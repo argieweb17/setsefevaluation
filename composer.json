@@ -56,7 +56,7 @@
         "sort-packages": true,
         "platform": {
             "php": "8.2.12",
-            "ext-gd": "*"
+            "ext-gd": "8.2.12"
         }
     },
     "autoload": {
