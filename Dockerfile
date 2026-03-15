@@ -62,6 +62,9 @@ RUN mkdir -p var/cache var/log
 ENV APP_ENV=prod
 RUN composer run-script post-install-cmd
 
+# Compile assets for production (AssetMapper)
+RUN php bin/console asset-map:compile --env=prod
+
 # Set permissions
 RUN chown -R www-data:www-data var/ public/
 
