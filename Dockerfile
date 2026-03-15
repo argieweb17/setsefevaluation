@@ -63,8 +63,9 @@ RUN composer run-script post-install-cmd
 # Set permissions
 RUN chown -R www-data:www-data var/ public/
 
-# Railway sets PORT dynamically — make Apache listen on it
-RUN sed -ri -e 's/80/${PORT}/g' /etc/apache2/sites-available/*.conf /etc/apache2/ports.conf
+# Use entrypoint script to configure PORT at runtime (Railway sets PORT dynamically)
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-EXPOSE ${PORT}
-CMD ["apache2-foreground"]
+EXPOSE 80
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
