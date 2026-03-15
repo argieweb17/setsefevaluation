@@ -20,11 +20,16 @@
 
 /* ── Smooth Turbo page transitions ── */
 .main-content {
-    animation: pageIn .2s ease both;
+    animation: pageIn .2s ease forwards;
 }
 @keyframes pageIn {
     from { opacity: 0; }
     to   { opacity: 1; }
+}
+/* Remove stacking-context after animation so Bootstrap modals can layer correctly */
+.main-content.animation-done {
+    animation: none;
+    opacity: 1;
 }
 /* Turbo adds [data-turbo-preview] on cached snapshot — hide it instantly */
 [data-turbo-preview] .main-content {

@@ -378,6 +378,10 @@
         </header>
         <script>
         document.addEventListener('DOMContentLoaded',function(){
+            // Remove animation stacking context so Bootstrap modals can layer correctly
+            var mc=document.querySelector('.main-content');
+            if(mc){mc.addEventListener('animationend',function(){mc.classList.add('animation-done');},{once:true});}
+
             // Fullscreen toggle
             var btn=document.getElementById('topbarFullscreen');
             if(btn){
@@ -427,7 +431,11 @@
 
             initSidebarDropdowns();
         });
-        document.addEventListener('turbo:load', initSidebarDropdowns);
+        document.addEventListener('turbo:load', function(){
+            initSidebarDropdowns();
+            var mc=document.querySelector('.main-content');
+            if(mc){mc.classList.remove('animation-done');mc.addEventListener('animationend',function(){mc.classList.add('animation-done');},{once:true});}
+        });
 
         function initSidebarDropdowns(){
             // Sidebar dropdown toggle with animation
