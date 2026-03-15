@@ -35,6 +35,8 @@ class SeedDepartmentsCommand extends Command
                 'Bachelor of Science in Mathematics',
                 'Bachelor of Science in Environmental Science',
                 'Bachelor of Science in Psychology',
+                'Bachelor of Science in Computer Science',
+                'Bachelor of Science in Information Technology',
             ],
             'College of Business Administration' => [
                 'Bachelor of Science in Business Administration',
@@ -62,11 +64,7 @@ class SeedDepartmentsCommand extends Command
             'College of Industrial Technology' => [
                 'Bachelor of Science in Industrial Technology',
                 'Bachelor of Technical-Vocational Teacher Education',
-            ],
-            'College of Information Technology' => [
-                'Bachelor of Science in Information Technology',
-                'Bachelor of Science in Computer Science',
-                'Bachelor of Science in Information Systems',
+      
             ],
             'College of Nursing and Allied Health Sciences' => [
                 'Bachelor of Science in Nursing',
