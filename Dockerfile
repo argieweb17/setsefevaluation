@@ -3,6 +3,7 @@ FROM php:8.2-fpm
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
+    curl \
     unzip \
     libpq-dev \
     libzip-dev \
@@ -25,6 +26,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install Symfony CLI
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | bash \
+    && apt-get install -y symfony-cli
 
 # Set working directory
 WORKDIR /var/www/html
