@@ -3,8 +3,9 @@ set -e
 
 # Configure Apache port from Railway's PORT env var
 PORT="${PORT:-80}"
-sed -i "s/Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf
-sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/*.conf
+# Overwrite ports.conf to avoid sed match issues on restarts
+echo "Listen ${PORT}" > /etc/apache2/ports.conf
+sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/*.conf
 
 # Ensure var directory is writable
 mkdir -p /var/www/html/var/cache /var/www/html/var/log
