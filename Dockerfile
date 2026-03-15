@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     libpq-dev \
+    default-libmysqlclient-dev \
     libzip-dev \
     libpng-dev \
     libjpeg-dev \
@@ -19,7 +20,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
     gd \
     pdo \
-    pdo_pgsql \
+    pdo_mysql \
     zip \
     intl \
     opcache
