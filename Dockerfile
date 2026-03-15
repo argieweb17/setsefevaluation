@@ -29,12 +29,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 RUN a2enmod rewrite
 
 # Set document root to Symfony's public directory
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# Allow .htaccess overrides
-RUN sed -ri -e 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+RUN sed -ri -e "s!/var/www/html!/var/www/html/public!g" /etc/apache2/sites-available/*.conf
+RUN sed -ri -e "s!AllowOverride None!AllowOverride All!g" /etc/apache2/apache2.conf
 
 # Install Composer — allow running as root
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -56,6 +52,9 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy the rest of the application
 COPY . .
 
+# Create var directory (excluded by .dockerignore)
+RUN mkdir -p var/cache var/log
+
 # Run Symfony scripts
 ENV APP_ENV=prod
 RUN composer run-script post-install-cmd
@@ -63,7 +62,7 @@ RUN composer run-script post-install-cmd
 # Set permissions
 RUN chown -R www-data:www-data var/ public/
 
-# Use entrypoint script to configure PORT at runtime (Railway sets PORT dynamically)
+# Use entrypoint script to configure PORT at runtime
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
