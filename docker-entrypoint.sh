@@ -29,6 +29,7 @@ echo "=== Updating database schema ==="
 php /var/www/html/bin/console doctrine:schema:update --force --env=prod --no-interaction || echo "WARNING: schema update failed"
 php /var/www/html/bin/console doctrine:migrations:migrate --no-interaction --env=prod --allow-no-migration || echo "WARNING: migrations failed"
 php /var/www/html/bin/console app:seed-departments --env=prod || echo "WARNING: department seeding failed"
+php /var/www/html/bin/console app:create-admin --env=prod || echo "WARNING: admin creation failed"
 echo "==================================="
 
 chown -R www-data:www-data /var/www/html/var
