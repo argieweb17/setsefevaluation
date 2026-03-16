@@ -570,24 +570,14 @@
             <form method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false">
                 <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
                 <div class="modal-body p-4">
-                    <div class="mb-3 p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ede9fe;">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <i class="bi bi-info-circle-fill" style="color:#7c3aed;"></i>
-                            <strong style="color:#5b21b6;font-size:.82rem;">About Evaluation Period</strong>
-                        </div>
-                        <p class="mb-0" style="font-size:.78rem;color:#6b7280;">
-                            Create an evaluation period for <strong>Student Evaluation for Teacher (SET)</strong>.
-                            Select a faculty member and their subject to schedule a specific evaluation.
-                        </p>
-                    </div>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Evaluation Type</label>
                             <select name="evaluationType" class="form-select ev-form-control" required>
                                 <option value="SET">SET (Student Evaluation for Teacher)</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">School Year</label>
                             <select name="schoolYear" class="form-select ev-form-control">
                                 <option value="">— Select —</option>
@@ -596,7 +586,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Year Level</label>
                             <select name="yearLevel" class="form-select ev-form-control">
                                 <option value="">All Year Levels</option>
@@ -607,7 +597,7 @@
                                 <option value="5th Year">5th Year</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">College</label>
                             <select name="college" class="form-select ev-form-control college-select">
                                 <option value="">All Colleges</option>
@@ -616,7 +606,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Department</label>
                             <select name="department" class="form-select ev-form-control dept-select">
                                 <option value="">All Departments</option>
@@ -625,7 +615,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Faculty</label>
                             <select name="faculty" class="form-select ev-form-control faculty-select" data-target-subject="#createSubject">
                                 <option value="" data-faculty-id="" data-department="">— Select Faculty —</option>
@@ -634,43 +624,43 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Subject</label>
                             <select name="subject" id="createSubject" class="form-select ev-form-control subject-select" data-target-time="#createTime" data-target-section="#createSection" data-current-value="">
                                 <option value="" data-schedule="" data-section="">— Select Faculty first —</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Time</label>
                             <input type="text" name="time" id="createTime" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Section</label>
                             <input type="text" name="section" id="createSection" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Start Date & Time</label>
                             <input type="datetime-local" name="startDate" class="form-control ev-form-control" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">End Date & Time</label>
                             <input type="datetime-local" name="endDate" class="form-control ev-form-control" required>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-2">
+                        <div class="col-md-2">
+                            <div class="form-check form-switch mt-4">
                                 <input class="form-check-input" type="checkbox" name="status" id="evalStatus" value="1" checked>
                                 <label class="form-check-label ev-form-label" for="evalStatus">Open</label>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-2">
+                        <div class="col-md-2">
+                            <div class="form-check form-switch mt-4">
                                 <input class="form-check-input" type="checkbox" name="anonymousMode" id="anonMode" value="1" checked>
-                                <label class="form-check-label ev-form-label" for="anonMode">Anonymous</label>
+                                <label class="form-check-label ev-form-label" for="anonMode">Anon</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
+                <div class="modal-footer border-0 rounded-bottom-4 px-4 py-3" style="background:#f8f9fa;">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
                         <i class="bi bi-plus-lg me-1"></i>Create Period
@@ -701,19 +691,8 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
                 <input type="hidden" name="evaluationType" value="SUPERIOR">
                 <div class="modal-body p-4">
-                    <div class="mb-3 p-3 rounded-3" style="background:#f5f3ff;border:1px solid #ede9fe;">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            <i class="bi bi-info-circle-fill" style="color:#7c3aed;"></i>
-                            <strong style="color:#5b21b6;font-size:.82rem;">About SEF Evaluation</strong>
-                        </div>
-                        <p class="mb-0" style="font-size:.78rem;color:#6b7280;">
-                            <strong>Superior Evaluation for Faculty (SEF)</strong> allows Superiors to evaluate personnel
-                            with employment status set to <strong>Dean</strong>, <strong>Department Head</strong>, or <strong>Chair</strong>.
-                            Evaluation questions will use the SEF question set.
-                        </p>
-                    </div>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">School Year</label>
                             <select name="schoolYear" class="form-select ev-form-control">
                                 <option value="">— Select —</option>
@@ -722,7 +701,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">College</label>
                             <select name="college" class="form-select ev-form-control sup-college-select">
                                 <option value="">All Colleges</option>
@@ -731,7 +710,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Department</label>
                             <select name="department" class="form-select ev-form-control sup-dept-select">
                                 <option value="">All Departments</option>
@@ -740,7 +719,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Faculty</label>
                             <select name="faculty" class="form-select ev-form-control sup-faculty-select">
                                 <option value="" data-position="" data-department="">— Select Faculty —</option>
@@ -749,33 +728,33 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Position</label>
                             <input type="text" name="position" class="form-control ev-form-control sup-position-input" placeholder="Auto-filled from faculty" readonly>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">Start Date & Time</label>
                             <input type="datetime-local" name="startDate" class="form-control ev-form-control" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label ev-form-label">End Date & Time</label>
                             <input type="datetime-local" name="endDate" class="form-control ev-form-control" required>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-2">
+                        <div class="col-md-2">
+                            <div class="form-check form-switch mt-4">
                                 <input class="form-check-input" type="checkbox" name="status" id="supEvalStatus" value="1" checked>
                                 <label class="form-check-label ev-form-label" for="supEvalStatus">Open</label>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch mt-2">
+                        <div class="col-md-2">
+                            <div class="form-check form-switch mt-4">
                                 <input class="form-check-input" type="checkbox" name="anonymousMode" id="supAnonMode" value="1" checked>
-                                <label class="form-check-label ev-form-label" for="supAnonMode">Anonymous</label>
+                                <label class="form-check-label ev-form-label" for="supAnonMode">Anon</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 px-4 py-3" style="background:#f5f3ff;">
+                <div class="modal-footer border-0 rounded-bottom-4 px-4 py-3" style="background:#f8f9fa;">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
                         <i class="bi bi-plus-lg me-1"></i>Create SEF Evaluation

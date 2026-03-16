@@ -87,20 +87,20 @@
 
 {# ── Filter Toolbar ── #}
 <div class="fe-toolbar">
-    <div class="d-flex align-items-center flex-nowrap gap-2">
+    <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
         <div class="ev-filter-group" id="feTypeFilter">
             <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
             <button class="ev-filter-btn" data-type="SET" onclick="feFilterType('SET', this)">SET <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SET')|length }}</span></button>
             <button class="ev-filter-btn" data-type="SEF" onclick="feFilterType('SEF', this)">SEF <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SEF' or e.evaluation.evaluationType == 'SUPERIOR')|length }}</span></button>
         </div>
-        <div class="ev-search-box">
-            <i class="bi bi-search ev-search-icon"></i>
-            <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
-        </div>
         <label class="fe-select-all" id="feSelectAllWrap" style="display:none;">
             <input type="checkbox" id="feSelectAll" class="form-check-input">
             <span>Select All</span>
         </label>
+        <div class="ev-search-box ms-auto">
+            <i class="bi bi-search ev-search-icon"></i>
+            <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
+        </div>
     </div>
 </div>
 
@@ -164,7 +164,6 @@
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-1">
                         <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
-                        <a href="{{ path(prefix ~ '_results_print_comments', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Comments"><i class="bi bi-chat-left-text"></i></a>
                     </div>
                 </td>
             </tr>
@@ -355,7 +354,7 @@
 .ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
 .ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
 .ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
-.ev-search-box{position:relative;min-width:150px;flex:1;}
+.ev-search-box{position:relative;width:220px;}
 .ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
 .ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
 .ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
