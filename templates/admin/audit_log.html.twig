@@ -2,101 +2,282 @@
 
 {% block title %}Audit Log | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Audit Log</h4>
-</div>
+{% block stylesheets %}
+{# ═══════ STYLES ═══════ #}
+<style>
+/* ── Header ── */
+.al-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.al-header-left{display:flex;align-items:center;gap:.85rem}
+.al-header-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.al-title{font-size:1.35rem;font-weight:800;color:#0F172A;margin:0;letter-spacing:-.3px}
+.al-subtitle{font-size:.8rem;color:#64748B;margin:0}
+.al-header-right{display:flex;align-items:center;gap:.5rem}
+.al-count-badge{display:inline-flex;align-items:center;padding:6px 14px;border-radius:8px;font-size:.78rem;font-weight:600;background:#EFF6FF;color:#2563EB;border:1px solid #DBEAFE}
+.al-delete-all-btn{display:inline-flex;align-items:center;padding:6px 14px;border-radius:8px;font-size:.78rem;font-weight:600;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;cursor:pointer;transition:all .2s}
+.al-delete-all-btn:hover{background:#DC2626;color:#fff;border-color:#DC2626;box-shadow:0 4px 12px rgba(220,38,38,.25)}
 
-{# Filters #}
-<div class="card mb-3">
-    <div class="card-body">
-        <form method="get" action="{{ path('admin_audit_log') }}" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">Action</label>
-                <select name="action" class="form-select">
-                    <option value="">All Actions</option>
-                    <option value="CREATE_USER" {{ filterAction == 'CREATE_USER' ? 'selected' }}>Create User</option>
-                    <option value="EDIT_USER" {{ filterAction == 'EDIT_USER' ? 'selected' }}>Edit User</option>
-                    <option value="DELETE_USER" {{ filterAction == 'DELETE_USER' ? 'selected' }}>Delete User</option>
-                    <option value="ACTIVATE_USER" {{ filterAction == 'ACTIVATE_USER' ? 'selected' }}>Activate User</option>
-                    <option value="DEACTIVATE_USER" {{ filterAction == 'DEACTIVATE_USER' ? 'selected' }}>Deactivate User</option>
-                    <option value="RESET_PASSWORD" {{ filterAction == 'RESET_PASSWORD' ? 'selected' }}>Reset Password</option>
-                    <option value="BULK_UPLOAD" {{ filterAction == 'BULK_UPLOAD' ? 'selected' }}>Bulk Upload</option>
-                    <option value="CREATE_DEPARTMENT" {{ filterAction == 'CREATE_DEPARTMENT' ? 'selected' }}>Create Department</option>
-                    <option value="CREATE_SUBJECT" {{ filterAction == 'CREATE_SUBJECT' ? 'selected' }}>Create Subject</option>
-                    <option value="ASSIGN_FACULTY" {{ filterAction == 'ASSIGN_FACULTY' ? 'selected' }}>Assign Faculty</option>
-                    <option value="ENROLL_STUDENT" {{ filterAction == 'ENROLL_STUDENT' ? 'selected' }}>Enroll Student</option>
-                    <option value="CREATE_EVALUATION" {{ filterAction == 'CREATE_EVALUATION' ? 'selected' }}>Create Evaluation</option>
-                    <option value="OPEN_EVALUATION" {{ filterAction == 'OPEN_EVALUATION' ? 'selected' }}>Open Evaluation</option>
-                    <option value="CLOSE_EVALUATION" {{ filterAction == 'CLOSE_EVALUATION' ? 'selected' }}>Close Evaluation</option>
-                    <option value="LOCK_RESULTS" {{ filterAction == 'LOCK_RESULTS' ? 'selected' }}>Lock Results</option>
-                    <option value="CREATE_QUESTION" {{ filterAction == 'CREATE_QUESTION' ? 'selected' }}>Create Question</option>
-                    <option value="EDIT_QUESTION" {{ filterAction == 'EDIT_QUESTION' ? 'selected' }}>Edit Question</option>
-                    <option value="DELETE_QUESTION" {{ filterAction == 'DELETE_QUESTION' ? 'selected' }}>Delete Question</option>
-                    <option value="EXPORT_REPORT" {{ filterAction == 'EXPORT_REPORT' ? 'selected' }}>Export Report</option>
-                    <option value="SUBMIT_EVALUATION" {{ filterAction == 'SUBMIT_EVALUATION' ? 'selected' }}>Submit Evaluation</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-semibold">User</label>
-                <select name="user" class="form-select">
-                    <option value="">All Users</option>
-                    {% for u in staffUsers %}
-                        <option value="{{ u.id }}" {{ filterUser == u.id ? 'selected' }}>
-                            {{ u.fullName }} ({{ u.email }})
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-norsu w-100">Filter</button>
-            </div>
-            <div class="col-md-2">
-                <a href="{{ path('admin_audit_log') }}" class="btn btn-outline-secondary w-100">Clear</a>
-            </div>
-        </form>
+/* ── Flash ── */
+.al-flash-success{display:flex;align-items:center;padding:.75rem 1rem;border-radius:10px;background:#F0FDF4;border:1px solid #BBF7D0;color:#166534;font-size:.82rem;font-weight:600;margin-bottom:1rem;animation:alFadeIn .3s ease}
+
+/* ── Filters ── */
+.al-filter-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.al-filter-form{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap}
+.al-filter-group{flex:1;min-width:200px}
+.al-filter-label{display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
+.al-filter-select{width:100%;padding:8px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.82rem;color:#1E293B;background:#F8FAFC;transition:border-color .2s,box-shadow .2s;outline:none;appearance:auto}
+.al-filter-select:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.al-filter-actions{display:flex;gap:.5rem;padding-bottom:1px}
+.al-btn-filter{padding:8px 18px;border:none;border-radius:8px;background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.al-btn-filter:hover{box-shadow:0 4px 12px rgba(37,99,235,.3);transform:translateY(-1px)}
+.al-btn-clear{padding:8px 18px;border:1.5px solid #E2E8F0;border-radius:8px;background:#fff;color:#64748B;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center}
+.al-btn-clear:hover{border-color:#94A3B8;color:#334155;background:#F8FAFC}
+
+/* ── Table ── */
+.al-table-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.al-table-wrap{overflow-x:auto}
+.al-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.al-table thead{background:linear-gradient(135deg,#F8FAFC,#F1F5F9);border-bottom:2px solid #E2E8F0}
+.al-table thead th{padding:10px 14px;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none}
+.al-table tbody tr{border-bottom:1px solid #F1F5F9;transition:background .12s}
+.al-table tbody tr:last-child{border-bottom:none}
+.al-table tbody tr:hover{background:#F8FAFF}
+.al-table tbody td{padding:10px 14px;vertical-align:middle}
+.al-td-num{color:#94A3B8;font-size:.7rem;font-weight:600;text-align:center}
+.al-td-time{white-space:nowrap;color:#475569;font-size:.78rem}
+.al-td-user{display:flex;align-items:center;gap:.5rem;font-weight:600;color:#1E293B;font-size:.8rem}
+.al-user-avatar{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#DBEAFE,#EFF6FF);color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;flex-shrink:0}
+.al-user-system{background:linear-gradient(135deg,#F1F5F9,#E2E8F0);color:#64748B}
+.al-td-entity{font-size:.78rem;color:#475569}
+.al-entity-id{color:#94A3B8;font-size:.72rem}
+.al-td-details{font-size:.78rem;color:#64748B;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-td-ip code{font-size:.72rem;padding:2px 8px;border-radius:5px;background:#F1F5F9;color:#475569;font-family:'SF Mono',Monaco,monospace}
+
+/* ── Action Badges ── */
+.al-action-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.al-badge-default{background:#F1F5F9;color:#475569}
+.al-badge-green{background:#F0FDF4;color:#16A34A}
+.al-badge-red{background:#FEF2F2;color:#DC2626}
+.al-badge-blue{background:#EFF6FF;color:#2563EB}
+.al-badge-purple{background:#F5F3FF;color:#7C3AED}
+.al-badge-teal{background:#F0FDFA;color:#0D9488}
+.al-badge-emerald{background:#ECFDF5;color:#059669}
+.al-badge-orange{background:#FFF7ED;color:#EA580C}
+.al-badge-indigo{background:#EEF2FF;color:#4F46E5}
+
+/* ── Empty State ── */
+.al-empty{padding:0!important}
+.al-empty-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:#94A3B8}
+.al-empty-inner i{font-size:2.5rem;margin-bottom:.75rem;opacity:.4}
+.al-empty-inner strong{font-size:.88rem;color:#475569;margin-bottom:.25rem}
+.al-empty-inner span{font-size:.78rem}
+
+/* ── Modal ── */
+.al-modal{border:none;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15)}
+.al-modal-icon{width:56px;height:56px;border-radius:50%;background:#FEF2F2;color:#DC2626;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1rem}
+.al-modal-btn-cancel{padding:8px 22px;border:1.5px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s}
+.al-modal-btn-cancel:hover{background:#F8FAFC;border-color:#CBD5E1}
+.al-modal-btn-delete{padding:8px 22px;border:none;border-radius:8px;background:#DC2626;color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center}
+.al-modal-btn-delete:hover{background:#B91C1C;box-shadow:0 4px 12px rgba(220,38,38,.3)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+    .al-header{flex-direction:column;align-items:flex-start}
+    .al-filter-form{flex-direction:column}
+    .al-filter-group{min-width:100%}
+    .al-filter-actions{width:100%}
+    .al-btn-filter,.al-btn-clear{flex:1;text-align:center;justify-content:center}
+    .al-td-details{max-width:150px}
+}
+
+/* ── Animation ── */
+.al-header,.al-filter-card,.al-table-card,.al-flash-success{animation:alFadeIn .25s ease}
+@keyframes alFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+{% endblock %}
+
+{% block body %}
+{# ═══════ PAGE HEADER ═══════ #}
+<div class="al-header">
+    <div class="al-header-left">
+        <div class="al-header-icon">
+            <i class="bi bi-journal-text"></i>
+        </div>
+        <div>
+            <h4 class="al-title">Audit Log</h4>
+            <p class="al-subtitle">Track all system activities and user actions</p>
+        </div>
+    </div>
+    <div class="al-header-right">
+        <span class="al-count-badge">
+            <i class="bi bi-list-ul me-1"></i>{{ logs|length }} entr{{ logs|length != 1 ? 'ies' : 'y' }}
+        </span>
+        {% if logs|length > 0 %}
+        <button type="button" class="al-delete-all-btn" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
+            <i class="bi bi-trash3 me-1"></i>Delete All
+        </button>
+        {% endif %}
     </div>
 </div>
 
-{# Log Table #}
-<div class="card">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="thead-norsu">
-                    <tr>
-                        <th class="ps-3">Timestamp</th>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Entity</th>
-                        <th>Details</th>
-                        <th>IP Address</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td class="ps-3 small">{{ log.createdAt|date('M d, Y h:i A') }}</td>
-                        <td class="fw-semibold small">
-                            {{ log.performedBy ? log.performedBy.fullName : 'System' }}
-                        </td>
-                        <td>
-                            <span class="badge bg-dark">{{ log.action }}</span>
-                        </td>
-                        <td class="small">
-                            {{ log.entityType }}
-                            {% if log.entityId %}
-                                <span class="text-muted">#{{ log.entityId }}</span>
-                            {% endif %}
-                        </td>
-                        <td class="small">{{ log.details ?? '—' }}</td>
-                        <td class="small text-muted">{{ log.ipAddress ?? '—' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">No audit log entries found.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{# ═══════ FLASH MESSAGES ═══════ #}
+{% for message in app.flashes('success') %}
+<div class="al-flash-success">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+</div>
+{% endfor %}
+
+{# ═══════ FILTERS ═══════ #}
+<div class="al-filter-card">
+    <form method="get" action="{{ path('admin_audit_log') }}" class="al-filter-form">
+        <div class="al-filter-group">
+            <label class="al-filter-label"><i class="bi bi-funnel me-1"></i>Action</label>
+            <select name="action" class="al-filter-select">
+                <option value="">All Actions</option>
+                <option value="create_user" {{ filterAction == 'create_user' ? 'selected' }}>Create User</option>
+                <option value="edit_user" {{ filterAction == 'edit_user' ? 'selected' }}>Edit User</option>
+                <option value="delete_user" {{ filterAction == 'delete_user' ? 'selected' }}>Delete User</option>
+                <option value="activate_user" {{ filterAction == 'activate_user' ? 'selected' }}>Activate User</option>
+                <option value="deactivate_user" {{ filterAction == 'deactivate_user' ? 'selected' }}>Deactivate User</option>
+                <option value="reset_password" {{ filterAction == 'reset_password' ? 'selected' }}>Reset Password</option>
+                <option value="bulk_upload" {{ filterAction == 'bulk_upload' ? 'selected' }}>Bulk Upload</option>
+                <option value="create_evaluation" {{ filterAction == 'create_evaluation' ? 'selected' }}>Create Evaluation</option>
+                <option value="open_evaluation" {{ filterAction == 'open_evaluation' ? 'selected' }}>Open Evaluation</option>
+                <option value="close_evaluation" {{ filterAction == 'close_evaluation' ? 'selected' }}>Close Evaluation</option>
+                <option value="lock_results" {{ filterAction == 'lock_results' ? 'selected' }}>Lock Results</option>
+                <option value="create_department" {{ filterAction == 'create_department' ? 'selected' }}>Create Department</option>
+                <option value="create_subject" {{ filterAction == 'create_subject' ? 'selected' }}>Create Subject</option>
+                <option value="create_question" {{ filterAction == 'create_question' ? 'selected' }}>Create Question</option>
+                <option value="edit_question" {{ filterAction == 'edit_question' ? 'selected' }}>Edit Question</option>
+                <option value="delete_question" {{ filterAction == 'delete_question' ? 'selected' }}>Delete Question</option>
+                <option value="assign_faculty" {{ filterAction == 'assign_faculty' ? 'selected' }}>Assign Faculty</option>
+                <option value="enroll_student" {{ filterAction == 'enroll_student' ? 'selected' }}>Enroll Student</option>
+                <option value="submit_set" {{ filterAction == 'submit_set' ? 'selected' }}>Submit SET</option>
+                <option value="submit_sef" {{ filterAction == 'submit_sef' ? 'selected' }}>Submit SEF</option>
+                <option value="export_report" {{ filterAction == 'export_report' ? 'selected' }}>Export Report</option>
+                <option value="login" {{ filterAction == 'login' ? 'selected' }}>Login</option>
+                <option value="logout" {{ filterAction == 'logout' ? 'selected' }}>Logout</option>
+                <option value="user_registered" {{ filterAction == 'user_registered' ? 'selected' }}>User Registered</option>
+            </select>
+        </div>
+        <div class="al-filter-group">
+            <label class="al-filter-label"><i class="bi bi-person me-1"></i>User</label>
+            <select name="user" class="al-filter-select">
+                <option value="">All Users</option>
+                {% for u in staffUsers %}
+                    <option value="{{ u.id }}" {{ filterUser == u.id ? 'selected' }}>
+                        {{ u.fullName }} ({{ u.email }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="al-filter-actions">
+            <button type="submit" class="al-btn-filter"><i class="bi bi-search me-1"></i>Filter</button>
+            <a href="{{ path('admin_audit_log') }}" class="al-btn-clear"><i class="bi bi-x-lg me-1"></i>Clear</a>
+        </div>
+    </form>
+</div>
+
+{# ═══════ LOG TABLE ═══════ #}
+<div class="al-table-card">
+    <div class="al-table-wrap">
+        <table class="al-table">
+            <thead>
+                <tr>
+                    <th style="width:36px">#</th>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr class="al-row">
+                    <td class="al-td-num">{{ loop.index }}</td>
+                    <td class="al-td-time">
+                        <i class="bi bi-clock text-muted me-1"></i>{{ log.createdAt|date('M d, Y h:i A') }}
+                    </td>
+                    <td class="al-td-user">
+                        {% if log.performedBy %}
+                            <div class="al-user-avatar">{{ log.performedBy.firstName|first }}{{ log.performedBy.lastName|first }}</div>
+                            <span>{{ log.performedBy.fullName }}</span>
+                        {% else %}
+                            <div class="al-user-avatar al-user-system"><i class="bi bi-gear-fill"></i></div>
+                            <span class="text-muted">Deleted User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set actionClass = 'al-badge-default' %}
+                        {% if 'create' in log.action or 'register' in log.action %}
+                            {% set actionClass = 'al-badge-green' %}
+                        {% elseif 'delete' in log.action %}
+                            {% set actionClass = 'al-badge-red' %}
+                        {% elseif 'edit' in log.action or 'change' in log.action %}
+                            {% set actionClass = 'al-badge-blue' %}
+                        {% elseif 'login' in log.action or 'logout' in log.action %}
+                            {% set actionClass = 'al-badge-purple' %}
+                        {% elseif 'submit' in log.action or 'save' in log.action %}
+                            {% set actionClass = 'al-badge-teal' %}
+                        {% elseif 'activate' in log.action or 'open' in log.action %}
+                            {% set actionClass = 'al-badge-emerald' %}
+                        {% elseif 'deactivate' in log.action or 'close' in log.action or 'lock' in log.action %}
+                            {% set actionClass = 'al-badge-orange' %}
+                        {% elseif 'export' in log.action %}
+                            {% set actionClass = 'al-badge-indigo' %}
+                        {% endif %}
+                        <span class="al-action-badge {{ actionClass }}">{{ log.actionLabel }}</span>
+                    </td>
+                    <td class="al-td-entity">
+                        {{ log.entityType }}
+                        {% if log.entityId %}
+                            <span class="al-entity-id">#{{ log.entityId }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="al-td-details">{{ log.details|default('—') }}</td>
+                    <td class="al-td-ip">
+                        <code>{{ log.ipAddress|default('—') }}</code>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="al-empty">
+                        <div class="al-empty-inner">
+                            <i class="bi bi-journal-x"></i>
+                            <strong>No audit log entries found</strong>
+                            <span>System activities will appear here once actions are performed.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ═══════ DELETE ALL MODAL ═══════ #}
+<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+        <div class="modal-content al-modal">
+            <div class="modal-body text-center px-4 py-4">
+                <div class="al-modal-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h5 class="fw-bold mb-2" style="color:#1E293B">Delete All Logs?</h5>
+                <p class="text-muted mb-3" style="font-size:.88rem">
+                    This will permanently delete <strong>all {{ logs|length }}</strong> audit log entries. This action cannot be undone.
+                </p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="al-modal-btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{{ path('admin_audit_log_delete_all') }}" class="d-inline">
+                        <input type="hidden" name="_token" value="{{ csrf_token('delete_all_audit_logs') }}">
+                        <button type="submit" class="al-modal-btn-delete">
+                            <i class="bi bi-trash3 me-1"></i>Delete All
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

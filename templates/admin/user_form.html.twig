@@ -2,6 +2,26 @@
 
 {% block title %}{{ title }} | SET-SEF Evaluation{% endblock %}
 
+{% block stylesheets %}
+<style>
+.uf-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 10px 40px rgba(30,58,138,.18);margin-bottom:1.5rem;position:relative;}
+.uf-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;pointer-events:none;}
+.uf-header-inner{position:relative;z-index:1;padding:1.5rem 1.75rem 1.25rem;}
+.uf-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(4px);flex-shrink:0;}
+.uf-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.9);padding:2px 10px;border-radius:20px;font-size:.75rem;backdrop-filter:blur(4px);}
+.uf-form-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.5rem;}
+.uf-form-header{background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);color:#fff;padding:.65rem 1.1rem;font-size:.85rem;font-weight:600;}
+@keyframes ufFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.uf-form-card{animation:ufFadeIn .25s ease;}
+/* Role checkboxes */
+.uf-role-checkboxes{display:flex;flex-wrap:wrap;gap:.45rem;}
+.uf-role-chip{display:inline-flex;align-items:center;gap:2px;padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:500;cursor:pointer;border:1.5px solid #dee2e6;background:#f8f9fa;color:#495057;transition:all .15s ease;user-select:none;}
+.uf-role-chip:hover{border-color:var(--chip-color);background:color-mix(in srgb,var(--chip-color) 8%,#fff);}
+.uf-role-chip--active{border-color:var(--chip-color);background:color-mix(in srgb,var(--chip-color) 12%,#fff);color:var(--chip-color);font-weight:600;box-shadow:0 0 0 2px color-mix(in srgb,var(--chip-color) 15%,transparent);}
+.uf-role-cb{display:none;}
+</style>
+{% endblock %}
+
 {% block body %}
 {# ═══════════════════════════════════════
    USER FORM — CREATE / EDIT
@@ -133,26 +153,6 @@
     </div>
 </div>
 
-{# ═══════════════════════════════════════
-   SCOPED STYLES
-   ═══════════════════════════════════════ #}
-<style>
-.uf-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 10px 40px rgba(30,58,138,.18);margin-bottom:1.5rem;position:relative;}
-.uf-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;pointer-events:none;}
-.uf-header-inner{position:relative;z-index:1;padding:1.5rem 1.75rem 1.25rem;}
-.uf-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(4px);flex-shrink:0;}
-.uf-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.9);padding:2px 10px;border-radius:20px;font-size:.75rem;backdrop-filter:blur(4px);}
-.uf-form-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.5rem;}
-.uf-form-header{background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);color:#fff;padding:.65rem 1.1rem;font-size:.85rem;font-weight:600;}
-@keyframes ufFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.uf-form-card{animation:ufFadeIn .25s ease;}
-/* Role checkboxes */
-.uf-role-checkboxes{display:flex;flex-wrap:wrap;gap:.45rem;}
-.uf-role-chip{display:inline-flex;align-items:center;gap:2px;padding:5px 14px;border-radius:20px;font-size:.8rem;font-weight:500;cursor:pointer;border:1.5px solid #dee2e6;background:#f8f9fa;color:#495057;transition:all .15s ease;user-select:none;}
-.uf-role-chip:hover{border-color:var(--chip-color);background:color-mix(in srgb,var(--chip-color) 8%,#fff);}
-.uf-role-chip--active{border-color:var(--chip-color);background:color-mix(in srgb,var(--chip-color) 12%,#fff);color:var(--chip-color);font-weight:600;box-shadow:0 0 0 2px color-mix(in srgb,var(--chip-color) 15%,transparent);}
-.uf-role-cb{display:none;}
-</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.uf-role-cb').forEach(function(cb) {

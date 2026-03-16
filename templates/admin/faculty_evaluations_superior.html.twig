@@ -2,175 +2,7 @@
 
 {% block title %}{{ faculty.fullName }} | SEF Evaluations{% endblock %}
 
-{% block body %}
-
-{# ── Header Section ── #}
-<div class="fes-header">
-    <div class="fes-header-bg"></div>
-    <div class="fes-header-inner">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="fes-avatar">
-                    {% if faculty.profilePicture %}
-                        <img src="{{ asset('images/profiles/' ~ faculty.profilePicture) }}" alt="Profile" class="fes-avatar-img">
-                    {% else %}
-                        {{ faculty.firstName|first|upper }}{{ faculty.lastName|first|upper }}
-                    {% endif %}
-                </div>
-                <div>
-                    <h4 class="fes-name">{{ faculty.fullName }}</h4>
-                    <div class="fes-meta">
-                        {% if faculty.department %}
-                        <span class="fes-meta-tag"><i class="bi bi-building"></i> {{ faculty.department.departmentName }}</span>
-                        {% endif %}
-                        {% if faculty.employmentStatus %}
-                        <span class="fes-meta-tag"><i class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
-                        {% endif %}
-                        {% if faculty.campus %}
-                        <span class="fes-meta-tag"><i class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ path('admin_results_superior') }}" class="btn btn-sm fes-btn-back">
-                    <i class="bi bi-arrow-left me-1"></i>Back to SEF Results
-                </a>
-                {% if evaluations|length > 0 %}
-                <a href="{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fes-btn-print">
-                    <i class="bi bi-printer me-1"></i>Print All
-                </a>
-                <button type="button" id="fesToggleSelect" class="btn btn-sm fes-btn-select">
-                    <i class="bi bi-check2-square me-1"></i>Select to Print
-                </button>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ── Stats Row ── #}
-{% if evaluations|length > 0 %}
-<div class="fes-stats">
-    <div class="fes-stat-card">
-        <div class="fes-stat-icon stat-purple"><i class="bi bi-clipboard-data"></i></div>
-        <div>
-            <div class="fes-stat-num">{{ evaluations|length }}</div>
-            <div class="fes-stat-label">Evaluations</div>
-        </div>
-    </div>
-    <div class="fes-stat-card">
-        <div class="fes-stat-icon stat-green"><i class="bi bi-graph-up"></i></div>
-        <div>
-            <div class="fes-stat-num">{{ overallAvg|number_format(2) }}</div>
-            <div class="fes-stat-label">Overall Average</div>
-        </div>
-    </div>
-    <div class="fes-stat-card">
-        <div class="fes-stat-icon stat-blue"><i class="bi bi-people"></i></div>
-        <div>
-            <div class="fes-stat-num">{{ totalEvaluators }}</div>
-            <div class="fes-stat-label">Total Evaluators</div>
-        </div>
-    </div>
-    <div class="fes-stat-card">
-        <div class="fes-stat-icon stat-amber"><i class="bi bi-trophy"></i></div>
-        <div>
-            {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
-            <div class="fes-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
-            <div class="fes-stat-label">Performance</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{# ── Section Title ── #}
-<div class="fes-section-title">
-    <div class="d-flex align-items-center justify-content-between">
-        <h6><i class="bi bi-journal-text me-2"></i>SEF Evaluation History</h6>
-        <label class="fes-select-all" id="fesSelectAllWrap" style="display:none;">
-            <input type="checkbox" id="fesSelectAll" class="form-check-input">
-            <span>Select All</span>
-        </label>
-    </div>
-</div>
-
-{# ── Evaluation Cards ── #}
-{% if evaluations|length > 0 %}
-<div class="fes-list">
-    {% for item in evaluations %}
-    {% set ev = item.evaluation %}
-    {% set pct = (item.average / 5 * 100)|round(0) %}
-    <div class="fes-eval-card" data-eval-id="{{ ev.id }}">
-        <div class="fes-eval-left">
-            <div class="fes-eval-check" style="display:none;">
-                <input type="checkbox" class="form-check-input fes-check" value="{{ ev.id }}">
-            </div>
-            <div class="fes-eval-type">
-                <i class="bi bi-person-check-fill"></i>
-            </div>
-            <div class="fes-eval-info">
-                <div class="fes-eval-title">SEF &mdash; {{ ev.semester }}</div>
-                <div class="fes-eval-sub">
-                    <span><i class="bi bi-calendar3"></i> {{ ev.schoolYear }}</span>
-                    {% if ev.faculty %}
-                    <span><i class="bi bi-person"></i> {{ ev.faculty }}</span>
-                    {% endif %}
-                </div>
-                <div class="fes-eval-rating">
-                    <span class="fes-eval-score">{{ item.average|number_format(2) }}</span>
-                    <span class="fes-eval-of">/ 5</span>
-                    <div class="fes-bar">
-                        <div class="fes-bar-fill {% if item.average >= 4.5 %}bar-green{% elseif item.average >= 3.5 %}bar-blue{% elseif item.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
-                    </div>
-                    <span class="fes-eval-count"><i class="bi bi-people-fill"></i> {{ item.evaluators }} evaluator{{ item.evaluators != 1 ? 's' : '' }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="fes-eval-right">
-            {% if item.level == 'Always manifested' %}
-                <span class="fes-badge badge-green"><i class="bi bi-star-fill"></i> {{ item.level }}</span>
-            {% elseif item.level == 'Often manifested' %}
-                <span class="fes-badge badge-blue"><i class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
-            {% elseif item.level == 'Sometimes manifested' %}
-                <span class="fes-badge badge-teal"><i class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
-            {% elseif item.level == 'Seldom manifested' %}
-                <span class="fes-badge badge-yellow"><i class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
-            {% else %}
-                <span class="fes-badge badge-red"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
-            {% endif %}
-            <a href="{{ path('admin_results_superior_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank"
-               class="fes-print-btn">
-                <i class="bi bi-printer"></i> Print
-            </a>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% else %}
-<div class="fes-empty">
-    <div class="fes-empty-icon"><i class="bi bi-clipboard-x"></i></div>
-    <h6 class="fw-bold text-dark mb-1">No SEF Evaluations Found</h6>
-    <p class="text-muted small mb-0">This faculty has not been evaluated via SEF in any period yet.</p>
-</div>
-{% endif %}
-
-{# ── Floating Action Bar ── #}
-<div class="fes-action-bar" id="fesActionBar">
-    <div class="fes-action-inner">
-        <span class="fes-action-count"><span id="fesSelCount">0</span> evaluation(s) selected</span>
-        <a href="#" id="fesPrintSelected" target="_blank" class="btn btn-sm fes-action-print">
-            <i class="bi bi-printer me-1"></i>Print Selected
-        </a>
-        <button type="button" id="fesCancelSelect" class="btn btn-sm fes-action-cancel">
-            <i class="bi bi-x-lg me-1"></i>Cancel
-        </button>
-    </div>
-</div>
-
-{# ═══════════════════════════════════
-   STYLES — Purple SEF theme
-   ═══════════════════════════════════ #}
+{% block stylesheets %}
 <style>
 /* ── Header ── */
 .fes-header {
@@ -651,6 +483,176 @@
     .fes-action-inner { padding: 8px 14px; gap: 8px; }
 }
 </style>
+{% endblock %}
+
+{% block body %}
+
+{# ── Header Section ── #}
+<div class="fes-header">
+    <div class="fes-header-bg"></div>
+    <div class="fes-header-inner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fes-avatar">
+                    {% if faculty.profilePicture %}
+                        <img src="{{ asset('images/profiles/' ~ faculty.profilePicture) }}" alt="Profile" class="fes-avatar-img">
+                    {% else %}
+                        {{ faculty.firstName|first|upper }}{{ faculty.lastName|first|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 class="fes-name">{{ faculty.fullName }}</h4>
+                    <div class="fes-meta">
+                        {% if faculty.department %}
+                        <span class="fes-meta-tag"><i class="bi bi-building"></i> {{ faculty.department.departmentName }}</span>
+                        {% endif %}
+                        {% if faculty.employmentStatus %}
+                        <span class="fes-meta-tag"><i class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
+                        {% endif %}
+                        {% if faculty.campus %}
+                        <span class="fes-meta-tag"><i class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('admin_results_superior') }}" class="btn btn-sm fes-btn-back">
+                    <i class="bi bi-arrow-left me-1"></i>Back to SEF Results
+                </a>
+                {% if evaluations|length > 0 %}
+                <a href="{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fes-btn-print">
+                    <i class="bi bi-printer me-1"></i>Print All
+                </a>
+                <button type="button" id="fesToggleSelect" class="btn btn-sm fes-btn-select">
+                    <i class="bi bi-check2-square me-1"></i>Select to Print
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Stats Row ── #}
+{% if evaluations|length > 0 %}
+<div class="fes-stats">
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-purple"><i class="bi bi-clipboard-data"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ evaluations|length }}</div>
+            <div class="fes-stat-label">Evaluations</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-green"><i class="bi bi-graph-up"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ overallAvg|number_format(2) }}</div>
+            <div class="fes-stat-label">Overall Average</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-blue"><i class="bi bi-people"></i></div>
+        <div>
+            <div class="fes-stat-num">{{ totalEvaluators }}</div>
+            <div class="fes-stat-label">Total Evaluators</div>
+        </div>
+    </div>
+    <div class="fes-stat-card">
+        <div class="fes-stat-icon stat-amber"><i class="bi bi-trophy"></i></div>
+        <div>
+            {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
+            <div class="fes-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
+            <div class="fes-stat-label">Performance</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Section Title ── #}
+<div class="fes-section-title">
+    <div class="d-flex align-items-center justify-content-between">
+        <h6><i class="bi bi-journal-text me-2"></i>SEF Evaluation History</h6>
+        <label class="fes-select-all" id="fesSelectAllWrap" style="display:none;">
+            <input type="checkbox" id="fesSelectAll" class="form-check-input">
+            <span>Select All</span>
+        </label>
+    </div>
+</div>
+
+{# ── Evaluation Cards ── #}
+{% if evaluations|length > 0 %}
+<div class="fes-list">
+    {% for item in evaluations %}
+    {% set ev = item.evaluation %}
+    {% set pct = (item.average / 5 * 100)|round(0) %}
+    <div class="fes-eval-card" data-eval-id="{{ ev.id }}">
+        <div class="fes-eval-left">
+            <div class="fes-eval-check" style="display:none;">
+                <input type="checkbox" class="form-check-input fes-check" value="{{ ev.id }}">
+            </div>
+            <div class="fes-eval-type">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div class="fes-eval-info">
+                <div class="fes-eval-title">SEF &mdash; {{ ev.semester }}</div>
+                <div class="fes-eval-sub">
+                    <span><i class="bi bi-calendar3"></i> {{ ev.schoolYear }}</span>
+                    {% if ev.faculty %}
+                    <span><i class="bi bi-person"></i> {{ ev.faculty }}</span>
+                    {% endif %}
+                </div>
+                <div class="fes-eval-rating">
+                    <span class="fes-eval-score">{{ item.average|number_format(2) }}</span>
+                    <span class="fes-eval-of">/ 5</span>
+                    <div class="fes-bar">
+                        <div class="fes-bar-fill {% if item.average >= 4.5 %}bar-green{% elseif item.average >= 3.5 %}bar-blue{% elseif item.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
+                    </div>
+                    <span class="fes-eval-count"><i class="bi bi-people-fill"></i> {{ item.evaluators }} evaluator{{ item.evaluators != 1 ? 's' : '' }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="fes-eval-right">
+            {% if item.level == 'Always manifested' %}
+                <span class="fes-badge badge-green"><i class="bi bi-star-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Often manifested' %}
+                <span class="fes-badge badge-blue"><i class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Sometimes manifested' %}
+                <span class="fes-badge badge-teal"><i class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
+            {% elseif item.level == 'Seldom manifested' %}
+                <span class="fes-badge badge-yellow"><i class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
+            {% else %}
+                <span class="fes-badge badge-red"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
+            {% endif %}
+            <a href="{{ path('admin_results_superior_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank"
+               class="fes-print-btn">
+                <i class="bi bi-printer"></i> Print
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="fes-empty">
+    <div class="fes-empty-icon"><i class="bi bi-clipboard-x"></i></div>
+    <h6 class="fw-bold text-dark mb-1">No SEF Evaluations Found</h6>
+    <p class="text-muted small mb-0">This faculty has not been evaluated via SEF in any period yet.</p>
+</div>
+{% endif %}
+
+{# ── Floating Action Bar ── #}
+<div class="fes-action-bar" id="fesActionBar">
+    <div class="fes-action-inner">
+        <span class="fes-action-count"><span id="fesSelCount">0</span> evaluation(s) selected</span>
+        <a href="#" id="fesPrintSelected" target="_blank" class="btn btn-sm fes-action-print">
+            <i class="bi bi-printer me-1"></i>Print Selected
+        </a>
+        <button type="button" id="fesCancelSelect" class="btn btn-sm fes-action-cancel">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+    </div>
+</div>
+
+
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

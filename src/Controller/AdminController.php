@@ -1164,15 +1164,28 @@ class AdminController extends AbstractController
     public function createEvaluation(Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
+            $evaluationType = $request->request->get('evaluationType', 'SET');
+            $faculty = $request->request->get('faculty');
+            $subject = $request->request->get('subject');
+            $schoolYear = $request->request->get('schoolYear');
+            $section = $request->request->get('section');
+
+            $evalRepo = $em->getRepository(EvaluationPeriod::class);
+            $existing = $evalRepo->findDuplicate($evaluationType, $faculty, $subject, $schoolYear, $section);
+            if ($existing) {
+                $this->addFlash('danger', 'An evaluation period already exists for this faculty, subject, section, and school year.');
+                return $this->redirectToRoute('admin_evaluations');
+            }
+
             $eval = new EvaluationPeriod();
-            $eval->setEvaluationType($request->request->get('evaluationType', 'SET'));
-            $eval->setSchoolYear($request->request->get('schoolYear'));
+            $eval->setEvaluationType($evaluationType);
+            $eval->setSchoolYear($schoolYear);
             $sem = $request->request->get('semester');
             $eval->setSemester($sem !== '' ? $sem : null);
-            $eval->setFaculty($request->request->get('faculty'));
-            $eval->setSubject($request->request->get('subject'));
+            $eval->setFaculty($faculty);
+            $eval->setSubject($subject);
             $eval->setTime($request->request->get('time'));
-            $eval->setSection($request->request->get('section'));
+            $eval->setSection($section);
             $eval->setStartDate(new \DateTime($request->request->get('startDate')));
             $eval->setEndDate(new \DateTime($request->request->get('endDate')));
             $eval->setStatus($request->request->getBoolean('status', true));
@@ -2472,6 +2485,16 @@ class AdminController extends AbstractController
             'filterUser' => $filterUser,
             'staffUsers' => $userRepo->findBy([], ['lastName' => 'ASC']),
         ]);
+    }
+
+    #[Route('/audit-log/delete-all', name: 'admin_audit_log_delete_all', methods: ['POST'])]
+    public function deleteAllAuditLogs(Request $request, AuditLogRepository $repo): Response
+    {
+        if ($this->isCsrfTokenValid('delete_all_audit_logs', $request->request->get('_token'))) {
+            $count = $repo->deleteAll();
+            $this->addFlash('success', $count . ' audit log entries deleted.');
+        }
+        return $this->redirectToRoute('admin_audit_log');
     }
 
     // ── Helper ──

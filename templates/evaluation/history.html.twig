@@ -2,7 +2,7 @@
 
 {% block title %}Evaluation History | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
+{% block stylesheets %}
 <style>
 .eh-page { max-width: 1140px; margin: 0 auto; }
 .eh-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
@@ -67,6 +67,9 @@
     .eh-search-wrap input { width: 150px; }
 }
 </style>
+{% endblock %}
+
+{% block body %}
 
 {% set totalAvg = 0 %}
 {% set totalCount = 0 %}

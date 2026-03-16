@@ -73,7 +73,7 @@
             <i class="bi bi-star-fill"></i>
         </div>
         <div class="analytics-stat-body">
-            <span class="analytics-stat-value">{{ avgRating|number_format(2) }}</span>
+            <span class="analytics-stat-value">—</span>
             <span class="analytics-stat-label">Average Rating</span>
         </div>
     </div>
@@ -213,63 +213,6 @@
 </div>
 {% endif %}
 
-{# ═══════ EVALUATION RESULTS TABLE ═══════ #}
-{% if evalResults|length > 0 %}
-<div class="fd-section-header mt-4">
-    <div class="fd-section-title">
-        <i class="bi bi-clipboard-data-fill"></i>
-        <span>Latest Evaluation Results</span>
-    </div>
-    <span class="fd-section-badge">{{ evalResults|length }} result{{ evalResults|length != 1 ? 's' : '' }}</span>
-</div>
-
-<div class="fd-table-wrap">
-    <table class="fd-table">
-        <thead>
-            <tr>
-                <th style="width:40px">#</th>
-                <th>Evaluation</th>
-                <th>Average Rating</th>
-                <th class="text-center">Evaluators</th>
-                <th class="text-center">Performance</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in evalResults %}
-            <tr class="fd-row">
-                <td class="fd-td-num">{{ loop.index }}</td>
-                <td class="fd-td-name">{{ r.evaluation.label }}</td>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="fd-rating-value">{{ r.average|number_format(2) }}</span>
-                        <span class="fd-rating-of">/ 5</span>
-                        <div class="fd-rating-bar">
-                            <div class="fd-rating-fill {% if r.average >= 4.5 %}fill-green{% elseif r.average >= 3.5 %}fill-blue{% elseif r.average >= 2.5 %}fill-yellow{% else %}fill-red{% endif %}" style="width:{{ (r.average / 5 * 100)|round }}%"></div>
-                        </div>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <span class="fd-evaluator-badge">{{ r.evaluators }}</span>
-                </td>
-                <td class="text-center">
-                    {% if r.average >= 4.5 %}
-                        <span class="fd-perf-tag perf-green"><i class="bi bi-star-fill"></i> Always Manifested</span>
-                    {% elseif r.average >= 3.5 %}
-                        <span class="fd-perf-tag perf-blue"><i class="bi bi-check-circle-fill"></i> Often Manifested</span>
-                    {% elseif r.average >= 2.5 %}
-                        <span class="fd-perf-tag perf-yellow"><i class="bi bi-dash-circle-fill"></i> Sometimes</span>
-                    {% elseif r.average >= 1.5 %}
-                        <span class="fd-perf-tag perf-orange"><i class="bi bi-exclamation-circle-fill"></i> Rarely</span>
-                    {% else %}
-                        <span class="fd-perf-tag perf-red"><i class="bi bi-x-circle-fill"></i> Never</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% endif %}
 
 {# ─── Inline Styles ─── #}
 <style>

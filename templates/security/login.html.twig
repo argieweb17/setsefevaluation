@@ -4,152 +4,7 @@
 
 {% block body_class %}no-navbar{% endblock %}
 
-{% block body %}
-{# ═══════════════════════════════════════════════════
-   LOGIN PAGE — Professional Split Layout
-   ═══════════════════════════════════════════════════ #}
-
-<div class="lg-page">
-    {# ── LEFT PANEL: Decorative branding ── #}
-    <div class="lg-brand-panel">
-        <div class="lg-brand-bg"></div>
-        <div class="lg-brand-content">
-            <div class="lg-brand-logo-wrap">
-                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-brand-logo">
-            </div>
-            <h1 class="lg-brand-title">SET-SEF Evaluation System</h1>
-            <p class="lg-brand-sub">Welcome back to the Negros Oriental State University evaluation platform</p>
-
-            <div class="lg-brand-features">
-                <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i class="bi bi-shield-check"></i></div>
-                    <div>
-                        <strong>Secure Access</strong>
-                        <span>Your data is protected with enterprise-grade security</span>
-                    </div>
-                </div>
-                <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i class="bi bi-speedometer2"></i></div>
-                    <div>
-                        <strong>Real-time Dashboard</strong>
-                        <span>Instant access to evaluations and analytics</span>
-                    </div>
-                </div>
-                <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i class="bi bi-people"></i></div>
-                    <div>
-                        <strong>Multi-role Support</strong>
-                        <span>Students, faculty, and staff — all in one system</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg-brand-footer">
-                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
-            </div>
-        </div>
-    </div>
-
-    {# ── RIGHT PANEL: Login form ── #}
-    <div class="lg-form-panel">
-        <div class="lg-form-scroll">
-            <div class="lg-form-inner">
-
-                {# Mobile logo (hidden on desktop) #}
-                <div class="lg-mobile-header d-lg-none">
-                    <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-mobile-logo">
-                </div>
-
-                {# Welcome header #}
-                <div class="lg-header">
-                    <h2 class="lg-title">Sign in to your account</h2>
-                    <p class="lg-subtitle">Access your dashboard, evaluations, and analytics</p>
-                </div>
-
-                {# Error alert #}
-                {% if error %}
-                    <div class="lg-error-alert">
-                        <div class="lg-error-icon-box">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                        </div>
-                        <div>
-                            <strong class="lg-error-title">Authentication failed</strong>
-                            <span class="lg-error-msg">{{ error.messageKey|trans(error.messageData, 'security') }}</span>
-                        </div>
-                    </div>
-                {% endif %}
-
-                {# Login form #}
-                <form method="post" class="lg-form" id="loginForm">
-                    <div class="lg-field">
-                        <label for="inputEmail" class="lg-label">
-                            Email or Student ID
-                        </label>
-                        <div class="lg-input-wrap">
-                            <i class="bi bi-envelope"></i>
-                            <input type="text" value="{{ last_username }}" name="_username" id="inputEmail"
-                                   class="form-control lg-input" autocomplete="username" required autofocus
-                                   placeholder="Enter your email or student ID">
-                        </div>
-                    </div>
-
-                    <div class="lg-field">
-                        <label for="inputPassword" class="lg-label">
-                            Password
-                        </label>
-                        <div class="lg-input-wrap">
-                            <i class="bi bi-key"></i>
-                            <input type="password" name="_password" id="inputPassword"
-                                   class="form-control lg-input" autocomplete="current-password" required
-                                   placeholder="Enter your password">
-                            <button type="button" class="lg-pwd-toggle" id="pwdToggle" tabindex="-1"
-                                    aria-label="Toggle password visibility">
-                                <i class="bi bi-eye" id="pwdToggleIcon"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-                    <button type="submit" class="lg-submit-btn" id="loginSubmitBtn">
-                        <span class="lg-submit-text">
-                            Sign In<i class="bi bi-arrow-right ms-2"></i>
-                        </span>
-                        <span class="lg-submit-loading d-none">
-                            <span class="lg-loading-spinner"></span>
-                            <span>Signing In</span>
-                            <span class="lg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
-                        </span>
-                        <span class="lg-btn-progress"></span>
-                    </button>
-
-                    <div class="lg-divider">
-                        <span>or continue with</span>
-                    </div>
-
-                    <a href="{{ path('app_student_login') }}" class="lg-alt-btn">
-                        <div class="lg-alt-btn-icon">
-                            <i class="bi bi-mortarboard-fill"></i>
-                        </div>
-                        <div class="lg-alt-btn-text">
-                            <strong>Student Quick Login</strong>
-                            <span>Sign in using Student ID only</span>
-                        </div>
-                        <i class="bi bi-chevron-right lg-alt-btn-arrow"></i>
-                    </a>
-
-                    <div class="lg-register-link">
-                        New to the platform? <a href="{{ path('app_register') }}">Create an account</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════════════════
-   SCOPED STYLES
-   ═══════════════════════════════════════════════════ #}
+{% block stylesheets %}
 <style>
 /* ── Page layout ── */
 .lg-page {
@@ -361,6 +216,78 @@
     color: #64748B;
     margin: 0;
     animation: slideUp 0.35s ease 0.3s both;
+}
+
+/* ── Success alert ── */
+.lg-success-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    margin-bottom: 1.5rem;
+    animation: slideUp 0.4s ease;
+}
+.lg-success-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    background: #DCFCE7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #16A34A;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.lg-success-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #166534;
+    margin-bottom: 0.1rem;
+}
+.lg-success-msg {
+    font-size: 0.8rem;
+    color: #15803D;
+}
+
+/* ── Pending approval alert ── */
+.lg-pending-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    margin-bottom: 1.5rem;
+    animation: slideUp 0.4s ease;
+}
+.lg-pending-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    background: #FEF3C7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D97706;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+.lg-pending-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #92400E;
+    margin-bottom: 0.1rem;
+}
+.lg-pending-msg {
+    font-size: 0.8rem;
+    color: #B45309;
 }
 
 /* ── Error alert ── */
@@ -832,6 +759,176 @@
     }
 }
 </style>
+{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════════════════
+   LOGIN PAGE — Professional Split Layout
+   ═══════════════════════════════════════════════════ #}
+
+<div class="lg-page">
+    {# ── LEFT PANEL: Decorative branding ── #}
+    <div class="lg-brand-panel">
+        <div class="lg-brand-bg"></div>
+        <div class="lg-brand-content">
+            <div class="lg-brand-logo-wrap">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-brand-logo">
+            </div>
+            <h1 class="lg-brand-title">SET-SEF Evaluation System</h1>
+            <p class="lg-brand-sub">Welcome back to the Negros Oriental State University evaluation platform</p>
+
+            <div class="lg-brand-features">
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <strong>Secure Access</strong>
+                        <span>Your data is protected with enterprise-grade security</span>
+                    </div>
+                </div>
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-speedometer2"></i></div>
+                    <div>
+                        <strong>Real-time Dashboard</strong>
+                        <span>Instant access to evaluations and analytics</span>
+                    </div>
+                </div>
+                <div class="lg-feature-item">
+                    <div class="lg-feature-icon"><i class="bi bi-people"></i></div>
+                    <div>
+                        <strong>Multi-role Support</strong>
+                        <span>Students, faculty, and staff — all in one system</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg-brand-footer">
+                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── RIGHT PANEL: Login form ── #}
+    <div class="lg-form-panel">
+        <div class="lg-form-scroll">
+            <div class="lg-form-inner">
+
+                {# Mobile logo (hidden on desktop) #}
+                <div class="lg-mobile-header d-lg-none">
+                    <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="lg-mobile-logo">
+                </div>
+
+                {# Welcome header #}
+                <div class="lg-header">
+                    <h2 class="lg-title">Sign in to your account</h2>
+                    <p class="lg-subtitle">Access your dashboard, evaluations, and analytics</p>
+                </div>
+
+                {# Registration success alerts #}
+                {% for message in app.flashes('registration_success') %}
+                    <div class="lg-success-alert">
+                        <div class="lg-success-icon-box">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="lg-success-title">Account Created!</strong>
+                            <span class="lg-success-msg">{{ message }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {% for message in app.flashes('registration_pending') %}
+                    <div class="lg-pending-alert">
+                        <div class="lg-pending-icon-box">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                        <div>
+                            <strong class="lg-pending-title">Account Created — Pending Approval</strong>
+                            <span class="lg-pending-msg">{{ message }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {# Error alert #}
+                {% if error %}
+                    <div class="lg-error-alert">
+                        <div class="lg-error-icon-box">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <div>
+                            <strong class="lg-error-title">Authentication failed</strong>
+                            <span class="lg-error-msg">{{ error.messageKey|trans(error.messageData, 'security') }}</span>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# Login form #}
+                <form method="post" class="lg-form" id="loginForm">
+                    <div class="lg-field">
+                        <label for="inputEmail" class="lg-label">
+                            Email or Student ID
+                        </label>
+                        <div class="lg-input-wrap">
+                            <i class="bi bi-envelope"></i>
+                            <input type="text" value="{{ last_username }}" name="_username" id="inputEmail"
+                                   class="form-control lg-input" autocomplete="username" required autofocus
+                                   placeholder="Enter your email or student ID">
+                        </div>
+                    </div>
+
+                    <div class="lg-field">
+                        <label for="inputPassword" class="lg-label">
+                            Password
+                        </label>
+                        <div class="lg-input-wrap">
+                            <i class="bi bi-key"></i>
+                            <input type="password" name="_password" id="inputPassword"
+                                   class="form-control lg-input" autocomplete="current-password" required
+                                   placeholder="Enter your password">
+                            <button type="button" class="lg-pwd-toggle" id="pwdToggle" tabindex="-1"
+                                    aria-label="Toggle password visibility">
+                                <i class="bi bi-eye" id="pwdToggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                    <button type="submit" class="lg-submit-btn" id="loginSubmitBtn">
+                        <span class="lg-submit-text">
+                            Sign In<i class="bi bi-arrow-right ms-2"></i>
+                        </span>
+                        <span class="lg-submit-loading d-none">
+                            <span class="lg-loading-spinner"></span>
+                            <span>Signing In</span>
+                            <span class="lg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
+                        </span>
+                        <span class="lg-btn-progress"></span>
+                    </button>
+
+                    <div class="lg-divider">
+                        <span>or continue with</span>
+                    </div>
+
+                    <a href="{{ path('app_student_login') }}" class="lg-alt-btn">
+                        <div class="lg-alt-btn-icon">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div class="lg-alt-btn-text">
+                            <strong>Student Quick Login</strong>
+                            <span>Sign in using Student ID only</span>
+                        </div>
+                        <i class="bi bi-chevron-right lg-alt-btn-arrow"></i>
+                    </a>
+
+                    <div class="lg-register-link">
+                        New to the platform? <a href="{{ path('app_register') }}">Create an account</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {# ═══════════════════════════════════════════════════
    JAVASCRIPT

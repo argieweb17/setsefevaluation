@@ -71,6 +71,31 @@ class EvaluationPeriodRepository extends ServiceEntityRepository
      *
      * @return EvaluationPeriod[]
      */
+    /**
+     * Check if a duplicate evaluation period exists for the same faculty, subject, and school year.
+     */
+    public function findDuplicate(string $evaluationType, ?string $faculty, ?string $subject, ?string $schoolYear, ?string $section): ?EvaluationPeriod
+    {
+        $qb = $this->createQueryBuilder('ep')
+            ->where('ep.evaluationType = :type')
+            ->setParameter('type', $evaluationType);
+
+        if ($faculty) {
+            $qb->andWhere('ep.faculty = :faculty')->setParameter('faculty', $faculty);
+        }
+        if ($subject) {
+            $qb->andWhere('ep.subject = :subject')->setParameter('subject', $subject);
+        }
+        if ($schoolYear) {
+            $qb->andWhere('ep.schoolYear = :sy')->setParameter('sy', $schoolYear);
+        }
+        if ($section) {
+            $qb->andWhere('ep.section = :section')->setParameter('section', $section);
+        }
+
+        return $qb->setMaxResults(1)->getQuery()->getOneOrNullResult();
+    }
+
     public function findForFaculty(?int $departmentId): array
     {
         $qb = $this->createQueryBuilder('ep')

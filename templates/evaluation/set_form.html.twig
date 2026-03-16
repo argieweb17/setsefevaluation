@@ -2,6 +2,27 @@
 
 {% block title %}Evaluate {{ faculty.fullName }} | SET{% endblock %}
 
+{% block stylesheets %}
+<style>
+.eval-form-letterhead{display:flex;align-items:center;gap:16px;padding:18px 28px;border-bottom:3px solid #1e40af;background:linear-gradient(135deg,#f0f4fa 0%,#e8eff8 100%);}
+.eval-form-lh-logo{width:64px;height:64px;object-fit:contain;flex-shrink:0;}
+.eval-form-lh-center{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:0;}
+.eval-form-lh-ra{font-size:.62rem;font-weight:600;color:#64748b;letter-spacing:.5px;}
+.eval-form-lh-sub{font-size:.72rem;color:#475569;}
+.eval-form-lh-name{margin:2px 0;font-size:1.05rem;font-weight:800;color:#1e3a5f;letter-spacing:.8px;text-transform:uppercase;}
+.eval-form-lh-hist{font-size:.62rem;color:#64748b;font-weight:500;letter-spacing:.3px;}
+.eval-form-lh-addr{font-size:.62rem;color:#64748b;margin-top:2px;}
+.eval-form-lh-contact{font-size:.58rem;color:#94a3b8;}
+.eval-form-cat-desc{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 24px;font-size:.82rem;color:#475569;line-height:1.6;font-style:italic;}
+.eval-form-cat-desc strong{color:#1e293b;font-size:.88rem;font-style:normal;}
+@media(max-width:576px){
+    .eval-form-letterhead{flex-direction:column;text-align:center;padding:14px;}
+    .eval-form-lh-logo{width:48px;height:48px;}
+    .eval-form-lh-name{font-size:.9rem;}
+}
+</style>
+{% endblock %}
+
 {% block body %}
 <div class="mb-3">
     <a href="{{ path('evaluation_set_index') }}" class="text-decoration-none small">
@@ -113,23 +134,4 @@
     <a href="{{ path('evaluation_set_index') }}" class="btn btn-light">Cancel</a>
 </div>
 </form>
-
-<style>
-.eval-form-letterhead{display:flex;align-items:center;gap:16px;padding:18px 28px;border-bottom:3px solid #1e40af;background:linear-gradient(135deg,#f0f4fa 0%,#e8eff8 100%);}
-.eval-form-lh-logo{width:64px;height:64px;object-fit:contain;flex-shrink:0;}
-.eval-form-lh-center{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:0;}
-.eval-form-lh-ra{font-size:.62rem;font-weight:600;color:#64748b;letter-spacing:.5px;}
-.eval-form-lh-sub{font-size:.72rem;color:#475569;}
-.eval-form-lh-name{margin:2px 0;font-size:1.05rem;font-weight:800;color:#1e3a5f;letter-spacing:.8px;text-transform:uppercase;}
-.eval-form-lh-hist{font-size:.62rem;color:#64748b;font-weight:500;letter-spacing:.3px;}
-.eval-form-lh-addr{font-size:.62rem;color:#64748b;margin-top:2px;}
-.eval-form-lh-contact{font-size:.58rem;color:#94a3b8;}
-.eval-form-cat-desc{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 24px;font-size:.82rem;color:#475569;line-height:1.6;font-style:italic;}
-.eval-form-cat-desc strong{color:#1e293b;font-size:.88rem;font-style:normal;}
-@media(max-width:576px){
-    .eval-form-letterhead{flex-direction:column;text-align:center;padding:14px;}
-    .eval-form-lh-logo{width:48px;height:48px;}
-    .eval-form-lh-name{font-size:.9rem;}
-}
-</style>
 {% endblock %}

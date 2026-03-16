@@ -2,225 +2,7 @@
 
 {% block title %}SEF Evaluation Results | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
-{# ═══════════════════════════════════════
-   SEF / SUPERIOR EVALUATION RESULTS
-   ═══════════════════════════════════════ #}
-
-{# ── Pre-compute stats ── #}
-{% set totalFaculty = facultyResults|length %}
-{% set totalEvaluators = 0 %}
-{% set sumAvg = 0 %}
-{% set alwaysCount = 0 %}
-{% for r in facultyResults %}
-    {% set totalEvaluators = totalEvaluators + r.evaluators %}
-    {% set sumAvg = sumAvg + r.average %}
-    {% if r.level == 'Always manifested' %}{% set alwaysCount = alwaysCount + 1 %}{% endif %}
-{% endfor %}
-{% set overallAvg = totalFaculty > 0 ? (sumAvg / totalFaculty) : 0 %}
-
-{# ── Header ── #}
-<div class="rs-header no-print">
-    <div class="rs-header-bg"></div>
-    <div class="rs-header-inner">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rs-header-icon">
-                    <i class="bi bi-bar-chart-line-fill"></i>
-                </div>
-                <div>
-                    <h4 class="rs-title">SEF Evaluation Results</h4>
-                    <p class="rs-subtitle">Superior Evaluation for Faculty</p>
-                    <div class="rs-meta">
-                        <span class="rs-meta-tag"><i class="bi bi-calendar-event"></i> {{ evaluations|length }} Periods</span>
-                        <span class="rs-meta-tag"><i class="bi bi-buildings"></i> {{ departments|length }} Departments</span>
-                        {% if selectedEvaluation %}
-                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} Faculty</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if selectedEvaluation %}
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
-                    <i class="bi bi-printer me-1"></i>Print
-                </button>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-{# ── Stats Row ── #}
-{% if totalFaculty > 0 %}
-<div class="rs-stats no-print">
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-purple"><i class="bi bi-people-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ totalFaculty }}</div>
-            <div class="rs-stat-label">Faculty Evaluated</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-blue"><i class="bi bi-person-check-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ totalEvaluators }}</div>
-            <div class="rs-stat-label">Total Evaluators</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-green"><i class="bi bi-graph-up-arrow"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ overallAvg|number_format(2) }}</div>
-            <div class="rs-stat-label">Overall Average</div>
-        </div>
-    </div>
-    <div class="rs-stat-card">
-        <div class="rs-stat-icon si-amber"><i class="bi bi-trophy-fill"></i></div>
-        <div>
-            <div class="rs-stat-num">{{ alwaysCount }}</div>
-            <div class="rs-stat-label">Always Manifested</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{# ── Filter Toolbar ── #}
-<div class="rs-toolbar no-print">
-    <div class="rs-toolbar-row">
-        <form method="get" action="{{ path('admin_results_superior') }}" class="rs-toolbar-row" style="flex:1;">
-            <select name="evaluation" class="rs-filter-select" onchange="this.form.submit()">
-                <option value="">All SEF Periods</option>
-                {% for eval in evaluations %}
-                    <option value="{{ eval.id }}" {{ selectedEvaluation == eval.id ? 'selected' }}>
-                        {{ eval.semester ?? '' }} — {{ eval.schoolYear ?? '' }}
-                        {% if eval.faculty %} ({{ eval.faculty }}){% endif %}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
-        <select class="rs-filter-select" id="rsFilterCollege" onchange="applyFilters()">
-            <option value="">All Colleges</option>
-            {% for col in colleges %}
-                <option value="{{ col }}">{{ col }}</option>
-            {% endfor %}
-        </select>
-        <div class="rs-search-box">
-            <i class="bi bi-search rs-search-icon"></i>
-            <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
-        </div>
-        <button type="button" class="rs-reset-btn" id="resetFilters">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-        </button>
-    </div>
-    <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
-</div>
-
-{# ── Results Table ── #}
-<div class="rs-table-wrap">
-    <div class="rs-table-bar">
-        <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-trophy"></i>
-            <span>SEF Faculty Rankings</span>
-        </div>
-        <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 rs-table">
-            <thead>
-                <tr>
-                    <th style="width:55px" class="ps-3">Rank</th>
-                    <th>Faculty Name</th>
-                    <th>Department</th>
-                    <th class="text-center">Rating</th>
-                    <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center">Evaluators</th>
-                    <th class="text-center">Performance</th>
-                    <th class="text-center" style="width:80px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in facultyResults %}
-                <tr class="result-row"
-                    data-name="{{ r.faculty.fullName|lower }}"
-                    data-college="{{ r.faculty.department ? (r.faculty.department.collegeName ?? '') : '' }}"
-                    data-level="{{ r.level }}"
-                    data-average="{{ r.average|number_format(2) }}"
-                    data-evaluators="{{ r.evaluators }}">
-                    <td class="ps-3">
-                        {% if loop.index <= 3 %}
-                            <div class="rs-rank rank-{{ loop.index }}">{{ loop.index }}</div>
-                        {% else %}
-                            <span class="rs-rank-text result-rank">{{ loop.index }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rs-avatar">
-                                {% if r.faculty.profilePicture %}
-                                    <img src="{{ asset('images/profiles/' ~ r.faculty.profilePicture) }}" alt="" class="rs-avatar-img">
-                                {% else %}
-                                    {{ r.faculty.firstName|first|upper }}{{ r.faculty.lastName|first|upper }}
-                                {% endif %}
-                            </div>
-                            <div>
-                                <div class="rs-faculty-name">{{ r.faculty.fullName }}</div>
-                                <div class="rs-faculty-email">{{ r.faculty.email ?? '' }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="rs-dept-tag">
-                            <i class="bi bi-building"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
-                        </span>
-                    </td>
-                    <td class="text-center">
-                        <span class="rs-rating-num">{{ r.average|number_format(2) }}</span>
-                        <span class="rs-rating-of">/ 5</span>
-                    </td>
-                    <td class="text-center">
-                        {% set pct = (r.average / 5 * 100)|round(0) %}
-                        <div class="rs-bar">
-                            <div class="rs-bar-fill {% if r.average >= 4.5 %}bar-green{% elseif r.average >= 3.5 %}bar-blue{% elseif r.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
-                        </div>
-                    </td>
-                    <td class="text-center"><span class="rs-evaluator-num">{{ r.evaluators }}</span></td>
-                    <td class="text-center">
-                        {% if r.level == 'Always manifested' %}
-                            <span class="rs-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> {{ r.level }}</span>
-                        {% elseif r.level == 'Often manifested' %}
-                            <span class="rs-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> {{ r.level }}</span>
-                        {% elseif r.level == 'Sometimes manifested' %}
-                            <span class="rs-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> {{ r.level }}</span>
-                        {% elseif r.level == 'Seldom manifested' %}
-                            <span class="rs-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> {{ r.level }}</span>
-                        {% else %}
-                            <span class="rs-perf-badge perf-poor"><i class="bi bi-x-circle-fill"></i> {{ r.level }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-center">
-                        <a href="{{ path('admin_results_superior_faculty_evaluations', {faculty: r.faculty.id}) }}"
-                           class="rs-action-btn" title="View Evaluations">
-                            <i class="bi bi-eye-fill"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="8" class="text-center py-5">
-                        <div class="rs-empty-icon mx-auto mb-2"><i class="bi bi-inbox"></i></div>
-                        <span class="text-muted">No SEF results found for this evaluation period.</span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════
-   STYLES
-   ═══════════════════════════════════════ #}
+{% block stylesheets %}
 <style>
 /* ── Header ── */
 .rs-header {
@@ -648,6 +430,226 @@
     .rs-stats { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
+{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════
+   SEF / SUPERIOR EVALUATION RESULTS
+   ═══════════════════════════════════════ #}
+
+{# ── Pre-compute stats ── #}
+{% set totalFaculty = facultyResults|length %}
+{% set totalEvaluators = 0 %}
+{% set sumAvg = 0 %}
+{% set alwaysCount = 0 %}
+{% for r in facultyResults %}
+    {% set totalEvaluators = totalEvaluators + r.evaluators %}
+    {% set sumAvg = sumAvg + r.average %}
+    {% if r.level == 'Always manifested' %}{% set alwaysCount = alwaysCount + 1 %}{% endif %}
+{% endfor %}
+{% set overallAvg = totalFaculty > 0 ? (sumAvg / totalFaculty) : 0 %}
+
+{# ── Header ── #}
+<div class="rs-header no-print">
+    <div class="rs-header-bg"></div>
+    <div class="rs-header-inner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rs-header-icon">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                </div>
+                <div>
+                    <h4 class="rs-title">SEF Evaluation Results</h4>
+                    <p class="rs-subtitle">Superior Evaluation for Faculty</p>
+                    <div class="rs-meta">
+                        <span class="rs-meta-tag"><i class="bi bi-calendar-event"></i> {{ evaluations|length }} Periods</span>
+                        <span class="rs-meta-tag"><i class="bi bi-buildings"></i> {{ departments|length }} Departments</span>
+                        {% if selectedEvaluation %}
+                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} Faculty</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if selectedEvaluation %}
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Print
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ── Stats Row ── #}
+{% if totalFaculty > 0 %}
+<div class="rs-stats no-print">
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-purple"><i class="bi bi-people-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ totalFaculty }}</div>
+            <div class="rs-stat-label">Faculty Evaluated</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-blue"><i class="bi bi-person-check-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ totalEvaluators }}</div>
+            <div class="rs-stat-label">Total Evaluators</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-green"><i class="bi bi-graph-up-arrow"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ overallAvg|number_format(2) }}</div>
+            <div class="rs-stat-label">Overall Average</div>
+        </div>
+    </div>
+    <div class="rs-stat-card">
+        <div class="rs-stat-icon si-amber"><i class="bi bi-trophy-fill"></i></div>
+        <div>
+            <div class="rs-stat-num">{{ alwaysCount }}</div>
+            <div class="rs-stat-label">Always Manifested</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Filter Toolbar ── #}
+<div class="rs-toolbar no-print">
+    <div class="rs-toolbar-row">
+        <form method="get" action="{{ path('admin_results_superior') }}" class="rs-toolbar-row" style="flex:1;">
+            <select name="evaluation" class="rs-filter-select" onchange="this.form.submit()">
+                <option value="">All SEF Periods</option>
+                {% for eval in evaluations %}
+                    <option value="{{ eval.id }}" {{ selectedEvaluation == eval.id ? 'selected' }}>
+                        {{ eval.semester ?? '' }} — {{ eval.schoolYear ?? '' }}
+                        {% if eval.faculty %} ({{ eval.faculty }}){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+        <select class="rs-filter-select" id="rsFilterCollege" onchange="applyFilters()">
+            <option value="">All Colleges</option>
+            {% for col in colleges %}
+                <option value="{{ col }}">{{ col }}</option>
+            {% endfor %}
+        </select>
+        <div class="rs-search-box">
+            <i class="bi bi-search rs-search-icon"></i>
+            <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
+        </div>
+        <button type="button" class="rs-reset-btn" id="resetFilters">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+        </button>
+    </div>
+    <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
+</div>
+
+{# ── Results Table ── #}
+<div class="rs-table-wrap">
+    <div class="rs-table-bar">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-trophy"></i>
+            <span>SEF Faculty Rankings</span>
+        </div>
+        <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 rs-table">
+            <thead>
+                <tr>
+                    <th style="width:55px" class="ps-3">Rank</th>
+                    <th>Faculty Name</th>
+                    <th>Department</th>
+                    <th class="text-center">Rating</th>
+                    <th class="text-center" style="width:100px">Progress</th>
+                    <th class="text-center">Evaluators</th>
+                    <th class="text-center">Performance</th>
+                    <th class="text-center" style="width:80px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in facultyResults %}
+                <tr class="result-row"
+                    data-name="{{ r.faculty.fullName|lower }}"
+                    data-college="{{ r.faculty.department ? (r.faculty.department.collegeName ?? '') : '' }}"
+                    data-level="{{ r.level }}"
+                    data-average="{{ r.average|number_format(2) }}"
+                    data-evaluators="{{ r.evaluators }}">
+                    <td class="ps-3">
+                        {% if loop.index <= 3 %}
+                            <div class="rs-rank rank-{{ loop.index }}">{{ loop.index }}</div>
+                        {% else %}
+                            <span class="rs-rank-text result-rank">{{ loop.index }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="rs-avatar">
+                                {% if r.faculty.profilePicture %}
+                                    <img src="{{ asset('images/profiles/' ~ r.faculty.profilePicture) }}" alt="" class="rs-avatar-img">
+                                {% else %}
+                                    {{ r.faculty.firstName|first|upper }}{{ r.faculty.lastName|first|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="rs-faculty-name">{{ r.faculty.fullName }}</div>
+                                <div class="rs-faculty-email">{{ r.faculty.email ?? '' }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="rs-dept-tag">
+                            <i class="bi bi-building"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="rs-rating-num">{{ r.average|number_format(2) }}</span>
+                        <span class="rs-rating-of">/ 5</span>
+                    </td>
+                    <td class="text-center">
+                        {% set pct = (r.average / 5 * 100)|round(0) %}
+                        <div class="rs-bar">
+                            <div class="rs-bar-fill {% if r.average >= 4.5 %}bar-green{% elseif r.average >= 3.5 %}bar-blue{% elseif r.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
+                        </div>
+                    </td>
+                    <td class="text-center"><span class="rs-evaluator-num">{{ r.evaluators }}</span></td>
+                    <td class="text-center">
+                        {% if r.level == 'Always manifested' %}
+                            <span class="rs-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Often manifested' %}
+                            <span class="rs-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Sometimes manifested' %}
+                            <span class="rs-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> {{ r.level }}</span>
+                        {% elseif r.level == 'Seldom manifested' %}
+                            <span class="rs-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> {{ r.level }}</span>
+                        {% else %}
+                            <span class="rs-perf-badge perf-poor"><i class="bi bi-x-circle-fill"></i> {{ r.level }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a href="{{ path('admin_results_superior_faculty_evaluations', {faculty: r.faculty.id}) }}"
+                           class="rs-action-btn" title="View Evaluations">
+                            <i class="bi bi-eye-fill"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="rs-empty-icon mx-auto mb-2"><i class="bi bi-inbox"></i></div>
+                        <span class="text-muted">No SEF results found for this evaluation period.</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+
 
 {# ═══════════════════════════════════════
    JAVASCRIPT — SEARCH / COLLEGE FILTER

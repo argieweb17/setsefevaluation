@@ -105,19 +105,13 @@ class RegistrationController extends AbstractController
                     $request->getClientIp()
                 ));
 
-                $successRole = $role;
+                if ($role === 'student') {
+                    $this->addFlash('registration_success', 'Your student account has been successfully created. You can now log in with your credentials.');
+                } else {
+                    $this->addFlash('registration_pending', 'Your account has been successfully created. Please wait for administrator approval before you can log in.');
+                }
 
-                // Reset the form for a fresh state
-                $user = new User();
-                $form = $this->createForm(RegistrationFormType::class, $user);
-
-                return $this->render('registration/register.html.twig', [
-                    'registrationForm' => $form,
-                    'registrationSuccess' => true,
-                    'registeredRole' => $successRole,
-                    'colleges' => $colleges,
-                    'deptCollegeMap' => $deptCollegeMap,
-                ]);
+                return $this->redirectToRoute('app_login');
             }
         }
 

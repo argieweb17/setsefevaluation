@@ -4,660 +4,7 @@
 
 {% block body_class %}no-navbar{% endblock %}
 
-{% block body %}
-{# ═══════════════════════════════════════════════════
-   REGISTRATION PAGE — Professional Split Layout
-   ═══════════════════════════════════════════════════ #}
-
-<div class="rg-page">
-    {# ── LEFT PANEL: Decorative branding ── #}
-    <div class="rg-brand-panel">
-        <div class="rg-brand-bg"></div>
-        <div class="rg-brand-content">
-            <div class="rg-brand-logo-wrap">
-                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="rg-brand-logo">
-            </div>
-            <h1 class="rg-brand-title">SET-SEF Evaluation System</h1>
-            <p class="rg-brand-sub">Join the Negros Oriental State University evaluation community</p>
-
-            <div class="rg-brand-features">
-                <div class="rg-feature-item">
-                    <div class="rg-feature-icon"><i class="bi bi-shield-check"></i></div>
-                    <div>
-                        <strong>Secure Platform</strong>
-                        <span>Enterprise-grade data protection</span>
-                    </div>
-                </div>
-                <div class="rg-feature-item">
-                    <div class="rg-feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                    <div>
-                        <strong>Smart Analytics</strong>
-                        <span>Data-driven evaluation insights</span>
-                    </div>
-                </div>
-                <div class="rg-feature-item">
-                    <div class="rg-feature-icon"><i class="bi bi-people"></i></div>
-                    <div>
-                        <strong>Collaborative</strong>
-                        <span>University-wide assessment tools</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="rg-brand-footer">
-                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
-            </div>
-        </div>
-    </div>
-
-    {# ── RIGHT PANEL: Registration form ── #}
-    <div class="rg-form-panel">
-        <div class="rg-form-scroll">
-            <div class="rg-form-inner">
-
-                {# Step progress indicator #}
-                <div class="rg-steps" id="rgSteps">
-                    <div class="rg-step active" data-step="1">
-                        <div class="rg-step-num">1</div>
-                        <span>Select Role</span>
-                    </div>
-                    <div class="rg-step-line"></div>
-                    <div class="rg-step" data-step="2">
-                        <div class="rg-step-num">2</div>
-                        <span>Your Details</span>
-                    </div>
-                </div>
-
-                <h2 class="rg-title" id="rgTitle">Choose your role</h2>
-                <p class="rg-subtitle" id="rgSubtitle">Select how you'll use the evaluation system</p>
-
-                {# ═══ STEP 1: Role Selection ═══ #}
-                <div id="roleStep" class="rg-step-content">
-                    <div class="rg-role-grid">
-                        <button type="button" class="rg-role-card" data-role="student" onclick="selectRole('student')">
-                            <div class="rg-role-icon-wrap rg-role-student">
-                                <i class="bi bi-mortarboard-fill"></i>
-                            </div>
-                            <div class="rg-role-info">
-                                <h4>Student</h4>
-                                <p>Evaluate faculty performance and participate in academic assessments</p>
-                            </div>
-                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
-                        </button>
-
-                        <button type="button" class="rg-role-card" data-role="faculty" onclick="selectRole('faculty')">
-                            <div class="rg-role-icon-wrap rg-role-faculty">
-                                <i class="bi bi-person-workspace"></i>
-                            </div>
-                            <div class="rg-role-info">
-                                <h4>Faculty</h4>
-                                <p>Access evaluation results, analytics and faculty development tools</p>
-                            </div>
-                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
-                        </button>
-
-                        <button type="button" class="rg-role-card" data-role="staff" onclick="selectRole('staff')">
-                            <div class="rg-role-icon-wrap rg-role-staff">
-                                <i class="bi bi-clipboard2-check-fill"></i>
-                            </div>
-                            <div class="rg-role-info">
-                                <h4>Staff</h4>
-                                <p>Manage evaluations, generate reports and oversee processes</p>
-                            </div>
-                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
-                        </button>
-
-                        <button type="button" class="rg-role-card" data-role="superior" onclick="selectRole('superior')">
-                            <div class="rg-role-icon-wrap rg-role-superior">
-                                <i class="bi bi-star-fill"></i>
-                            </div>
-                            <div class="rg-role-info">
-                                <h4>Superior</h4>
-                                <p>Evaluate Deans and Department Heads, review institutional performance</p>
-                            </div>
-                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
-                        </button>
-                    </div>
-
-                    <div class="rg-login-link mt-4">
-                        Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
-                    </div>
-                </div>
-
-                {# ═══ STEP 2: Registration Form ═══ #}
-                <div id="formStep" class="rg-step-content d-none">
-                    <div class="rg-selected-role" id="selectedRoleBadge">
-                        <span class="rg-role-pill" id="rolePill"></span>
-                        <button type="button" class="rg-change-role" id="changeRoleBtn">
-                            <i class="bi bi-arrow-left-short"></i>Change
-                        </button>
-                    </div>
-
-                    {{ form_start(registrationForm, {'attr': {'id': 'regForm', 'class': 'rg-form', 'novalidate': 'novalidate', 'data-turbo': 'false'}}) }}
-
-                        {# Hidden role select + unused Symfony widgets #}
-                        <div class="d-none">
-                            {{ form_widget(registrationForm.role) }}
-                            {{ form_widget(registrationForm.course) }}
-                            {{ form_widget(registrationForm.department) }}
-                        </div>
-
-                        {# ── Honeypot: hidden from humans, bots auto-fill it ── #}
-                        <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden;">
-                            <label for="reg_website">Leave this empty</label>
-                            {{ form_widget(registrationForm.website, {'attr': {'id': 'reg_website', 'tabindex': '-1', 'autocomplete': 'off'}}) }}
-                        </div>
-
-                        {# ── Timestamp for timing-based bot detection ── #}
-                        {{ form_widget(registrationForm._ts) }}
-
-                        {# ── Security error alert ── #}
-                        {% if securityError|default(null) %}
-                        <div class="rg-security-alert">
-                            <i class="bi bi-shield-exclamation"></i>
-                            <div>
-                                <strong>Security Notice</strong>
-                                <p>{{ securityError }}</p>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {# ── Section: Personal Information ── #}
-                        <div class="rg-section">
-                            <div class="rg-section-label">
-                                <i class="bi bi-person-circle"></i>
-                                <span>Personal Information</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">First Name <span class="text-danger">*</span></label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person"></i>
-                                        {{ form_widget(registrationForm.firstName, {'attr': {'placeholder': 'First name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.firstName) }}
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Last Name <span class="text-danger">*</span></label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person"></i>
-                                        {{ form_widget(registrationForm.lastName, {'attr': {'placeholder': 'Last name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.lastName) }}
-                                </div>
-                            </div>
-                            <div class="mt-3 role-field" data-for="faculty staff superior" id="emailField" style="display:none">
-                                <label class="rg-label">Email Address <span class="text-danger">*</span></label>
-                                <div class="rg-input-wrap">
-                                    <i class="bi bi-envelope"></i>
-                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input'}}) }}
-                                </div>
-                                {{ form_errors(registrationForm.email) }}
-                            </div>
-                        </div>
-
-                        {# ── Section: Student Details ── #}
-                        <div class="rg-section role-field" data-for="student" style="display:none">
-                            <div class="rg-section-label">
-                                <i class="bi bi-mortarboard"></i>
-                                <span>Academic Information</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Student ID</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person-badge"></i>
-                                        {{ form_widget(registrationForm.schoolId, {'attr': {'placeholder': 'e.g. 2024-00123', 'class': 'form-control rg-input', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.schoolId) }}
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Year Level</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-layers"></i>
-                                        {{ form_widget(registrationForm.yearLevel, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.yearLevel) }}
-                                </div>
-                            </div>
-                            <div class="row g-3 mt-0">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">College</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-bank2"></i>
-                                        <select id="studentCollege" class="form-select rg-select" onchange="filterStudentDepts()" required>
-                                            <option value="">Select college</option>
-                                            {% for college in colleges %}
-                                                <option value="{{ college }}">{{ college }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Department</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-building"></i>
-                                        <select id="studentDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
-                                            <option value="">Select college first</option>
-                                        </select>
-                                    </div>
-                                    {{ form_errors(registrationForm.department) }}
-                                </div>
-                            </div>
-                        </div>
-
-                        {# ── Section: Faculty Details ── #}
-                        <div class="rg-section role-field" data-for="faculty" style="display:none">
-                            <div class="rg-section-label">
-                                <i class="bi bi-person-workspace"></i>
-                                <span>Faculty Information</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Campus</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-geo-alt"></i>
-                                        {{ form_widget(registrationForm.campus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.campus) }}
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">College</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-bank2"></i>
-                                        <select id="facultyCollege" class="form-select rg-select" onchange="filterFacultyDepts()" required>
-                                            <option value="">Select college</option>
-                                            {% for college in colleges %}
-                                                <option value="{{ college }}">{{ college }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row g-3 mt-0">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Department</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-building"></i>
-                                        <select id="facultyDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
-                                            <option value="">Select college first</option>
-                                        </select>
-                                    </div>
-                                    {{ form_errors(registrationForm.department) }}
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Employment Status</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-briefcase"></i>
-                                        {{ form_widget(registrationForm.employmentStatus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.employmentStatus) }}
-                                </div>
-                            </div>
-                            <div class="row g-3 mt-0">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Employee ID</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# ── Section: Staff Details ── #}
-                        <div class="rg-section role-field" data-for="staff" style="display:none">
-                            <div class="rg-section-label">
-                                <i class="bi bi-clipboard2-check"></i>
-                                <span>Staff Information</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Office / Unit</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-building"></i>
-                                        <input type="text" class="form-control rg-input" name="_office" placeholder="e.g. Registrar's Office" required>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Staff ID</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_staff_id" placeholder="e.g. STF-0001" required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# ── Section: Superior Information ── #}
-                        <div class="rg-section role-field" data-for="superior" style="display:none">
-                            <div class="rg-section-label">
-                                <i class="bi bi-star"></i>
-                                <span>Superior Information</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Position / Designation</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-briefcase"></i>
-                                        <select class="form-select rg-select" name="_position" required>
-                                            <option value="">Select position</option>
-                                            <option value="President">President</option>
-                                            <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
-                                            <option value="Campus Director">Campus Director</option>
-                                            <option value="Dean">Dean</option>
-                                            <option value="Program Chair">Program Chair</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Employee ID</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Academic Rank</label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-award"></i>
-                                        <select class="form-select rg-select" name="_academic_rank" required>
-                                            <option value="">Select academic rank</option>
-                                            <option value="Part-time">Part-time</option>
-                                            <option value="Temporary">Temporary</option>
-                                            <option value="Instructor">Instructor</option>
-                                            <option value="Assistant Professor">Assistant Professor</option>
-                                            <option value="Associate Professor">Associate Professor</option>
-                                            <option value="Professor">Professor</option>
-                                            <option value="University Professor">University Professor</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# ── Section: Security ── #}
-                        <div class="rg-section">
-                            <div class="rg-section-label">
-                                <i class="bi bi-shield-lock"></i>
-                                <span>Create Password</span>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Password <span class="text-danger">*</span></label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-lock"></i>
-                                        {{ form_widget(registrationForm.plainPassword.first, {'attr': {'placeholder': 'Create a password', 'class': 'form-control rg-input', 'id': 'regPwd', 'autocomplete': 'new-password', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.plainPassword.first) }}
-                                    <div class="rg-pwd-strength" id="pwdStrength">
-                                        <div class="rg-pwd-bar"><span id="pwdBar"></span></div>
-                                        <small id="pwdText">Enter a password</small>
-                                    </div>
-                                    {# Password requirements checklist #}
-                                    <div class="rg-pwd-requirements" id="pwdRequirements">
-                                        <div class="rg-pwd-req" id="reqLength">
-                                            <i class="bi bi-circle"></i>
-                                            <span>At least 8 characters</span>
-                                        </div>
-                                        <div class="rg-pwd-req" id="reqUpper">
-                                            <i class="bi bi-circle"></i>
-                                            <span>One uppercase letter (A–Z)</span>
-                                        </div>
-                                        <div class="rg-pwd-req" id="reqLower">
-                                            <i class="bi bi-circle"></i>
-                                            <span>One lowercase letter (a–z)</span>
-                                        </div>
-                                        <div class="rg-pwd-req" id="reqNumber">
-                                            <i class="bi bi-circle"></i>
-                                            <span>One number (0–9)</span>
-                                        </div>
-                                        <div class="rg-pwd-req" id="reqSpecial">
-                                            <i class="bi bi-circle"></i>
-                                            <span>One special character (!@#$...)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="rg-label">Confirm Password <span class="text-danger">*</span></label>
-                                    <div class="rg-input-wrap">
-                                        <i class="bi bi-shield-lock-fill"></i>
-                                        {{ form_widget(registrationForm.plainPassword.second, {'attr': {'placeholder': 'Confirm password', 'class': 'form-control rg-input', 'id': 'regPwdConfirm', 'autocomplete': 'new-password', 'required': 'required'}}) }}
-                                    </div>
-                                    {{ form_errors(registrationForm.plainPassword) }}
-                                    {# Password match indicator #}
-                                    <div class="rg-pwd-match d-none" id="pwdMatchIndicator">
-                                        <i class="bi bi-circle"></i>
-                                        <span>Passwords match</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# ── Section: Terms & Data Privacy ── #}
-                        <div class="rg-section rg-terms-section">
-                            <div class="rg-section-label">
-                                <i class="bi bi-file-earmark-lock2"></i>
-                                <span>Terms & Data Privacy</span>
-                            </div>
-                            <div class="rg-terms-box">
-                                <div class="rg-terms-scroll">
-                                    <h6>Data Privacy Notice</h6>
-                                    <p>In compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>, the information you provide will be used solely for the purpose of faculty evaluation and academic quality assurance within NORSU.</p>
-                                    <h6>Terms of Use</h6>
-                                    <ul>
-                                        <li>Your evaluation responses will be kept <strong>confidential</strong> and used only for institutional improvement.</li>
-                                        <li>You agree not to share your account credentials with others.</li>
-                                        <li>Any misuse of the system may result in account suspension.</li>
-                                        <li>Anonymous evaluation data may be used in aggregate reports.</li>
-                                    </ul>
-                                    <h6>Data Collection</h6>
-                                    <p>We collect: name, email, school/employee ID, department, and evaluation responses. This data is stored securely and access is restricted to authorized personnel only.</p>
-                                </div>
-                            </div>
-                            <div class="rg-terms-check">
-                                <label class="rg-checkbox-wrap" id="termsCheckboxWrap">
-                                    <input type="checkbox" name="{{ registrationForm.agreeTerms.vars.full_name }}" id="agreeTermsCheck" value="1" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">
-                                    <span class="rg-checkbox-box" id="termsCheckboxBox">
-                                        <i class="bi bi-check-lg"></i>
-                                    </span>
-                                    <span class="rg-checkbox-label">
-                                        I have read and agree to the <strong>Terms of Use</strong> and <strong>Data Privacy Policy</strong> in accordance with RA 10173.
-                                    </span>
-                                </label>
-                                {{ form_errors(registrationForm.agreeTerms) }}
-                            </div>
-                        </div>
-
-                        {# Approval notice #}
-                        <div class="rg-notice role-field" data-for="faculty staff superior" style="display:none">
-                            <i class="bi bi-info-circle-fill"></i>
-                            <div>
-                                <strong>Admin Approval Required</strong>
-                                <p>Faculty, Staff, and Superior accounts require administrator approval before access is granted.</p>
-                            </div>
-                        </div>
-
-                        {# Submit button #}
-                        <button type="submit" class="rg-submit-btn" id="regSubmitBtn">
-                            <span class="rg-submit-text">
-                                <i class="bi bi-person-plus-fill me-2"></i>Create Account
-                            </span>
-                            <span class="rg-submit-loading d-none">
-                                <span class="rg-loading-spinner"></span>
-                                <span>Creating Account</span>
-                                <span class="rg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
-                            </span>
-                            <span class="rg-btn-progress"></span>
-                        </button>
-
-                        <div class="rg-login-link mt-3">
-                            Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
-                        </div>
-                    {% do registrationForm.agreeTerms.setRendered %}
-                    {{ form_end(registrationForm) }}
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════════════════
-   APPROVAL CONFIRMATION MODAL (before submit)
-   ═══════════════════════════════════════════════════ #}
-<div class="modal fade" id="approvalConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-        <div class="modal-content" style="border:none;border-radius:1.25rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.18);">
-            <div class="modal-body text-center px-4 py-4 position-relative">
-                <div class="rg-confirm-icon-wrap mb-3">
-                    <div class="rg-confirm-icon">
-                        <i class="bi bi-hourglass-split"></i>
-                    </div>
-                </div>
-
-                <h4 class="fw-bold mb-2" style="color:#1E293B;font-size:1.2rem;">Admin Approval Required</h4>
-                <p style="font-size:0.88rem;color:#64748B;margin-bottom:0.75rem;line-height:1.5;">
-                    Your account will need to be <strong style="color:#D97706;">approved by an administrator</strong> before you can log in.
-                </p>
-
-                <div class="rg-confirm-info">
-                    <div class="rg-confirm-info-item">
-                        <i class="bi bi-clock-history"></i>
-                        <span>Approval may take some time. Please wait for the admin to activate your account.</span>
-                    </div>
-                    <div class="rg-confirm-info-item">
-                        <i class="bi bi-envelope-check"></i>
-                        <span>You may contact the QUAMC office for faster processing.</span>
-                    </div>
-                </div>
-
-                <div class="rg-confirm-contact">
-                    <div class="rg-confirm-contact-header">
-                        <i class="bi bi-headset"></i>
-                        <strong>Contact Admin</strong>
-                    </div>
-                    <div class="rg-confirm-contact-row">
-                        <a href="mailto:quamc@norsu.edu.ph" class="rg-confirm-chip">
-                            <i class="bi bi-envelope-fill"></i> quamc@norsu.edu.ph
-                        </a>
-                        <a href="tel:+63351234567" class="rg-confirm-chip">
-                            <i class="bi bi-telephone-fill"></i> (035) 123-4567
-                        </a>
-                    </div>
-                </div>
-
-                <p style="font-size:0.82rem;color:#94A3B8;margin-top:0.75rem;margin-bottom:1rem;">Do you want to proceed with registration?</p>
-
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="rg-confirm-cancel-btn" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-1"></i>Cancel
-                    </button>
-                    <button type="button" class="rg-confirm-proceed-btn" id="confirmProceedBtn">
-                        <i class="bi bi-check-lg me-1"></i>Yes, Create Account
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════════════════
-   REGISTRATION SUCCESS MODAL
-   ═══════════════════════════════════════════════════ #}
-<div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-        <div class="modal-content rg-success-modal">
-            <div class="modal-body text-center px-4 py-5 position-relative">
-                {# Confetti #}
-                <div class="success-confetti">
-                    <span class="confetti-piece" style="--x:-60px;--y:-40px;--r:45deg;--c:#3B82F6;--d:0.1s"></span>
-                    <span class="confetti-piece" style="--x:70px;--y:-50px;--r:-30deg;--c:#10B981;--d:0.2s"></span>
-                    <span class="confetti-piece" style="--x:-80px;--y:20px;--r:60deg;--c:#F59E0B;--d:0.15s"></span>
-                    <span class="confetti-piece" style="--x:90px;--y:10px;--r:-45deg;--c:#8B5CF6;--d:0.25s"></span>
-                    <span class="confetti-piece" style="--x:-40px;--y:-70px;--r:20deg;--c:#EC4899;--d:0.05s"></span>
-                    <span class="confetti-piece" style="--x:50px;--y:-65px;--r:-60deg;--c:#06B6D4;--d:0.3s"></span>
-                    <span class="confetti-piece" style="--x:-95px;--y:-15px;--r:75deg;--c:#F97316;--d:0.12s"></span>
-                    <span class="confetti-piece" style="--x:85px;--y:-25px;--r:-15deg;--c:#14B8A6;--d:0.22s"></span>
-                    <span class="confetti-piece confetti-rect" style="--x:60px;--y:40px;--r:30deg;--c:#6366F1;--d:0.18s"></span>
-                    <span class="confetti-piece confetti-rect" style="--x:-70px;--y:50px;--r:-50deg;--c:#EF4444;--d:0.08s"></span>
-                </div>
-
-                <div class="success-check-wrap mb-3">
-                    <svg class="success-check-svg" viewBox="0 0 100 100">
-                        <circle class="success-circle" cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="3"/>
-                        <polyline class="success-tick" points="30,52 45,65 70,38" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-
-                <h4 class="fw-bold mb-2" style="color:#1E293B;">Account Created!</h4>
-
-                {% if registeredRole|default(null) == 'student' %}
-                    <p class="text-muted mb-1" style="font-size:0.95rem;">
-                        Your student account has been successfully created.
-                    </p>
-                    <p class="text-muted mb-4" style="font-size:0.9rem;">
-                        You can now log in with your credentials.
-                    </p>
-                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Log In Now
-                    </a>
-                {% else %}
-                    <p class="text-muted mb-1" style="font-size:0.95rem;">
-                        Your account has been successfully created.
-                    </p>
-                    <div class="rg-modal-notice">
-                        <i class="bi bi-hourglass-split"></i>
-                        <div>
-                            <strong>Pending Approval</strong>
-                            <span>Your account requires administrator approval before you can log in.</span>
-                        </div>
-                    </div>
-
-                    {# ── Admin Contact Information ── #}
-                    <div class="rg-modal-contact">
-                        <div class="rg-modal-contact-header">
-                            <i class="bi bi-headset"></i>
-                            <strong>Contact the Administrator</strong>
-                        </div>
-                        <p class="rg-modal-contact-desc">For faster approval or any questions, reach out to the QUAMC office:</p>
-                        <div class="rg-modal-contact-items">
-                            <a href="mailto:quamc@norsu.edu.ph" class="rg-contact-item">
-                                <div class="rg-contact-icon rg-contact-email"><i class="bi bi-envelope-fill"></i></div>
-                                <div>
-                                    <span class="rg-contact-label">Email</span>
-                                    <span class="rg-contact-value">quamc@norsu.edu.ph</span>
-                                </div>
-                            </a>
-                            <a href="tel:+63351234567" class="rg-contact-item">
-                                <div class="rg-contact-icon rg-contact-phone"><i class="bi bi-telephone-fill"></i></div>
-                                <div>
-                                    <span class="rg-contact-label">Phone</span>
-                                    <span class="rg-contact-value">(035) 123-4567</span>
-                                </div>
-                            </a>
-                            <div class="rg-contact-item">
-                                <div class="rg-contact-icon rg-contact-office"><i class="bi bi-geo-alt-fill"></i></div>
-                                <div>
-                                    <span class="rg-contact-label">Office</span>
-                                    <span class="rg-contact-value">QUAMC Office, Admin Bldg.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>Go to Login
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════════════════════════════════════════════════
-   SCOPED STYLES
-   ═══════════════════════════════════════════════════ #}
+{% block stylesheets %}
 <style>
 /* ── Page layout ── */
 .rg-page {
@@ -2026,6 +1373,659 @@ a.rg-contact-item:hover {
     }
 }
 </style>
+{% endblock %}
+
+{% block body %}
+{# ═══════════════════════════════════════════════════
+   REGISTRATION PAGE — Professional Split Layout
+   ═══════════════════════════════════════════════════ #}
+
+<div class="rg-page">
+    {# ── LEFT PANEL: Decorative branding ── #}
+    <div class="rg-brand-panel">
+        <div class="rg-brand-bg"></div>
+        <div class="rg-brand-content">
+            <div class="rg-brand-logo-wrap">
+                <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC" class="rg-brand-logo">
+            </div>
+            <h1 class="rg-brand-title">SET-SEF Evaluation System</h1>
+            <p class="rg-brand-sub">Join the Negros Oriental State University evaluation community</p>
+
+            <div class="rg-brand-features">
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <div>
+                        <strong>Secure Platform</strong>
+                        <span>Enterprise-grade data protection</span>
+                    </div>
+                </div>
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <div>
+                        <strong>Smart Analytics</strong>
+                        <span>Data-driven evaluation insights</span>
+                    </div>
+                </div>
+                <div class="rg-feature-item">
+                    <div class="rg-feature-icon"><i class="bi bi-people"></i></div>
+                    <div>
+                        <strong>Collaborative</strong>
+                        <span>University-wide assessment tools</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rg-brand-footer">
+                <p>&copy; {{ 'now'|date('Y') }} Negros Oriental State University</p>
+            </div>
+        </div>
+    </div>
+
+    {# ── RIGHT PANEL: Registration form ── #}
+    <div class="rg-form-panel">
+        <div class="rg-form-scroll">
+            <div class="rg-form-inner">
+
+                {# Step progress indicator #}
+                <div class="rg-steps" id="rgSteps">
+                    <div class="rg-step active" data-step="1">
+                        <div class="rg-step-num">1</div>
+                        <span>Select Role</span>
+                    </div>
+                    <div class="rg-step-line"></div>
+                    <div class="rg-step" data-step="2">
+                        <div class="rg-step-num">2</div>
+                        <span>Your Details</span>
+                    </div>
+                </div>
+
+                <h2 class="rg-title" id="rgTitle">Choose your role</h2>
+                <p class="rg-subtitle" id="rgSubtitle">Select how you'll use the evaluation system</p>
+
+                {# ═══ STEP 1: Role Selection ═══ #}
+                <div id="roleStep" class="rg-step-content">
+                    <div class="rg-role-grid">
+                        <button type="button" class="rg-role-card" data-role="student" onclick="selectRole('student')">
+                            <div class="rg-role-icon-wrap rg-role-student">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Student</h4>
+                                <p>Evaluate faculty performance and participate in academic assessments</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="faculty" onclick="selectRole('faculty')">
+                            <div class="rg-role-icon-wrap rg-role-faculty">
+                                <i class="bi bi-person-workspace"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Faculty</h4>
+                                <p>Access evaluation results, analytics and faculty development tools</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="staff" onclick="selectRole('staff')">
+                            <div class="rg-role-icon-wrap rg-role-staff">
+                                <i class="bi bi-clipboard2-check-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Staff</h4>
+                                <p>Manage evaluations, generate reports and oversee processes</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+
+                        <button type="button" class="rg-role-card" data-role="superior" onclick="selectRole('superior')">
+                            <div class="rg-role-icon-wrap rg-role-superior">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div class="rg-role-info">
+                                <h4>Superior</h4>
+                                <p>Evaluate Deans and Department Heads, review institutional performance</p>
+                            </div>
+                            <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
+                        </button>
+                    </div>
+
+                    <div class="rg-login-link mt-4">
+                        Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
+                    </div>
+                </div>
+
+                {# ═══ STEP 2: Registration Form ═══ #}
+                <div id="formStep" class="rg-step-content d-none">
+                    <div class="rg-selected-role" id="selectedRoleBadge">
+                        <span class="rg-role-pill" id="rolePill"></span>
+                        <button type="button" class="rg-change-role" id="changeRoleBtn">
+                            <i class="bi bi-arrow-left-short"></i>Change
+                        </button>
+                    </div>
+
+                    {{ form_start(registrationForm, {'attr': {'id': 'regForm', 'class': 'rg-form', 'novalidate': 'novalidate', 'data-turbo': 'false'}}) }}
+
+                        {# Hidden role select + unused Symfony widgets #}
+                        <div class="d-none">
+                            {{ form_widget(registrationForm.role) }}
+                            {{ form_widget(registrationForm.course) }}
+                            {{ form_widget(registrationForm.department) }}
+                        </div>
+
+                        {# ── Honeypot: hidden from humans, bots auto-fill it ── #}
+                        <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;overflow:hidden;">
+                            <label for="reg_website">Leave this empty</label>
+                            {{ form_widget(registrationForm.website, {'attr': {'id': 'reg_website', 'tabindex': '-1', 'autocomplete': 'off'}}) }}
+                        </div>
+
+                        {# ── Timestamp for timing-based bot detection ── #}
+                        {{ form_widget(registrationForm._ts) }}
+
+                        {# ── Security error alert ── #}
+                        {% if securityError|default(null) %}
+                        <div class="rg-security-alert">
+                            <i class="bi bi-shield-exclamation"></i>
+                            <div>
+                                <strong>Security Notice</strong>
+                                <p>{{ securityError }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {# ── Section: Personal Information ── #}
+                        <div class="rg-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-person-circle"></i>
+                                <span>Personal Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">First Name <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person"></i>
+                                        {{ form_widget(registrationForm.firstName, {'attr': {'placeholder': 'First name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.firstName) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Last Name <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person"></i>
+                                        {{ form_widget(registrationForm.lastName, {'attr': {'placeholder': 'Last name', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.lastName) }}
+                                </div>
+                            </div>
+                            <div class="mt-3 role-field" data-for="faculty staff superior" id="emailField" style="display:none">
+                                <label class="rg-label">Email Address <span class="text-danger">*</span></label>
+                                <div class="rg-input-wrap">
+                                    <i class="bi bi-envelope"></i>
+                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input'}}) }}
+                                </div>
+                                {{ form_errors(registrationForm.email) }}
+                            </div>
+                        </div>
+
+                        {# ── Section: Student Details ── #}
+                        <div class="rg-section role-field" data-for="student" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-mortarboard"></i>
+                                <span>Academic Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Student ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-badge"></i>
+                                        {{ form_widget(registrationForm.schoolId, {'attr': {'placeholder': 'e.g. 2024-00123', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.schoolId) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Year Level</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-layers"></i>
+                                        {{ form_widget(registrationForm.yearLevel, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.yearLevel) }}
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">College</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-bank2"></i>
+                                        <select id="studentCollege" class="form-select rg-select" onchange="filterStudentDepts()" required>
+                                            <option value="">Select college</option>
+                                            {% for college in colleges %}
+                                                <option value="{{ college }}">{{ college }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Department</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <select id="studentDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
+                                            <option value="">Select college first</option>
+                                        </select>
+                                    </div>
+                                    {{ form_errors(registrationForm.department) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Faculty Details ── #}
+                        <div class="rg-section role-field" data-for="faculty" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-person-workspace"></i>
+                                <span>Faculty Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Campus</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ form_widget(registrationForm.campus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.campus) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">College</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-bank2"></i>
+                                        <select id="facultyCollege" class="form-select rg-select" onchange="filterFacultyDepts()" required>
+                                            <option value="">Select college</option>
+                                            {% for college in colleges %}
+                                                <option value="{{ college }}">{{ college }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Department</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <select id="facultyDepartment" class="form-select rg-select" name="{{ registrationForm.department.vars.full_name }}" disabled required>
+                                            <option value="">Select college first</option>
+                                        </select>
+                                    </div>
+                                    {{ form_errors(registrationForm.department) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employment Status</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-briefcase"></i>
+                                        {{ form_widget(registrationForm.employmentStatus, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.employmentStatus) }}
+                                </div>
+                            </div>
+                            <div class="row g-3 mt-0">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employee ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Staff Details ── #}
+                        <div class="rg-section role-field" data-for="staff" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-clipboard2-check"></i>
+                                <span>Staff Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Office / Unit</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-building"></i>
+                                        <input type="text" class="form-control rg-input" name="_office" placeholder="e.g. Registrar's Office" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Staff ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_staff_id" placeholder="e.g. STF-0001" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Superior Information ── #}
+                        <div class="rg-section role-field" data-for="superior" style="display:none">
+                            <div class="rg-section-label">
+                                <i class="bi bi-star"></i>
+                                <span>Superior Information</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Position / Designation</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-briefcase"></i>
+                                        <select class="form-select rg-select" name="_position" required>
+                                            <option value="">Select position</option>
+                                            <option value="President">President</option>
+                                            <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
+                                            <option value="Campus Director">Campus Director</option>
+                                            <option value="Dean">Dean</option>
+                                            <option value="Program Chair">Program Chair</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Employee ID</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-person-vcard"></i>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Academic Rank</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-award"></i>
+                                        <select class="form-select rg-select" name="_academic_rank" required>
+                                            <option value="">Select academic rank</option>
+                                            <option value="Part-time">Part-time</option>
+                                            <option value="Temporary">Temporary</option>
+                                            <option value="Instructor">Instructor</option>
+                                            <option value="Assistant Professor">Assistant Professor</option>
+                                            <option value="Associate Professor">Associate Professor</option>
+                                            <option value="Professor">Professor</option>
+                                            <option value="University Professor">University Professor</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Security ── #}
+                        <div class="rg-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-shield-lock"></i>
+                                <span>Create Password</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Password <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-lock"></i>
+                                        {{ form_widget(registrationForm.plainPassword.first, {'attr': {'placeholder': 'Create a password', 'class': 'form-control rg-input', 'id': 'regPwd', 'autocomplete': 'new-password', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.plainPassword.first) }}
+                                    <div class="rg-pwd-strength" id="pwdStrength">
+                                        <div class="rg-pwd-bar"><span id="pwdBar"></span></div>
+                                        <small id="pwdText">Enter a password</small>
+                                    </div>
+                                    {# Password requirements checklist #}
+                                    <div class="rg-pwd-requirements" id="pwdRequirements">
+                                        <div class="rg-pwd-req" id="reqLength">
+                                            <i class="bi bi-circle"></i>
+                                            <span>At least 8 characters</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqUpper">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One uppercase letter (A–Z)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqLower">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One lowercase letter (a–z)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqNumber">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One number (0–9)</span>
+                                        </div>
+                                        <div class="rg-pwd-req" id="reqSpecial">
+                                            <i class="bi bi-circle"></i>
+                                            <span>One special character (!@#$...)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Confirm Password <span class="text-danger">*</span></label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-shield-lock-fill"></i>
+                                        {{ form_widget(registrationForm.plainPassword.second, {'attr': {'placeholder': 'Confirm password', 'class': 'form-control rg-input', 'id': 'regPwdConfirm', 'autocomplete': 'new-password', 'required': 'required'}}) }}
+                                    </div>
+                                    {{ form_errors(registrationForm.plainPassword) }}
+                                    {# Password match indicator #}
+                                    <div class="rg-pwd-match d-none" id="pwdMatchIndicator">
+                                        <i class="bi bi-circle"></i>
+                                        <span>Passwords match</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# ── Section: Terms & Data Privacy ── #}
+                        <div class="rg-section rg-terms-section">
+                            <div class="rg-section-label">
+                                <i class="bi bi-file-earmark-lock2"></i>
+                                <span>Terms & Data Privacy</span>
+                            </div>
+                            <div class="rg-terms-box">
+                                <div class="rg-terms-scroll">
+                                    <h6>Data Privacy Notice</h6>
+                                    <p>In compliance with the <strong>Data Privacy Act of 2012 (RA 10173)</strong>, the information you provide will be used solely for the purpose of faculty evaluation and academic quality assurance within NORSU.</p>
+                                    <h6>Terms of Use</h6>
+                                    <ul>
+                                        <li>Your evaluation responses will be kept <strong>confidential</strong> and used only for institutional improvement.</li>
+                                        <li>You agree not to share your account credentials with others.</li>
+                                        <li>Any misuse of the system may result in account suspension.</li>
+                                        <li>Anonymous evaluation data may be used in aggregate reports.</li>
+                                    </ul>
+                                    <h6>Data Collection</h6>
+                                    <p>We collect: name, email, school/employee ID, department, and evaluation responses. This data is stored securely and access is restricted to authorized personnel only.</p>
+                                </div>
+                            </div>
+                            <div class="rg-terms-check">
+                                <label class="rg-checkbox-wrap" id="termsCheckboxWrap">
+                                    <input type="checkbox" name="{{ registrationForm.agreeTerms.vars.full_name }}" id="agreeTermsCheck" value="1" style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">
+                                    <span class="rg-checkbox-box" id="termsCheckboxBox">
+                                        <i class="bi bi-check-lg"></i>
+                                    </span>
+                                    <span class="rg-checkbox-label">
+                                        I have read and agree to the <strong>Terms of Use</strong> and <strong>Data Privacy Policy</strong> in accordance with RA 10173.
+                                    </span>
+                                </label>
+                                {{ form_errors(registrationForm.agreeTerms) }}
+                            </div>
+                        </div>
+
+                        {# Approval notice #}
+                        <div class="rg-notice role-field" data-for="faculty staff superior" style="display:none">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                <strong>Admin Approval Required</strong>
+                                <p>Faculty, Staff, and Superior accounts require administrator approval before access is granted.</p>
+                            </div>
+                        </div>
+
+                        {# Submit button #}
+                        <button type="submit" class="rg-submit-btn" id="regSubmitBtn">
+                            <span class="rg-submit-text">
+                                <i class="bi bi-person-plus-fill me-2"></i>Create Account
+                            </span>
+                            <span class="rg-submit-loading d-none">
+                                <span class="rg-loading-spinner"></span>
+                                <span>Creating Account</span>
+                                <span class="rg-loading-dots"><span>.</span><span>.</span><span>.</span></span>
+                            </span>
+                            <span class="rg-btn-progress"></span>
+                        </button>
+
+                        <div class="rg-login-link mt-3">
+                            Already have an account? <a href="{{ path('app_login') }}">Sign in here</a>
+                        </div>
+                    {% do registrationForm.agreeTerms.setRendered %}
+                    {{ form_end(registrationForm) }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   APPROVAL CONFIRMATION MODAL (before submit)
+   ═══════════════════════════════════════════════════ #}
+<div class="modal fade" id="approvalConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content" style="border:none;border-radius:1.25rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.18);">
+            <div class="modal-body text-center px-4 py-4 position-relative">
+                <div class="rg-confirm-icon-wrap mb-3">
+                    <div class="rg-confirm-icon">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mb-2" style="color:#1E293B;font-size:1.2rem;">Admin Approval Required</h4>
+                <p style="font-size:0.88rem;color:#64748B;margin-bottom:0.75rem;line-height:1.5;">
+                    Your account will need to be <strong style="color:#D97706;">approved by an administrator</strong> before you can log in.
+                </p>
+
+                <div class="rg-confirm-info">
+                    <div class="rg-confirm-info-item">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Approval may take some time. Please wait for the admin to activate your account.</span>
+                    </div>
+                    <div class="rg-confirm-info-item">
+                        <i class="bi bi-envelope-check"></i>
+                        <span>You may contact the QUAMC office for faster processing.</span>
+                    </div>
+                </div>
+
+                <div class="rg-confirm-contact">
+                    <div class="rg-confirm-contact-header">
+                        <i class="bi bi-headset"></i>
+                        <strong>Contact Admin</strong>
+                    </div>
+                    <div class="rg-confirm-contact-row">
+                        <a href="mailto:quamc@norsu.edu.ph" class="rg-confirm-chip">
+                            <i class="bi bi-envelope-fill"></i> quamc@norsu.edu.ph
+                        </a>
+                        <a href="tel:+63351234567" class="rg-confirm-chip">
+                            <i class="bi bi-telephone-fill"></i> (035) 123-4567
+                        </a>
+                    </div>
+                </div>
+
+                <p style="font-size:0.82rem;color:#94A3B8;margin-top:0.75rem;margin-bottom:1rem;">Do you want to proceed with registration?</p>
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="rg-confirm-cancel-btn" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="rg-confirm-proceed-btn" id="confirmProceedBtn">
+                        <i class="bi bi-check-lg me-1"></i>Yes, Create Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   REGISTRATION SUCCESS MODAL
+   ═══════════════════════════════════════════════════ #}
+<div class="modal fade" id="registrationSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+        <div class="modal-content rg-success-modal">
+            <div class="modal-body text-center px-4 py-5 position-relative">
+                {# Confetti #}
+                <div class="success-confetti">
+                    <span class="confetti-piece" style="--x:-60px;--y:-40px;--r:45deg;--c:#3B82F6;--d:0.1s"></span>
+                    <span class="confetti-piece" style="--x:70px;--y:-50px;--r:-30deg;--c:#10B981;--d:0.2s"></span>
+                    <span class="confetti-piece" style="--x:-80px;--y:20px;--r:60deg;--c:#F59E0B;--d:0.15s"></span>
+                    <span class="confetti-piece" style="--x:90px;--y:10px;--r:-45deg;--c:#8B5CF6;--d:0.25s"></span>
+                    <span class="confetti-piece" style="--x:-40px;--y:-70px;--r:20deg;--c:#EC4899;--d:0.05s"></span>
+                    <span class="confetti-piece" style="--x:50px;--y:-65px;--r:-60deg;--c:#06B6D4;--d:0.3s"></span>
+                    <span class="confetti-piece" style="--x:-95px;--y:-15px;--r:75deg;--c:#F97316;--d:0.12s"></span>
+                    <span class="confetti-piece" style="--x:85px;--y:-25px;--r:-15deg;--c:#14B8A6;--d:0.22s"></span>
+                    <span class="confetti-piece confetti-rect" style="--x:60px;--y:40px;--r:30deg;--c:#6366F1;--d:0.18s"></span>
+                    <span class="confetti-piece confetti-rect" style="--x:-70px;--y:50px;--r:-50deg;--c:#EF4444;--d:0.08s"></span>
+                </div>
+
+                <div class="success-check-wrap mb-3">
+                    <svg class="success-check-svg" viewBox="0 0 100 100">
+                        <circle class="success-circle" cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="3"/>
+                        <polyline class="success-tick" points="30,52 45,65 70,38" fill="none" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <h4 class="fw-bold mb-2" style="color:#1E293B;">Account Created!</h4>
+
+                {% if registeredRole|default(null) == 'student' %}
+                    <p class="text-muted mb-1" style="font-size:0.95rem;">
+                        Your student account has been successfully created.
+                    </p>
+                    <p class="text-muted mb-4" style="font-size:0.9rem;">
+                        You can now log in with your credentials.
+                    </p>
+                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Log In Now
+                    </a>
+                {% else %}
+                    <p class="text-muted mb-1" style="font-size:0.95rem;">
+                        Your account has been successfully created.
+                    </p>
+                    <div class="rg-modal-notice">
+                        <i class="bi bi-hourglass-split"></i>
+                        <div>
+                            <strong>Pending Approval</strong>
+                            <span>Your account requires administrator approval before you can log in.</span>
+                        </div>
+                    </div>
+
+                    {# ── Admin Contact Information ── #}
+                    <div class="rg-modal-contact">
+                        <div class="rg-modal-contact-header">
+                            <i class="bi bi-headset"></i>
+                            <strong>Contact the Administrator</strong>
+                        </div>
+                        <p class="rg-modal-contact-desc">For faster approval or any questions, reach out to the QUAMC office:</p>
+                        <div class="rg-modal-contact-items">
+                            <a href="mailto:quamc@norsu.edu.ph" class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-email"><i class="bi bi-envelope-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Email</span>
+                                    <span class="rg-contact-value">quamc@norsu.edu.ph</span>
+                                </div>
+                            </a>
+                            <a href="tel:+63351234567" class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-phone"><i class="bi bi-telephone-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Phone</span>
+                                    <span class="rg-contact-value">(035) 123-4567</span>
+                                </div>
+                            </a>
+                            <div class="rg-contact-item">
+                                <div class="rg-contact-icon rg-contact-office"><i class="bi bi-geo-alt-fill"></i></div>
+                                <div>
+                                    <span class="rg-contact-label">Office</span>
+                                    <span class="rg-contact-value">QUAMC Office, Admin Bldg.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ path('app_login') }}" class="rg-modal-btn">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Go to Login
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {# ═══════════════════════════════════════════════════
    JAVASCRIPT

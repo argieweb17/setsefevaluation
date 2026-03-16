@@ -36,6 +36,14 @@ class AuditLogRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    public function deleteAll(): int
+    {
+        return $this->createQueryBuilder('a')
+            ->delete()
+            ->getQuery()
+            ->execute();
+    }
+
     /**
      * Count logs by action type within a date range.
      */

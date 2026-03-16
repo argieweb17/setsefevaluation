@@ -517,34 +517,51 @@
    QR CODE MODAL
    ═══════════════════════════════════════ #}
 <div class="modal fade" id="qrCodeModal" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
         <div class="modal-content qr-modal">
-            <div class="qr-modal-top">
-                <div class="qr-modal-top-inner">
-                    <div class="qr-modal-icon-wrap"><i class="bi bi-qr-code-scan"></i></div>
-                    <h5 class="qr-modal-title">QR Code</h5>
-                    <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to evaluate</p>
+            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="qr-modal-layout">
+                <div class="qr-modal-left">
+                    <div class="qr-modal-icon"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="qr-modal-title">Evaluation QR Code</h5>
+                    <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to open the evaluation form</p>
+
+                    <div class="qr-eval-info">
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Type</span>
+                            <span class="qr-eval-type-badge" id="qrEvalType"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Faculty</span>
+                            <span class="qr-info-value" id="qrEvalFaculty"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Subject</span>
+                            <span class="qr-info-value" id="qrEvalSubject"></span>
+                        </div>
+                        <div class="qr-info-row" id="qrEvalDetailsRow">
+                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-value" id="qrEvalDetails"></span>
+                        </div>
+                    </div>
+
+                    <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
+                    <div class="qr-url-box" id="qrUrl"></div>
+                    <div class="qr-actions">
+                        <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
+                            <i class="bi bi-download"></i> Download
+                        </button>
+                        <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
+                            <i class="bi bi-clipboard"></i> Copy Link
+                        </button>
+                    </div>
                 </div>
-                <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="qr-modal-body">
-                <div class="qr-eval-info">
-                    <span class="qr-eval-type-badge" id="qrEvalType"></span>
-                    <div class="qr-eval-faculty" id="qrEvalFaculty"></div>
-                    <div class="qr-eval-subject" id="qrEvalSubject"></div>
-                    <div class="qr-eval-details" id="qrEvalDetails"></div>
-                </div>
-                <div class="qr-code-frame">
-                    <img id="qrImage" src="" alt="QR Code">
-                </div>
-                <div class="qr-url-text" id="qrUrl"></div>
-                <div class="qr-actions">
-                    <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
-                        <i class="bi bi-download"></i> Download
-                    </button>
-                    <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
-                        <i class="bi bi-clipboard"></i> Copy Link
-                    </button>
+                <div class="qr-modal-right">
+                    <div class="qr-preview-label"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div class="qr-code-frame">
+                        <img id="qrImage" src="" alt="QR Code">
+                    </div>
+                    <div class="qr-scan-hint"><i class="bi bi-phone me-1"></i>Scan with any camera app</div>
                 </div>
             </div>
         </div>
@@ -881,30 +898,38 @@
 .ev-form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 
 /* ──── QR Modal ──── */
-.qr-modal{border:0;border-radius:1.1rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.18);animation:qrSlideUp .35s ease;}
-.qr-modal-top{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);padding:1.5rem 1.5rem 1.3rem;text-align:center;position:relative;}
-.qr-modal-top-inner{position:relative;z-index:1;}
-.qr-modal-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;transition:all .2s;z-index:2;backdrop-filter:blur(4px);}
-.qr-modal-close:hover{background:rgba(255,255,255,.3);transform:scale(1.1);}
-.qr-modal-icon-wrap{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin:0 auto .6rem;font-size:1.4rem;color:#fff;backdrop-filter:blur(4px);box-shadow:0 4px 16px rgba(0,0,0,.1);}
-.qr-modal-title{font-size:1.1rem;font-weight:700;color:#fff;margin:0;}
-.qr-modal-subtitle{font-size:.75rem;color:rgba(255,255,255,.7);margin:.2rem 0 0;}
-.qr-modal-body{padding:1.3rem 1.5rem 1.5rem;background:#fff;}
-.qr-eval-info{text-align:center;margin-bottom:1rem;}
-.qr-eval-type-badge{display:inline-block;padding:.22rem .7rem;border-radius:1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
-.qr-eval-faculty{font-size:.88rem;font-weight:600;color:#1E293B;margin-top:.5rem;}
-.qr-eval-subject{font-size:.8rem;color:#64748B;}
-.qr-eval-details{font-size:.72rem;color:#94A3B8;margin-top:.15rem;}
-.qr-code-frame{display:flex;justify-content:center;margin:1rem 0;position:relative;}
-.qr-code-frame img{width:200px;height:200px;border-radius:14px;padding:10px;background:#fff;border:3px solid #E2E8F0;box-shadow:0 4px 20px rgba(0,0,0,.06);transition:all .3s;}
-.qr-code-frame img:hover{box-shadow:0 8px 30px rgba(30,64,175,.12);border-color:#93C5FD;}
-.qr-url-text{text-align:center;font-size:.68rem;color:#94A3B8;word-break:break-all;margin-bottom:1rem;padding:0 .5rem;}
-.qr-actions{display:flex;gap:.6rem;justify-content:center;}
-.qr-action-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1.1rem;border-radius:.6rem;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
-.qr-btn-download{background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.2);}
-.qr-btn-download:hover{box-shadow:0 4px 16px rgba(30,64,175,.3);transform:translateY(-1px);}
+.qr-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);animation:qrSlideUp .3s ease;position:relative;}
+.qr-modal-close{position:absolute;top:12px;right:12px;background:#F1F5F9;border:none;color:#64748B;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s;z-index:2;}
+.qr-modal-close:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-layout{display:flex;min-height:340px;}
+.qr-modal-left{flex:1;padding:1.5rem 1.5rem 1.25rem;display:flex;flex-direction:column;}
+.qr-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#DBEAFE,#EFF6FF);color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:.75rem;box-shadow:0 2px 8px rgba(37,99,235,.1);}
+.qr-modal-title{font-size:1.1rem;font-weight:800;color:#0F172A;margin:0;line-height:1.2;letter-spacing:-.3px;}
+.qr-modal-subtitle{font-size:.74rem;color:#94A3B8;margin:.2rem 0 0;line-height:1.4;}
+.qr-eval-info{margin-top:.85rem;margin-bottom:auto;display:flex;flex-direction:column;gap:.4rem;padding:.65rem .75rem;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:10px;}
+.qr-info-row{display:flex;align-items:center;gap:.5rem;}
+.qr-info-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;flex-shrink:0;}
+.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;}
+.qr-eval-type-badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
+.qr-url-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem;margin-top:.75rem;}
+.qr-url-box{font-size:.6rem;color:#64748B;word-break:break-all;padding:.45rem .65rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:.7rem;font-family:'SF Mono',Monaco,Consolas,monospace;line-height:1.5;}
+.qr-actions{display:flex;gap:.4rem;}
+.qr-action-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.55rem .6rem;border-radius:8px;font-size:.76rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.qr-btn-download{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.2);}
+.qr-btn-download:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px);}
 .qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
 .qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-right{width:235px;background:#F8FAFC;border-left:1px solid #F1F5F9;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;}
+.qr-preview-label{font-size:.64rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:.75rem;}
+.qr-code-frame{padding:.85rem;background:#fff;border:1.5px dashed #D4D9E1;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.03);}
+.qr-code-frame img{width:160px;height:160px;border-radius:8px;display:block;}
+.qr-scan-hint{font-size:.62rem;color:#B0B8C4;margin-top:.75rem;display:flex;align-items:center;}
+@media(max-width:575.98px){
+    .qr-modal-layout{flex-direction:column-reverse;}
+    .qr-modal-right{width:100%;border-left:none;border-bottom:1px solid #F1F5F9;padding:1.25rem;}
+    .qr-code-frame img{width:140px;height:140px;}
+    .qr-modal-left{padding:1.25rem;}
+}
 @keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
 /* ──── Hide SET-only columns (Subject, Year, Schedule) ──── */
@@ -1250,15 +1275,15 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         // Update modal info
         var typeBadge = document.getElementById('qrEvalType');
         typeBadge.textContent = evalType;
-        typeBadge.className = 'ev-type-badge ' + (evalType === 'SET' ? 'ev-type-set' : (evalType === 'SEF' ? 'ev-type-sef' : 'ev-type-superior'));
+        typeBadge.className = 'qr-eval-type-badge';
 
-        document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to evaluate';
+        document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
         document.getElementById('qrEvalFaculty').textContent = faculty || '';
         document.getElementById('qrEvalSubject').textContent = subject || '';
 
-        var details = [];
-        if (section) details.push('Section: ' + section);
-        document.getElementById('qrEvalDetails').textContent = details.join(' · ');
+        document.getElementById('qrEvalDetails').textContent = section || '';
+        var detailsRow = document.getElementById('qrEvalDetailsRow');
+        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
 
         // Generate QR code via API

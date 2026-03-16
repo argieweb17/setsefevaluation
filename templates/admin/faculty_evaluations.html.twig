@@ -3,198 +3,7 @@
 
 {% block title %}{{ faculty.fullName }} | Evaluations{% endblock %}
 
-{% block body %}
-
-{# ── Header Section ── #}
-<div class="fe-header">
-    <div class="fe-header-bg"></div>
-    <div class="fe-header-inner">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="fe-avatar">
-                    {% if faculty.profilePicture %}
-                        <img src="{{ asset('images/profiles/' ~ faculty.profilePicture) }}" alt="Profile" class="fe-avatar-img">
-                    {% else %}
-                        {{ faculty.firstName|first|upper }}{{ faculty.lastName|first|upper }}
-                    {% endif %}
-                </div>
-                <div>
-                    <h4 class="fe-name">{{ faculty.fullName }}</h4>
-                    <div class="fe-meta">
-                        {% if faculty.department %}
-                        <span class="fe-meta-tag"><i class="bi bi-building"></i> {{ faculty.department.departmentName }}</span>
-                        {% endif %}
-                        {% if faculty.employmentStatus %}
-                        <span class="fe-meta-tag"><i class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
-                        {% endif %}
-                        {% if faculty.campus %}
-                        <span class="fe-meta-tag"><i class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="{{ path(prefix ~ '_results') }}" class="btn btn-sm fe-btn-back">
-                    <i class="bi bi-arrow-left me-1"></i>Back to Results
-                </a>
-                {% if evaluations|length > 0 %}
-                <a href="{{ path(prefix ~ '_results_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fe-btn-print">
-                    <i class="bi bi-printer me-1"></i>Print All
-                </a>
-                <button type="button" id="feToggleSelect" class="btn btn-sm fe-btn-select">
-                    <i class="bi bi-check2-square me-1"></i>Select to Print
-                </button>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ── Stats Row ── #}
-{% if evaluations|length > 0 %}
-<div class="fe-stats">
-    <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-blue"><i class="bi bi-clipboard-data"></i></div>
-        <div>
-            <div class="fe-stat-num">{{ evaluations|length }}</div>
-            <div class="fe-stat-label">Evaluations</div>
-        </div>
-    </div>
-    <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-green"><i class="bi bi-graph-up"></i></div>
-        <div>
-            <div class="fe-stat-num">{{ overallAvg|number_format(2) }}</div>
-            <div class="fe-stat-label">Overall Average</div>
-        </div>
-    </div>
-    <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-purple"><i class="bi bi-people"></i></div>
-        <div>
-            <div class="fe-stat-num">{{ totalEvaluators }}</div>
-            <div class="fe-stat-label">Total Evaluators</div>
-        </div>
-    </div>
-    <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-amber"><i class="bi bi-trophy"></i></div>
-        <div>
-            {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
-            <div class="fe-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
-            <div class="fe-stat-label">Performance</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{# ── Filter Toolbar ── #}
-<div class="fe-toolbar">
-    <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
-        <div class="ev-filter-group" id="feTypeFilter">
-            <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
-            <button class="ev-filter-btn" data-type="SET" onclick="feFilterType('SET', this)">SET <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SET')|length }}</span></button>
-            <button class="ev-filter-btn" data-type="SEF" onclick="feFilterType('SEF', this)">SEF <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SEF' or e.evaluation.evaluationType == 'SUPERIOR')|length }}</span></button>
-        </div>
-        <label class="fe-select-all" id="feSelectAllWrap" style="display:none;">
-            <input type="checkbox" id="feSelectAll" class="form-check-input">
-            <span>Select All</span>
-        </label>
-        <div class="ev-search-box ms-auto">
-            <i class="bi bi-search ev-search-icon"></i>
-            <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
-        </div>
-    </div>
-</div>
-
-{# ── Evaluation Table ── #}
-{% if evaluations|length > 0 %}
-<div class="fe-table-wrap">
-    <table class="table table-hover align-middle mb-0 fe-table">
-        <thead>
-            <tr>
-                <th class="fe-th-check" style="display:none;width:40px;"><input type="checkbox" class="form-check-input" id="feSelectAll"></th>
-                <th style="width:50px">Type</th>
-                <th>Period</th>
-                <th>Subject</th>
-                <th>Section</th>
-                <th class="text-center">Rating</th>
-                <th class="text-center" style="width:100px">Progress</th>
-                <th class="text-center">Evaluators</th>
-                <th class="text-center">Performance</th>
-                <th class="text-center" style="width:80px">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in evaluations %}
-            {% set ev = item.evaluation %}
-            {% set pct = (item.average / 5 * 100)|round(0) %}
-            <tr class="fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" data-search="{{ ev.evaluationType }} {{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }} {{ ev.subject ?? '' }} {{ ev.section ?? '' }}">
-                <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
-                <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
-                <td>
-                    <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
-                </td>
-                <td>
-                    {% if ev.subject %}<span class="fe-info-badge"><i class="bi bi-book me-1"></i>{{ ev.subject }}</span>{% else %}—{% endif %}
-                </td>
-                <td>
-                    {% if ev.section %}<span class="fe-info-badge"><i class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}—{% endif %}
-                </td>
-                <td class="text-center">
-                    <span class="fe-rating-num">{{ item.average|number_format(2) }}</span>
-                    <span class="fe-rating-of">/ 5</span>
-                </td>
-                <td class="text-center">
-                    <div class="fe-bar mx-auto">
-                        <div class="fe-bar-fill {% if item.average >= 4.5 %}bar-green{% elseif item.average >= 3.5 %}bar-blue{% elseif item.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
-                    </div>
-                </td>
-                <td class="text-center"><span class="fw-semibold">{{ item.evaluators }}</span></td>
-                <td class="text-center">
-                    {% if item.level == 'Always manifested' %}
-                        <span class="fe-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> {{ item.level }}</span>
-                    {% elseif item.level == 'Often manifested' %}
-                        <span class="fe-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
-                    {% elseif item.level == 'Sometimes manifested' %}
-                        <span class="fe-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
-                    {% elseif item.level == 'Seldom manifested' %}
-                        <span class="fe-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
-                    {% else %}
-                        <span class="fe-perf-badge perf-poor"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
-                    {% endif %}
-                </td>
-                <td class="text-center">
-                    <div class="d-flex justify-content-center gap-1">
-                        <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class="fe-empty">
-    <div class="fe-empty-icon"><i class="bi bi-clipboard-x"></i></div>
-    <h6 class="fw-bold text-dark mb-1">No Evaluations Found</h6>
-    <p class="text-muted small mb-0">This faculty has not been evaluated in any period yet.</p>
-</div>
-{% endif %}
-
-{# ── Floating Action Bar ── #}
-<div class="fe-action-bar" id="feActionBar">
-    <div class="fe-action-inner">
-        <span class="fe-action-count"><span id="feSelCount">0</span> evaluation(s) selected</span>
-        <a href="#" id="fePrintSelected" target="_blank" class="btn btn-sm fe-action-print">
-            <i class="bi bi-printer me-1"></i>Print Selected
-        </a>
-        <button type="button" id="feCancelSelect" class="btn btn-sm fe-action-cancel">
-            <i class="bi bi-x-lg me-1"></i>Cancel
-        </button>
-    </div>
-</div>
-
-{# ═══════════════════════════════════
-   STYLES
-   ═══════════════════════════════════ #}
+{% block stylesheets %}
 <style>
 /* ── Header ── */
 .fe-header {
@@ -634,6 +443,199 @@
     .fe-action-inner { padding: 8px 14px; gap: 8px; }
 }
 </style>
+{% endblock %}
+
+{% block body %}
+
+{# ── Header Section ── #}
+<div class="fe-header">
+    <div class="fe-header-bg"></div>
+    <div class="fe-header-inner">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fe-avatar">
+                    {% if faculty.profilePicture %}
+                        <img src="{{ asset('images/profiles/' ~ faculty.profilePicture) }}" alt="Profile" class="fe-avatar-img">
+                    {% else %}
+                        {{ faculty.firstName|first|upper }}{{ faculty.lastName|first|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4 class="fe-name">{{ faculty.fullName }}</h4>
+                    <div class="fe-meta">
+                        {% if faculty.department %}
+                        <span class="fe-meta-tag"><i class="bi bi-building"></i> {{ faculty.department.departmentName }}</span>
+                        {% endif %}
+                        {% if faculty.employmentStatus %}
+                        <span class="fe-meta-tag"><i class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
+                        {% endif %}
+                        {% if faculty.campus %}
+                        <span class="fe-meta-tag"><i class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path(prefix ~ '_results') }}" class="btn btn-sm fe-btn-back">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Results
+                </a>
+                {% if evaluations|length > 0 %}
+                <a href="{{ path(prefix ~ '_results_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fe-btn-print">
+                    <i class="bi bi-printer me-1"></i>Print All
+                </a>
+                <button type="button" id="feToggleSelect" class="btn btn-sm fe-btn-select">
+                    <i class="bi bi-check2-square me-1"></i>Select to Print
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Stats Row ── #}
+{% if evaluations|length > 0 %}
+<div class="fe-stats">
+    <div class="fe-stat-card">
+        <div class="fe-stat-icon stat-blue"><i class="bi bi-clipboard-data"></i></div>
+        <div>
+            <div class="fe-stat-num">{{ evaluations|length }}</div>
+            <div class="fe-stat-label">Evaluations</div>
+        </div>
+    </div>
+    <div class="fe-stat-card">
+        <div class="fe-stat-icon stat-green"><i class="bi bi-graph-up"></i></div>
+        <div>
+            <div class="fe-stat-num">{{ overallAvg|number_format(2) }}</div>
+            <div class="fe-stat-label">Overall Average</div>
+        </div>
+    </div>
+    <div class="fe-stat-card">
+        <div class="fe-stat-icon stat-purple"><i class="bi bi-people"></i></div>
+        <div>
+            <div class="fe-stat-num">{{ totalEvaluators }}</div>
+            <div class="fe-stat-label">Total Evaluators</div>
+        </div>
+    </div>
+    <div class="fe-stat-card">
+        <div class="fe-stat-icon stat-amber"><i class="bi bi-trophy"></i></div>
+        <div>
+            {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
+            <div class="fe-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
+            <div class="fe-stat-label">Performance</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Filter Toolbar ── #}
+<div class="fe-toolbar">
+    <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
+        <div class="ev-filter-group" id="feTypeFilter">
+            <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
+            <button class="ev-filter-btn" data-type="SET" onclick="feFilterType('SET', this)">SET <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SET')|length }}</span></button>
+            <button class="ev-filter-btn" data-type="SEF" onclick="feFilterType('SEF', this)">SEF <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SEF' or e.evaluation.evaluationType == 'SUPERIOR')|length }}</span></button>
+        </div>
+        <label class="fe-select-all" id="feSelectAllWrap" style="display:none;">
+            <input type="checkbox" id="feSelectAll" class="form-check-input">
+            <span>Select All</span>
+        </label>
+        <div class="ev-search-box ms-auto">
+            <i class="bi bi-search ev-search-icon"></i>
+            <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
+        </div>
+    </div>
+</div>
+
+{# ── Evaluation Table ── #}
+{% if evaluations|length > 0 %}
+<div class="fe-table-wrap">
+    <table class="table table-hover align-middle mb-0 fe-table">
+        <thead>
+            <tr>
+                <th class="fe-th-check" style="display:none;width:40px;"><input type="checkbox" class="form-check-input" id="feSelectAll"></th>
+                <th style="width:50px">Type</th>
+                <th>Period</th>
+                <th>Subject</th>
+                <th>Section</th>
+                <th class="text-center">Rating</th>
+                <th class="text-center" style="width:100px">Progress</th>
+                <th class="text-center">Evaluators</th>
+                <th class="text-center">Performance</th>
+                <th class="text-center" style="width:80px">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in evaluations %}
+            {% set ev = item.evaluation %}
+            {% set pct = (item.average / 5 * 100)|round(0) %}
+            <tr class="fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" data-search="{{ ev.evaluationType }} {{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }} {{ ev.subject ?? '' }} {{ ev.section ?? '' }}">
+                <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
+                <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
+                <td>
+                    <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
+                </td>
+                <td>
+                    {% if ev.subject %}<span class="fe-info-badge"><i class="bi bi-book me-1"></i>{{ ev.subject }}</span>{% else %}—{% endif %}
+                </td>
+                <td>
+                    {% if ev.section %}<span class="fe-info-badge"><i class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}—{% endif %}
+                </td>
+                <td class="text-center">
+                    <span class="fe-rating-num">{{ item.average|number_format(2) }}</span>
+                    <span class="fe-rating-of">/ 5</span>
+                </td>
+                <td class="text-center">
+                    <div class="fe-bar mx-auto">
+                        <div class="fe-bar-fill {% if item.average >= 4.5 %}bar-green{% elseif item.average >= 3.5 %}bar-blue{% elseif item.average >= 2.5 %}bar-yellow{% else %}bar-red{% endif %}" style="width:{{ pct }}%"></div>
+                    </div>
+                </td>
+                <td class="text-center"><span class="fw-semibold">{{ item.evaluators }}</span></td>
+                <td class="text-center">
+                    {% if item.level == 'Always manifested' %}
+                        <span class="fe-perf-badge perf-excellent"><i class="bi bi-star-fill"></i> {{ item.level }}</span>
+                    {% elseif item.level == 'Often manifested' %}
+                        <span class="fe-perf-badge perf-verygood"><i class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
+                    {% elseif item.level == 'Sometimes manifested' %}
+                        <span class="fe-perf-badge perf-good"><i class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
+                    {% elseif item.level == 'Seldom manifested' %}
+                        <span class="fe-perf-badge perf-fair"><i class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
+                    {% else %}
+                        <span class="fe-perf-badge perf-poor"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <div class="d-flex justify-content-center gap-1">
+                        <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="fe-empty">
+    <div class="fe-empty-icon"><i class="bi bi-clipboard-x"></i></div>
+    <h6 class="fw-bold text-dark mb-1">No Evaluations Found</h6>
+    <p class="text-muted small mb-0">This faculty has not been evaluated in any period yet.</p>
+</div>
+{% endif %}
+
+{# ── Floating Action Bar ── #}
+<div class="fe-action-bar" id="feActionBar">
+    <div class="fe-action-inner">
+        <span class="fe-action-count"><span id="feSelCount">0</span> evaluation(s) selected</span>
+        <a href="#" id="fePrintSelected" target="_blank" class="btn btn-sm fe-action-print">
+            <i class="bi bi-printer me-1"></i>Print Selected
+        </a>
+        <button type="button" id="feCancelSelect" class="btn btn-sm fe-action-cancel">
+            <i class="bi bi-x-lg me-1"></i>Cancel
+        </button>
+    </div>
+</div>
+
+
+
 
 <script>
 /* ── Type Filter & Search ── */

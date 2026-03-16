@@ -2,7 +2,7 @@
 
 {% block title %}Evaluate Teachers | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
+{% block stylesheets %}
 <style>
 .ev-page { max-width: 1140px; margin: 0 auto; }
 .ev-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
@@ -73,6 +73,9 @@
     .ev-search-wrap input { width: 150px; }
 }
 </style>
+{% endblock %}
+
+{% block body %}
 
 {% set submittedCount = 0 %}
 {% set draftCount = 0 %}

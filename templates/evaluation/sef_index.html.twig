@@ -2,7 +2,7 @@
 
 {% block title %}Superior Evaluation | SET-SEF Evaluation{% endblock %}
 
-{% block body %}
+{% block stylesheets %}
 <style>
 .sf-page { max-width: 1140px; margin: 0 auto; }
 .sf-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
@@ -67,6 +67,9 @@
     .sf-item { padding: .75rem 1rem; }
 }
 </style>
+{% endblock %}
+
+{% block body %}
 
 {% set submittedCount = 0 %}
 {% set draftCount = 0 %}

@@ -2,6 +2,166 @@
 
 {% block title %}Evaluation Periods | SET-SEF Evaluation{% endblock %}
 
+{% block stylesheets %}
+<style>
+/* ──── Header ──── */
+.ev-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
+.ev-header-inner{padding:22px 26px 18px;}
+.ev-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(8px);}
+.ev-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);padding:3px 10px;border-radius:20px;font-weight:600;backdrop-filter:blur(6px);}
+.ev-meta-active{background:rgba(34,197,94,.25);color:#bbf7d0;}
+.ev-meta-warn{background:rgba(245,158,11,.25);color:#fde68a;}
+
+/* ──── Stats Row ──── */
+.ev-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap;}
+.ev-stat{text-align:center;flex:1;min-width:70px;padding:4px 0 8px;}
+.ev-stat-val{display:block;font-size:1.35rem;font-weight:800;color:#fff;}
+.ev-stat-lbl{font-size:.7rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.ev-val-success{color:#86efac !important;}
+.ev-val-warn{color:#fde68a !important;}
+.ev-val-info{color:#93c5fd !important;}
+.ev-stat-divider{width:1px;align-self:stretch;background:rgba(255,255,255,.10);margin:4px 0 8px;}
+
+/* ──── Toolbar ──── */
+.ev-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin:1.25rem 0;}
+.ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
+.ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
+.ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
+.ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
+.ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
+.ev-search-box{position:relative;min-width:220px;}
+.ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
+.ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
+.ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+
+/* ──── Card Grid ──── */
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:1rem;}
+@media(max-width:576px){.ev-grid{grid-template-columns:1fr;}}
+
+/* ──── Cards ──── */
+.ev-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:all .2s;position:relative;}
+.ev-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);border-color:#cbd5e1;}
+.ev-card-active{border-color:rgba(34,197,94,.3);box-shadow:0 0 0 1px rgba(34,197,94,.1);}
+.ev-card-pending{border-color:rgba(245,158,11,.3);}
+.ev-card-closed{opacity:.85;}
+.ev-card-accent{height:4px;width:100%;}
+.ev-accent-active{background:linear-gradient(90deg,#22c55e,#16a34a);}
+.ev-accent-pending{background:linear-gradient(90deg,#f59e0b,#d97706);}
+.ev-accent-expired{background:linear-gradient(90deg,#ef4444,#dc2626);}
+.ev-accent-closed{background:linear-gradient(90deg,#94a3b8,#64748b);}
+.ev-card-body{padding:1rem 1.25rem;}
+
+/* Card Header */
+.ev-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.75rem;}
+.ev-type-badge{padding:4px 12px;border-radius:6px;font-size:.75rem;font-weight:700;letter-spacing:.5px;}
+.ev-type-set{background:#dbeafe;color:#1d4ed8;}
+.ev-type-sef{background:#fef3c7;color:#92400e;}
+.ev-card-title{margin:0;font-size:.95rem;font-weight:700;color:#1e293b;}
+.ev-status-text{font-size:.75rem;color:#64748b;display:flex;align-items:center;gap:4px;}
+.ev-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.ev-dot-success{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.4);}
+.ev-dot-warning{background:#f59e0b;}
+.ev-dot-danger{background:#ef4444;}
+.ev-dot-muted{background:#94a3b8;}
+
+/* Card Actions */
+.ev-card-actions{display:flex;gap:4px;flex-shrink:0;}
+.ev-action-btn{width:30px;height:30px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.8rem;color:#64748b;}
+.ev-action-btn:hover{transform:scale(1.08);}
+.ev-action-edit:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
+.ev-action-success:hover{background:#dcfce7;color:#16a34a;border-color:#86efac;}
+.ev-action-warning:hover{background:#fef3c7;color:#d97706;border-color:#fcd34d;}
+.ev-action-danger:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.ev-action-delete:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.ev-action-qr{color:#0d9488;}
+.ev-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;}
+
+/* Date Range */
+.ev-date-range{display:flex;align-items:center;gap:6px;font-size:.78rem;color:#64748b;padding:8px 10px;background:#f8fafc;border-radius:8px;margin-bottom:.75rem;}
+.ev-date-range i:first-child{color:#3b82f6;}
+
+/* Progress */
+.ev-progress-wrap{margin-bottom:.75rem;}
+.ev-progress-label{font-size:.72rem;color:#64748b;}
+.ev-progress-pct{font-size:.72rem;font-weight:700;color:#16a34a;}
+.ev-progress-bar{height:4px;background:#e2e8f0;border-radius:4px;overflow:hidden;}
+.ev-progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;transition:width .6s ease;}
+
+/* Badges */
+.ev-badges{margin-bottom:.75rem;}
+.ev-badge-row{display:flex;flex-wrap:wrap;gap:4px;}
+.ev-badge{padding:3px 8px;border-radius:6px;font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;}
+.ev-badge-primary{background:#dbeafe;color:#1e40af;}
+.ev-badge-success{background:#dcfce7;color:#166534;}
+.ev-badge-info{background:#e0f2fe;color:#0369a1;}
+.ev-badge-secondary{background:#f1f5f9;color:#475569;}
+.ev-badge-dark{background:#e2e8f0;color:#1e293b;}
+.ev-badge-muted{background:#f1f5f9;color:#94a3b8;}
+
+/* Card Footer */
+.ev-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:.75rem;border-top:1px solid #f1f5f9;}
+.ev-footer-stat{font-size:.78rem;color:#64748b;display:flex;align-items:center;gap:4px;}
+.ev-footer-stat i{color:#3b82f6;}
+.ev-footer-badges{display:flex;gap:4px;}
+.ev-mini-badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;}
+.ev-mini-success{background:#dcfce7;color:#166534;}
+.ev-mini-warning{background:#fef3c7;color:#92400e;}
+.ev-mini-danger{background:#fee2e2;color:#991b1b;}
+
+/* Empty State */
+.ev-empty-state{text-align:center;padding:4rem 2rem;background:#fff;border:2px dashed #e2e8f0;border-radius:12px;}
+.ev-empty-icon{width:64px;height:64px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:#94a3b8;}
+
+/* ──── Modal ──── */
+.ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
+.ev-modal-header{background:linear-gradient(135deg,#0f172a 0%,#1a56db 50%,#3b82f6 100%);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.ev-modal-icon{width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;}
+.ev-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
+.ev-form-control{font-size:.85rem;border-radius:8px;border-color:#e2e8f0;}
+.ev-form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+
+/* ──── QR Modal ──── */
+.qr-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);animation:qrSlideUp .3s ease;position:relative;}
+.qr-modal-close{position:absolute;top:12px;right:12px;background:#F1F5F9;border:none;color:#64748B;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s;z-index:2;}
+.qr-modal-close:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-layout{display:flex;min-height:340px;}
+.qr-modal-left{flex:1;padding:1.5rem 1.5rem 1.25rem;display:flex;flex-direction:column;}
+.qr-modal-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#DBEAFE,#EFF6FF);color:#1D4ED8;display:flex;align-items:center;justify-content:center;font-size:1.15rem;margin-bottom:.75rem;box-shadow:0 2px 8px rgba(37,99,235,.1);}
+.qr-modal-title{font-size:1.1rem;font-weight:800;color:#0F172A;margin:0;line-height:1.2;letter-spacing:-.3px;}
+.qr-modal-subtitle{font-size:.74rem;color:#94A3B8;margin:.2rem 0 0;line-height:1.4;}
+.qr-eval-info{margin-top:.85rem;margin-bottom:auto;display:flex;flex-direction:column;gap:.4rem;padding:.65rem .75rem;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:10px;}
+.qr-info-row{display:flex;align-items:center;gap:.5rem;}
+.qr-info-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;flex-shrink:0;}
+.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;}
+.qr-eval-type-badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
+.qr-url-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem;margin-top:.75rem;}
+.qr-url-box{font-size:.6rem;color:#64748B;word-break:break-all;padding:.45rem .65rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:.7rem;font-family:'SF Mono',Monaco,Consolas,monospace;line-height:1.5;}
+.qr-actions{display:flex;gap:.4rem;}
+.qr-action-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;padding:.55rem .6rem;border-radius:8px;font-size:.76rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.qr-btn-download{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.2);}
+.qr-btn-download:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px);}
+.qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
+.qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
+.qr-modal-right{width:235px;background:#F8FAFC;border-left:1px solid #F1F5F9;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem 1.25rem;}
+.qr-preview-label{font-size:.64rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:.75rem;}
+.qr-code-frame{padding:.85rem;background:#fff;border:1.5px dashed #D4D9E1;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.03);}
+.qr-code-frame img{width:160px;height:160px;border-radius:8px;display:block;}
+.qr-scan-hint{font-size:.62rem;color:#B0B8C4;margin-top:.75rem;display:flex;align-items:center;}
+@media(max-width:575.98px){
+    .qr-modal-layout{flex-direction:column-reverse;}
+    .qr-modal-right{width:100%;border-left:none;border-bottom:1px solid #F1F5F9;padding:1.25rem;}
+    .qr-code-frame img{width:140px;height:140px;}
+    .qr-modal-left{padding:1.25rem;}
+}
+@keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ──── Card Animation ──── */
+.ev-card-wrap{animation:evFadeIn .4s ease both;}
+@keyframes evFadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+</style>
+{% endblock %}
+
 {% block body %}
 {# ═══════════════════════════════════════
    COMPUTE STATS
@@ -377,34 +537,51 @@
    QR CODE MODAL
    ═══════════════════════════════════════ #}
 <div class="modal fade" id="qrCodeModal" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
         <div class="modal-content qr-modal">
-            <div class="qr-modal-top">
-                <div class="qr-modal-top-inner">
-                    <div class="qr-modal-icon-wrap"><i class="bi bi-qr-code-scan"></i></div>
-                    <h5 class="qr-modal-title">QR Code</h5>
-                    <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to evaluate</p>
+            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="qr-modal-layout">
+                <div class="qr-modal-left">
+                    <div class="qr-modal-icon"><i class="bi bi-qr-code-scan"></i></div>
+                    <h5 class="qr-modal-title">Evaluation QR Code</h5>
+                    <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to open the evaluation form</p>
+
+                    <div class="qr-eval-info">
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Type</span>
+                            <span class="qr-eval-type-badge" id="qrEvalType"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Faculty</span>
+                            <span class="qr-info-value" id="qrEvalFaculty"></span>
+                        </div>
+                        <div class="qr-info-row">
+                            <span class="qr-info-label">Subject</span>
+                            <span class="qr-info-value" id="qrEvalSubject"></span>
+                        </div>
+                        <div class="qr-info-row" id="qrEvalDetailsRow">
+                            <span class="qr-info-label">Section</span>
+                            <span class="qr-info-value" id="qrEvalDetails"></span>
+                        </div>
+                    </div>
+
+                    <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
+                    <div class="qr-url-box" id="qrUrl"></div>
+                    <div class="qr-actions">
+                        <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
+                            <i class="bi bi-download"></i> Download
+                        </button>
+                        <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
+                            <i class="bi bi-clipboard"></i> Copy Link
+                        </button>
+                    </div>
                 </div>
-                <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <div class="qr-modal-body">
-                <div class="qr-eval-info">
-                    <span class="qr-eval-type-badge" id="qrEvalType"></span>
-                    <div class="qr-eval-faculty" id="qrEvalFaculty"></div>
-                    <div class="qr-eval-subject" id="qrEvalSubject"></div>
-                    <div class="qr-eval-details" id="qrEvalDetails"></div>
-                </div>
-                <div class="qr-code-frame">
-                    <img id="qrImage" src="" alt="QR Code">
-                </div>
-                <div class="qr-url-text" id="qrUrl"></div>
-                <div class="qr-actions">
-                    <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
-                        <i class="bi bi-download"></i> Download
-                    </button>
-                    <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
-                        <i class="bi bi-clipboard"></i> Copy Link
-                    </button>
+                <div class="qr-modal-right">
+                    <div class="qr-preview-label"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div class="qr-code-frame">
+                        <img id="qrImage" src="" alt="QR Code">
+                    </div>
+                    <div class="qr-scan-hint"><i class="bi bi-phone me-1"></i>Scan with any camera app</div>
                 </div>
             </div>
         </div>
@@ -530,158 +707,7 @@
     </div>
 </div>
 
-{# ═══════════════════════════════════════
-   STYLES
-   ═══════════════════════════════════════ #}
-<style>
-/* ──── Header ──── */
-.ev-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
-.ev-header-inner{padding:22px 26px 18px;}
-.ev-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(8px);}
-.ev-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);padding:3px 10px;border-radius:20px;font-weight:600;backdrop-filter:blur(6px);}
-.ev-meta-active{background:rgba(34,197,94,.25);color:#bbf7d0;}
-.ev-meta-warn{background:rgba(245,158,11,.25);color:#fde68a;}
 
-/* ──── Stats Row ──── */
-.ev-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap;}
-.ev-stat{text-align:center;flex:1;min-width:70px;padding:4px 0 8px;}
-.ev-stat-val{display:block;font-size:1.35rem;font-weight:800;color:#fff;}
-.ev-stat-lbl{font-size:.7rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
-.ev-val-success{color:#86efac !important;}
-.ev-val-warn{color:#fde68a !important;}
-.ev-val-info{color:#93c5fd !important;}
-.ev-stat-divider{width:1px;align-self:stretch;background:rgba(255,255,255,.10);margin:4px 0 8px;}
-
-/* ──── Toolbar ──── */
-.ev-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin:1.25rem 0;}
-.ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
-.ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
-.ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
-.ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
-.ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
-.ev-search-box{position:relative;min-width:220px;}
-.ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
-.ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
-.ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-
-/* ──── Card Grid ──── */
-.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:1rem;}
-@media(max-width:576px){.ev-grid{grid-template-columns:1fr;}}
-
-/* ──── Cards ──── */
-.ev-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;transition:all .2s;position:relative;}
-.ev-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08);border-color:#cbd5e1;}
-.ev-card-active{border-color:rgba(34,197,94,.3);box-shadow:0 0 0 1px rgba(34,197,94,.1);}
-.ev-card-pending{border-color:rgba(245,158,11,.3);}
-.ev-card-closed{opacity:.85;}
-.ev-card-accent{height:4px;width:100%;}
-.ev-accent-active{background:linear-gradient(90deg,#22c55e,#16a34a);}
-.ev-accent-pending{background:linear-gradient(90deg,#f59e0b,#d97706);}
-.ev-accent-expired{background:linear-gradient(90deg,#ef4444,#dc2626);}
-.ev-accent-closed{background:linear-gradient(90deg,#94a3b8,#64748b);}
-.ev-card-body{padding:1rem 1.25rem;}
-
-/* Card Header */
-.ev-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.75rem;}
-.ev-type-badge{padding:4px 12px;border-radius:6px;font-size:.75rem;font-weight:700;letter-spacing:.5px;}
-.ev-type-set{background:#dbeafe;color:#1d4ed8;}
-.ev-type-sef{background:#fef3c7;color:#92400e;}
-.ev-card-title{margin:0;font-size:.95rem;font-weight:700;color:#1e293b;}
-.ev-status-text{font-size:.75rem;color:#64748b;display:flex;align-items:center;gap:4px;}
-.ev-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
-.ev-dot-success{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.4);}
-.ev-dot-warning{background:#f59e0b;}
-.ev-dot-danger{background:#ef4444;}
-.ev-dot-muted{background:#94a3b8;}
-
-/* Card Actions */
-.ev-card-actions{display:flex;gap:4px;flex-shrink:0;}
-.ev-action-btn{width:30px;height:30px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.8rem;color:#64748b;}
-.ev-action-btn:hover{transform:scale(1.08);}
-.ev-action-edit:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
-.ev-action-success:hover{background:#dcfce7;color:#16a34a;border-color:#86efac;}
-.ev-action-warning:hover{background:#fef3c7;color:#d97706;border-color:#fcd34d;}
-.ev-action-danger:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
-.ev-action-delete:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
-.ev-action-qr{color:#0d9488;}
-.ev-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;}
-
-/* Date Range */
-.ev-date-range{display:flex;align-items:center;gap:6px;font-size:.78rem;color:#64748b;padding:8px 10px;background:#f8fafc;border-radius:8px;margin-bottom:.75rem;}
-.ev-date-range i:first-child{color:#3b82f6;}
-
-/* Progress */
-.ev-progress-wrap{margin-bottom:.75rem;}
-.ev-progress-label{font-size:.72rem;color:#64748b;}
-.ev-progress-pct{font-size:.72rem;font-weight:700;color:#16a34a;}
-.ev-progress-bar{height:4px;background:#e2e8f0;border-radius:4px;overflow:hidden;}
-.ev-progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:4px;transition:width .6s ease;}
-
-/* Badges */
-.ev-badges{margin-bottom:.75rem;}
-.ev-badge-row{display:flex;flex-wrap:wrap;gap:4px;}
-.ev-badge{padding:3px 8px;border-radius:6px;font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;}
-.ev-badge-primary{background:#dbeafe;color:#1e40af;}
-.ev-badge-success{background:#dcfce7;color:#166534;}
-.ev-badge-info{background:#e0f2fe;color:#0369a1;}
-.ev-badge-secondary{background:#f1f5f9;color:#475569;}
-.ev-badge-dark{background:#e2e8f0;color:#1e293b;}
-.ev-badge-muted{background:#f1f5f9;color:#94a3b8;}
-
-/* Card Footer */
-.ev-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:.75rem;border-top:1px solid #f1f5f9;}
-.ev-footer-stat{font-size:.78rem;color:#64748b;display:flex;align-items:center;gap:4px;}
-.ev-footer-stat i{color:#3b82f6;}
-.ev-footer-badges{display:flex;gap:4px;}
-.ev-mini-badge{padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600;}
-.ev-mini-success{background:#dcfce7;color:#166534;}
-.ev-mini-warning{background:#fef3c7;color:#92400e;}
-.ev-mini-danger{background:#fee2e2;color:#991b1b;}
-
-/* Empty State */
-.ev-empty-state{text-align:center;padding:4rem 2rem;background:#fff;border:2px dashed #e2e8f0;border-radius:12px;}
-.ev-empty-icon{width:64px;height:64px;background:#f1f5f9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;color:#94a3b8;}
-
-/* ──── Modal ──── */
-.ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
-.ev-modal-header{background:linear-gradient(135deg,#0f172a 0%,#1a56db 50%,#3b82f6 100%);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
-.ev-modal-icon{width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;}
-.ev-form-label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:4px;}
-.ev-form-control{font-size:.85rem;border-radius:8px;border-color:#e2e8f0;}
-.ev-form-control:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-
-/* ──── QR Modal ──── */
-.qr-modal{border:0;border-radius:1.1rem;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.18);animation:qrSlideUp .35s ease;}
-.qr-modal-top{background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);padding:1.5rem 1.5rem 1.3rem;text-align:center;position:relative;}
-.qr-modal-top-inner{position:relative;z-index:1;}
-.qr-modal-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;cursor:pointer;transition:all .2s;z-index:2;backdrop-filter:blur(4px);}
-.qr-modal-close:hover{background:rgba(255,255,255,.3);transform:scale(1.1);}
-.qr-modal-icon-wrap{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;margin:0 auto .6rem;font-size:1.4rem;color:#fff;backdrop-filter:blur(4px);box-shadow:0 4px 16px rgba(0,0,0,.1);}
-.qr-modal-title{font-size:1.1rem;font-weight:700;color:#fff;margin:0;}
-.qr-modal-subtitle{font-size:.75rem;color:rgba(255,255,255,.7);margin:.2rem 0 0;}
-.qr-modal-body{padding:1.3rem 1.5rem 1.5rem;background:#fff;}
-.qr-eval-info{text-align:center;margin-bottom:1rem;}
-.qr-eval-type-badge{display:inline-block;padding:.22rem .7rem;border-radius:1rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
-.qr-eval-faculty{font-size:.88rem;font-weight:600;color:#1E293B;margin-top:.5rem;}
-.qr-eval-subject{font-size:.8rem;color:#64748B;}
-.qr-eval-details{font-size:.72rem;color:#94A3B8;margin-top:.15rem;}
-.qr-code-frame{display:flex;justify-content:center;margin:1rem 0;position:relative;}
-.qr-code-frame img{width:200px;height:200px;border-radius:14px;padding:10px;background:#fff;border:3px solid #E2E8F0;box-shadow:0 4px 20px rgba(0,0,0,.06);transition:all .3s;}
-.qr-code-frame img:hover{box-shadow:0 8px 30px rgba(30,64,175,.12);border-color:#93C5FD;}
-.qr-url-text{text-align:center;font-size:.68rem;color:#94A3B8;word-break:break-all;margin-bottom:1rem;padding:0 .5rem;}
-.qr-actions{display:flex;gap:.6rem;justify-content:center;}
-.qr-action-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1.1rem;border-radius:.6rem;font-size:.78rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
-.qr-btn-download{background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.2);}
-.qr-btn-download:hover{box-shadow:0 4px 16px rgba(30,64,175,.3);transform:translateY(-1px);}
-.qr-btn-copy{background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;}
-.qr-btn-copy:hover{background:#E2E8F0;color:#1E293B;}
-@keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-/* ──── Card Animation ──── */
-.ev-card-wrap{animation:evFadeIn .4s ease both;}
-@keyframes evFadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-</style>
 
 {# ═══════════════════════════════════════
    JAVASCRIPT
@@ -805,12 +831,14 @@ document.querySelectorAll('.faculty-select').forEach(function(sel) {
 
         var typeBadge = document.getElementById('qrEvalType');
         typeBadge.textContent = evalType;
-        typeBadge.className = 'ev-type-badge ' + (evalType === 'SET' ? 'ev-type-set' : (evalType === 'SEF' ? 'ev-type-sef' : 'ev-type-superior'));
+        typeBadge.className = 'qr-eval-type-badge';
 
-        document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to evaluate';
+        document.getElementById('qrModalSubtitle').textContent = schoolYear || 'Scan to open the evaluation form';
         document.getElementById('qrEvalFaculty').textContent = faculty || '';
         document.getElementById('qrEvalSubject').textContent = subject || '';
-        document.getElementById('qrEvalDetails').textContent = section ? 'Section: ' + section : '';
+        document.getElementById('qrEvalDetails').textContent = section || '';
+        var detailsRow = document.getElementById('qrEvalDetailsRow');
+        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
 
         var qrImg = document.getElementById('qrImage');

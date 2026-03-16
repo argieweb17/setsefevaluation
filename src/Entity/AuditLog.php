@@ -60,8 +60,8 @@ class AuditLog
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    private User $performedBy;
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $performedBy = null;
 
     #[ORM\Column(length: 50)]
     private string $action;
@@ -88,8 +88,8 @@ class AuditLog
 
     public function getId(): ?int { return $this->id; }
 
-    public function getPerformedBy(): User { return $this->performedBy; }
-    public function setPerformedBy(User $v): static { $this->performedBy = $v; return $this; }
+    public function getPerformedBy(): ?User { return $this->performedBy; }
+    public function setPerformedBy(?User $v): static { $this->performedBy = $v; return $this; }
 
     public function getAction(): string { return $this->action; }
     public function setAction(string $v): static { $this->action = $v; return $this; }

@@ -3,192 +3,352 @@
 {% block title %}Data Migration | SET-SEF Evaluation{% endblock %}
 
 {% block body %}
-{# ── Header ── #}
+{# ═══════ PAGE HEADER ═══════ #}
 <div class="mg-header">
-    <div class="mg-header-inner">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="mg-header-icon"><i class="bi bi-database-fill-gear"></i></div>
-                <div>
-                    <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Data Migration</h4>
-                    <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="mg-meta-pill"><i class="bi bi-people me-1"></i>{{ totalUsers }} Total Users</span>
-                        <span class="mg-meta-pill"><i class="bi bi-calendar3 me-1"></i>{{ 'now'|date('M d, Y') }}</span>
-                    </div>
-                </div>
-            </div>
-            <a href="{{ path('admin_users') }}" class="btn btn-sm btn-outline-light fw-semibold">
-                <i class="bi bi-arrow-left me-1"></i>Back to Users
-            </a>
+    <div class="mg-header-left">
+        <div class="mg-header-icon">
+            <i class="bi bi-database-fill-gear"></i>
         </div>
-        <div class="mg-stats-row">
-            <div class="mg-stat">
-                <span class="mg-stat-val">{{ studentCount }}</span>
-                <span class="mg-stat-lbl">Students</span>
-            </div>
-            <div class="mg-stat-divider"></div>
-            <div class="mg-stat">
-                <span class="mg-stat-val">{{ facultyCount }}</span>
-                <span class="mg-stat-lbl">Faculty</span>
-            </div>
-            <div class="mg-stat-divider"></div>
-            <div class="mg-stat">
-                <span class="mg-stat-val">{{ staffCount }}</span>
-                <span class="mg-stat-lbl">Staff</span>
-            </div>
-            <div class="mg-stat-divider"></div>
-            <div class="mg-stat">
-                <span class="mg-stat-val">{{ adminCount }}</span>
-                <span class="mg-stat-lbl">Admins</span>
-            </div>
-            <div class="mg-stat-divider"></div>
-            <div class="mg-stat">
-                <span class="mg-stat-val">{{ totalUsers }}</span>
-                <span class="mg-stat-lbl">Total</span>
-            </div>
+        <div>
+            <h4 class="mg-title">Data Migration</h4>
+            <p class="mg-subtitle">Import and export user data via CSV files</p>
+        </div>
+    </div>
+    <div class="mg-header-right">
+        <a href="{{ path('admin_users') }}" class="mg-back-btn">
+            <i class="bi bi-arrow-left me-1"></i>Back to Users
+        </a>
+    </div>
+</div>
+
+{# ═══════ FLASH MESSAGES ═══════ #}
+{% for message in app.flashes('success') %}
+<div class="mg-flash mg-flash-success">
+    <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
+</div>
+{% endfor %}
+{% for message in app.flashes('danger') %}
+<div class="mg-flash mg-flash-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
+</div>
+{% endfor %}
+
+{# ═══════ STAT CARDS ═══════ #}
+<div class="mg-stats-grid">
+    <a href="{{ path('admin_students') }}" class="mg-stat-card">
+        <div class="mg-stat-icon" style="background:#F5F3FF;color:#7C3AED">
+            <i class="bi bi-backpack-fill"></i>
+        </div>
+        <div class="mg-stat-body">
+            <span class="mg-stat-value">{{ studentCount }}</span>
+            <span class="mg-stat-label">Students</span>
+        </div>
+        <i class="bi bi-chevron-right mg-stat-arrow"></i>
+    </a>
+    <a href="{{ path('admin_faculty_list') }}" class="mg-stat-card">
+        <div class="mg-stat-icon" style="background:#EFF6FF;color:#2563EB">
+            <i class="bi bi-mortarboard-fill"></i>
+        </div>
+        <div class="mg-stat-body">
+            <span class="mg-stat-value">{{ facultyCount }}</span>
+            <span class="mg-stat-label">Faculty</span>
+        </div>
+        <i class="bi bi-chevron-right mg-stat-arrow"></i>
+    </a>
+    <a href="{{ path('admin_staff_list') }}" class="mg-stat-card">
+        <div class="mg-stat-icon" style="background:#F0FDF4;color:#16A34A">
+            <i class="bi bi-clipboard-data-fill"></i>
+        </div>
+        <div class="mg-stat-body">
+            <span class="mg-stat-value">{{ staffCount }}</span>
+            <span class="mg-stat-label">Staff</span>
+        </div>
+        <i class="bi bi-chevron-right mg-stat-arrow"></i>
+    </a>
+    <a href="{{ path('admin_admin_list') }}" class="mg-stat-card">
+        <div class="mg-stat-icon" style="background:#FEF2F2;color:#DC2626">
+            <i class="bi bi-shield-fill"></i>
+        </div>
+        <div class="mg-stat-body">
+            <span class="mg-stat-value">{{ adminCount }}</span>
+            <span class="mg-stat-label">Admins</span>
+        </div>
+        <i class="bi bi-chevron-right mg-stat-arrow"></i>
+    </a>
+    <div class="mg-stat-card mg-stat-total">
+        <div class="mg-stat-icon" style="background:rgba(255,255,255,.15);color:#fff">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="mg-stat-body">
+            <span class="mg-stat-value" style="color:#fff">{{ totalUsers }}</span>
+            <span class="mg-stat-label" style="color:rgba(255,255,255,.75)">Total Users</span>
         </div>
     </div>
 </div>
 
-{# ── Import Section ── #}
-<div class="mg-section-card">
-    <div class="mg-section-header" style="background:linear-gradient(135deg,#059669,#10b981 60%,#34d399);">
-        <span><i class="bi bi-cloud-arrow-up-fill me-2"></i>Import Users (CSV)</span>
-    </div>
-    <div class="p-4">
-        <form method="post" action="{{ path('admin_migration_import') }}" enctype="multipart/form-data">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold small text-muted"><i class="bi bi-people me-1"></i>Target Role</label>
-                    <select name="target_role" class="form-select form-select-sm" required>
+{# ═══════ IMPORT & EXPORT GRID ═══════ #}
+<div class="mg-two-col">
+    {# ── Import Card ── #}
+    <div class="mg-card">
+        <div class="mg-card-header mg-card-header-import">
+            <div class="mg-card-header-icon"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+            <div>
+                <strong>Import Users</strong>
+                <span>Upload a CSV file to bulk-create accounts</span>
+            </div>
+        </div>
+        <div class="mg-card-body">
+            <form method="post" action="{{ path('admin_migration_import') }}" enctype="multipart/form-data">
+                <div class="mg-form-group">
+                    <label class="mg-form-label"><i class="bi bi-people me-1"></i>Target Role</label>
+                    <select name="target_role" class="mg-form-select" required>
                         <option value="student">Student</option>
                         <option value="faculty">Faculty</option>
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
                     </select>
                 </div>
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold small text-muted"><i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV File</label>
-                    <input type="file" name="csv_file" class="form-control form-control-sm" accept=".csv" required>
+                <div class="mg-form-group">
+                    <label class="mg-form-label"><i class="bi bi-file-earmark-spreadsheet me-1"></i>CSV File</label>
+                    <div class="mg-file-upload" id="mgDropZone">
+                        <input type="file" name="csv_file" class="mg-file-input" id="mgFileInput" accept=".csv" required>
+                        <div class="mg-file-placeholder" id="mgFilePlaceholder">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <strong>Drop CSV file here or click to browse</strong>
+                            <span>Supports .csv files only</span>
+                        </div>
+                        <div class="mg-file-selected d-none" id="mgFileSelected">
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                            <span id="mgFileName"></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-sm btn-norsu w-100">
-                        <i class="bi bi-cloud-arrow-up me-1"></i>Import
-                    </button>
+                <button type="submit" class="mg-btn-import">
+                    <i class="bi bi-cloud-arrow-up me-1"></i>Import Users
+                </button>
+            </form>
+
+            <div class="mg-guide">
+                <div class="mg-guide-header">
+                    <i class="bi bi-info-circle-fill me-1"></i>CSV Format Guide
+                </div>
+                <div class="mg-guide-body">
+                    <div class="mg-guide-row">
+                        <span class="mg-guide-tag mg-tag-required">Required</span>
+                        <code>FirstName</code>, <code>LastName</code>, <code>Email</code>
+                    </div>
+                    <div class="mg-guide-row">
+                        <span class="mg-guide-tag mg-tag-optional">Optional</span>
+                        <code>Department</code>, <code>SchoolID</code>, <code>Campus</code>, <code>Password</code>
+                    </div>
+                    <div class="mg-guide-row">
+                        <span class="mg-guide-tag mg-tag-student">Student</span>
+                        <code>YearLevel</code>, <code>Course</code>
+                    </div>
+                    <div class="mg-guide-row">
+                        <span class="mg-guide-tag mg-tag-faculty">Faculty/Staff</span>
+                        <code>EmploymentStatus</code>
+                    </div>
+                    <div class="mg-guide-note">
+                        <i class="bi bi-shield-check me-1"></i>Duplicate emails are skipped. Default password: <code>password123</code>
+                    </div>
                 </div>
             </div>
-            <div class="mt-3 p-3 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
-                <p class="small fw-semibold text-success mb-2"><i class="bi bi-info-circle me-1"></i>CSV Format Guide</p>
-                <p class="small text-muted mb-1">Required columns: <code>FirstName</code>, <code>LastName</code>, <code>Email</code></p>
-                <p class="small text-muted mb-1">Optional columns: <code>Department</code>, <code>SchoolID</code>, <code>Campus</code>, <code>Password</code></p>
-                <p class="small text-muted mb-1">Student-only: <code>YearLevel</code>, <code>Course</code></p>
-                <p class="small text-muted mb-0">Faculty/Staff: <code>EmploymentStatus</code></p>
-                <p class="small text-muted mt-2 mb-0"><i class="bi bi-shield-check me-1"></i>Duplicate emails will be automatically skipped. Default password: <code>password123</code></p>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
 
-{# ── Export Section ── #}
-<div class="mg-section-card">
-    <div class="mg-section-header" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6 60%,#60a5fa);">
-        <span><i class="bi bi-cloud-arrow-down-fill me-2"></i>Export Users (CSV)</span>
-    </div>
-    <div class="p-4">
-        <p class="small text-muted mb-3">Download existing user data as CSV files, grouped by role. Useful for backup or transferring data.</p>
-        <div class="row g-3">
-            <div class="col-md-3">
-                <a href="{{ path('admin_migration_export', {role: 'student'}) }}" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="bi bi-backpack-fill me-1"></i>Export Students
-                    <span class="badge bg-primary ms-1">{{ studentCount }}</span>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ path('admin_migration_export', {role: 'faculty'}) }}" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="bi bi-mortarboard-fill me-1"></i>Export Faculty
-                    <span class="badge bg-primary ms-1">{{ facultyCount }}</span>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ path('admin_migration_export', {role: 'staff'}) }}" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="bi bi-clipboard-data me-1"></i>Export Staff
-                    <span class="badge bg-primary ms-1">{{ staffCount }}</span>
-                </a>
-            </div>
-            <div class="col-md-3">
-                <a href="{{ path('admin_migration_export', {role: 'admin'}) }}" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="bi bi-shield-fill me-1"></i>Export Admins
-                    <span class="badge bg-primary ms-1">{{ adminCount }}</span>
-                </a>
+    {# ── Export Card ── #}
+    <div class="mg-card">
+        <div class="mg-card-header mg-card-header-export">
+            <div class="mg-card-header-icon"><i class="bi bi-cloud-arrow-down-fill"></i></div>
+            <div>
+                <strong>Export Users</strong>
+                <span>Download user data as CSV files by role</span>
             </div>
         </div>
-    </div>
-</div>
+        <div class="mg-card-body">
+            <p class="mg-export-desc">Select a role below to download all user accounts of that type as a CSV file. Useful for backups or data transfer.</p>
 
-{# ── Quick Overview Cards ── #}
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="mg-overview-card">
-            <div class="mg-ov-icon" style="background:#f3e8ff;color:#7c3aed;"><i class="bi bi-backpack-fill"></i></div>
-            <div>
-                <div class="mg-ov-val">{{ studentCount }}</div>
-                <div class="mg-ov-lbl">Students</div>
+            <div class="mg-export-list">
+                <a href="{{ path('admin_migration_export', {role: 'student'}) }}" class="mg-export-item">
+                    <div class="mg-export-icon" style="background:#F5F3FF;color:#7C3AED"><i class="bi bi-backpack-fill"></i></div>
+                    <div class="mg-export-info">
+                        <strong>Students</strong>
+                        <span>{{ studentCount }} account{{ studentCount != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="mg-export-action">
+                        <i class="bi bi-download"></i>
+                    </div>
+                </a>
+                <a href="{{ path('admin_migration_export', {role: 'faculty'}) }}" class="mg-export-item">
+                    <div class="mg-export-icon" style="background:#EFF6FF;color:#2563EB"><i class="bi bi-mortarboard-fill"></i></div>
+                    <div class="mg-export-info">
+                        <strong>Faculty</strong>
+                        <span>{{ facultyCount }} account{{ facultyCount != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="mg-export-action">
+                        <i class="bi bi-download"></i>
+                    </div>
+                </a>
+                <a href="{{ path('admin_migration_export', {role: 'staff'}) }}" class="mg-export-item">
+                    <div class="mg-export-icon" style="background:#F0FDF4;color:#16A34A"><i class="bi bi-clipboard-data-fill"></i></div>
+                    <div class="mg-export-info">
+                        <strong>Staff</strong>
+                        <span>{{ staffCount }} account{{ staffCount != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="mg-export-action">
+                        <i class="bi bi-download"></i>
+                    </div>
+                </a>
+                <a href="{{ path('admin_migration_export', {role: 'admin'}) }}" class="mg-export-item">
+                    <div class="mg-export-icon" style="background:#FEF2F2;color:#DC2626"><i class="bi bi-shield-fill"></i></div>
+                    <div class="mg-export-info">
+                        <strong>Admins</strong>
+                        <span>{{ adminCount }} account{{ adminCount != 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="mg-export-action">
+                        <i class="bi bi-download"></i>
+                    </div>
+                </a>
             </div>
-            <a href="{{ path('admin_students') }}" class="stretched-link"></a>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="mg-overview-card">
-            <div class="mg-ov-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="bi bi-mortarboard-fill"></i></div>
-            <div>
-                <div class="mg-ov-val">{{ facultyCount }}</div>
-                <div class="mg-ov-lbl">Faculty</div>
-            </div>
-            <a href="{{ path('admin_faculty_list') }}" class="stretched-link"></a>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="mg-overview-card">
-            <div class="mg-ov-icon" style="background:#dcfce7;color:#15803d;"><i class="bi bi-clipboard-data"></i></div>
-            <div>
-                <div class="mg-ov-val">{{ staffCount }}</div>
-                <div class="mg-ov-lbl">Staff</div>
-            </div>
-            <a href="{{ path('admin_staff_list') }}" class="stretched-link"></a>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="mg-overview-card">
-            <div class="mg-ov-icon" style="background:#fce7f3;color:#be185d;"><i class="bi bi-shield-fill"></i></div>
-            <div>
-                <div class="mg-ov-val">{{ adminCount }}</div>
-                <div class="mg-ov-lbl">Admins</div>
-            </div>
-            <a href="{{ path('admin_admin_list') }}" class="stretched-link"></a>
         </div>
     </div>
 </div>
 
 {# ═══════ STYLES ═══════ #}
 <style>
-.mg-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 10px 40px rgba(30,58,138,.18);margin-bottom:1.5rem;position:relative;}
-.mg-header::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;pointer-events:none;}
-.mg-header-inner{position:relative;z-index:1;padding:1.5rem 1.75rem 1.25rem;}
-.mg-header-icon{width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;color:#fff;backdrop-filter:blur(4px);flex-shrink:0;}
-.mg-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.9);padding:2px 10px;border-radius:20px;font-size:.75rem;backdrop-filter:blur(4px);}
-.mg-stats-row{display:flex;gap:.5rem;margin-top:1.1rem;padding-top:.9rem;border-top:1px solid rgba(255,255,255,.13);flex-wrap:wrap;}
-.mg-stat{text-align:center;flex:1;min-width:70px;}
-.mg-stat-val{display:block;font-size:1.3rem;font-weight:700;color:#fff;line-height:1.2;}
-.mg-stat-lbl{display:block;font-size:.65rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
-.mg-stat-divider{width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:0 .25rem;}
-.mg-section-card{background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:1.25rem;}
-.mg-section-header{color:#fff;padding:.65rem 1.1rem;font-size:.85rem;font-weight:600;}
-.mg-overview-card{position:relative;background:#fff;border:1px solid #e5e7eb;border-radius:.75rem;padding:1.25rem;display:flex;align-items:center;gap:1rem;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .2s;}
-.mg-overview-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);transform:translateY(-2px);}
-.mg-ov-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
-.mg-ov-val{font-size:1.5rem;font-weight:700;color:#1e293b;line-height:1.2;}
-.mg-ov-lbl{font-size:.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
-@keyframes mgFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.mg-section-card,.mg-overview-card{animation:mgFadeIn .25s ease;}
+/* ── Header ── */
+.mg-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.mg-header-left{display:flex;align-items:center;gap:.85rem}
+.mg-header-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.mg-title{font-size:1.35rem;font-weight:800;color:#0F172A;margin:0;letter-spacing:-.3px}
+.mg-subtitle{font-size:.8rem;color:#64748B;margin:0}
+.mg-back-btn{display:inline-flex;align-items:center;padding:7px 16px;border-radius:8px;font-size:.78rem;font-weight:600;background:#F1F5F9;color:#475569;border:1px solid #E2E8F0;text-decoration:none;transition:all .2s}
+.mg-back-btn:hover{background:#E2E8F0;color:#1E293B}
+
+/* ── Flash ── */
+.mg-flash{display:flex;align-items:center;padding:.75rem 1rem;border-radius:10px;font-size:.82rem;font-weight:600;margin-bottom:1rem;animation:mgFadeIn .3s ease}
+.mg-flash-success{background:#F0FDF4;border:1px solid #BBF7D0;color:#166534}
+.mg-flash-danger{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+
+/* ── Stat Cards ── */
+.mg-stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.75rem;margin-bottom:1.25rem}
+.mg-stat-card{display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;background:#fff;border:1px solid #E8ECF1;border-radius:12px;text-decoration:none;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.mg-stat-card:hover{border-color:#C7D2FE;box-shadow:0 4px 15px rgba(37,99,235,.08);transform:translateY(-2px)}
+.mg-stat-total{background:linear-gradient(135deg,#1E3A8A,#2563EB);border-color:transparent}
+.mg-stat-total:hover{border-color:transparent;box-shadow:0 4px 15px rgba(30,58,138,.25)}
+.mg-stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.mg-stat-body{flex:1;min-width:0}
+.mg-stat-value{display:block;font-size:1.3rem;font-weight:800;color:#0F172A;line-height:1.2}
+.mg-stat-label{display:block;font-size:.65rem;color:#64748B;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.mg-stat-arrow{color:#CBD5E1;font-size:.7rem;transition:transform .2s}
+.mg-stat-card:hover .mg-stat-arrow{color:#2563EB;transform:translateX(2px)}
+
+/* ── Two Column Layout ── */
+.mg-two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+
+/* ── Card ── */
+.mg-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.mg-card-header{display:flex;align-items:center;gap:.75rem;padding:.85rem 1.15rem;color:#fff}
+.mg-card-header strong{display:block;font-size:.88rem;font-weight:700}
+.mg-card-header span{display:block;font-size:.72rem;opacity:.85}
+.mg-card-header-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0;backdrop-filter:blur(4px)}
+.mg-card-header-import{background:linear-gradient(135deg,#059669,#10B981)}
+.mg-card-header-export{background:linear-gradient(135deg,#1D4ED8,#3B82F6)}
+.mg-card-body{padding:1.15rem}
+
+/* ── Form ── */
+.mg-form-group{margin-bottom:.85rem}
+.mg-form-label{display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.35rem}
+.mg-form-select{width:100%;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:.82rem;color:#1E293B;background:#F8FAFC;outline:none;transition:border-color .2s,box-shadow .2s;appearance:auto}
+.mg-form-select:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+
+/* ── File Upload ── */
+.mg-file-upload{position:relative;border:2px dashed #CBD5E1;border-radius:10px;padding:1.25rem;text-align:center;transition:all .2s;cursor:pointer;background:#FAFBFC}
+.mg-file-upload:hover,.mg-file-upload.mg-drag-over{border-color:#2563EB;background:#EFF6FF}
+.mg-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+.mg-file-placeholder{display:flex;flex-direction:column;align-items:center;gap:.25rem;color:#94A3B8;pointer-events:none}
+.mg-file-placeholder i{font-size:1.5rem;color:#CBD5E1}
+.mg-file-placeholder strong{font-size:.8rem;color:#475569}
+.mg-file-placeholder span{font-size:.7rem}
+.mg-file-selected{display:flex;align-items:center;justify-content:center;gap:.5rem;pointer-events:none}
+.mg-file-selected i{color:#16A34A;font-size:1.1rem}
+.mg-file-selected span{font-size:.82rem;font-weight:600;color:#166534}
+
+/* ── Import Button ── */
+.mg-btn-import{width:100%;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#10B981);color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;margin-bottom:1rem}
+.mg-btn-import:hover{box-shadow:0 4px 14px rgba(5,150,105,.3);transform:translateY(-1px)}
+
+/* ── Guide ── */
+.mg-guide{border:1px solid #E2E8F0;border-radius:10px;overflow:hidden}
+.mg-guide-header{padding:.55rem .85rem;background:#F8FAFC;font-size:.74rem;font-weight:700;color:#475569;border-bottom:1px solid #E2E8F0}
+.mg-guide-body{padding:.65rem .85rem}
+.mg-guide-row{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.76rem;color:#475569;flex-wrap:wrap}
+.mg-guide-row code{font-size:.7rem;padding:1px 6px;border-radius:4px;background:#F1F5F9;color:#334155}
+.mg-guide-tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0}
+.mg-tag-required{background:#FEF2F2;color:#DC2626}
+.mg-tag-optional{background:#EFF6FF;color:#2563EB}
+.mg-tag-student{background:#F5F3FF;color:#7C3AED}
+.mg-tag-faculty{background:#FFF7ED;color:#EA580C}
+.mg-guide-note{margin-top:.5rem;padding-top:.5rem;border-top:1px solid #F1F5F9;font-size:.72rem;color:#64748B}
+.mg-guide-note code{font-size:.68rem;padding:1px 5px;border-radius:3px;background:#F1F5F9;color:#334155}
+
+/* ── Export ── */
+.mg-export-desc{font-size:.82rem;color:#64748B;margin-bottom:1rem}
+.mg-export-list{display:flex;flex-direction:column;gap:.5rem}
+.mg-export-item{display:flex;align-items:center;gap:.75rem;padding:.75rem .85rem;border:1px solid #E8ECF1;border-radius:10px;text-decoration:none;transition:all .2s}
+.mg-export-item:hover{border-color:#BFDBFE;background:#F8FAFF;box-shadow:0 2px 8px rgba(37,99,235,.06);transform:translateX(2px)}
+.mg-export-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.mg-export-info{flex:1;min-width:0}
+.mg-export-info strong{display:block;font-size:.82rem;font-weight:700;color:#1E293B}
+.mg-export-info span{font-size:.7rem;color:#64748B}
+.mg-export-action{width:32px;height:32px;border-radius:8px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:all .15s}
+.mg-export-item:hover .mg-export-action{background:#2563EB;color:#fff}
+
+/* ── Responsive ── */
+@media(max-width:992px){
+    .mg-stats-grid{grid-template-columns:repeat(3,1fr)}
+    .mg-two-col{grid-template-columns:1fr}
+}
+@media(max-width:576px){
+    .mg-stats-grid{grid-template-columns:repeat(2,1fr)}
+    .mg-header{flex-direction:column;align-items:flex-start}
+}
+
+/* ── Animation ── */
+.mg-header,.mg-stats-grid,.mg-card,.mg-flash{animation:mgFadeIn .25s ease}
+@keyframes mgFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
+
+{# ═══════ SCRIPT ═══════ #}
+<script>
+(function(){
+    var fileInput=document.getElementById('mgFileInput');
+    var dropZone=document.getElementById('mgDropZone');
+    var placeholder=document.getElementById('mgFilePlaceholder');
+    var selected=document.getElementById('mgFileSelected');
+    var fileName=document.getElementById('mgFileName');
+
+    if(fileInput){
+        fileInput.addEventListener('change',function(){
+            if(this.files.length>0){
+                placeholder.classList.add('d-none');
+                selected.classList.remove('d-none');
+                fileName.textContent=this.files[0].name;
+            }else{
+                placeholder.classList.remove('d-none');
+                selected.classList.add('d-none');
+            }
+        });
+    }
+    if(dropZone){
+        ['dragenter','dragover'].forEach(function(e){
+            dropZone.addEventListener(e,function(ev){ev.preventDefault();dropZone.classList.add('mg-drag-over');});
+        });
+        ['dragleave','drop'].forEach(function(e){
+            dropZone.addEventListener(e,function(){dropZone.classList.remove('mg-drag-over');});
+        });
+    }
+})();
+</script>
 {% endblock %}
