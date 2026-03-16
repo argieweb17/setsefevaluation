@@ -148,7 +148,9 @@
                     </td>
                     <td><span class="small text-muted">{{ u.email }}</span></td>
                     <td>
-                        {% if 'ROLE_FACULTY' in u.roles %}
+                        {% if 'ROLE_SUPERIOR' in u.roles %}
+                            <span class="mu-role-badge role-superior"><i class="bi bi-award-fill me-1"></i>Superior</span>
+                        {% elseif 'ROLE_FACULTY' in u.roles %}
                             <span class="mu-role-badge role-faculty"><i class="bi bi-mortarboard-fill me-1"></i>Faculty</span>
                         {% elseif 'ROLE_STAFF' in u.roles %}
                             <span class="mu-role-badge role-staff"><i class="bi bi-clipboard-data me-1"></i>Staff</span>
@@ -220,6 +222,8 @@
                     <td class="text-center">
                         {% if 'ROLE_ADMIN' in user.roles %}
                             <span class="mu-role-badge role-admin"><i class="bi bi-shield-fill me-1"></i>Admin</span>
+                        {% elseif 'ROLE_SUPERIOR' in user.roles %}
+                            <span class="mu-role-badge role-superior"><i class="bi bi-award-fill me-1"></i>Superior</span>
                         {% elseif 'ROLE_FACULTY' in user.roles %}
                             <span class="mu-role-badge role-faculty"><i class="bi bi-mortarboard-fill me-1"></i>Faculty</span>
                         {% elseif 'ROLE_STAFF' in user.roles %}
@@ -365,6 +369,7 @@
 .role-faculty{background:#dbeafe;color:#1d4ed8;}
 .role-staff{background:#dcfce7;color:#15803d;}
 .role-student{background:#f3e8ff;color:#7c3aed;}
+.role-superior{background:#fef3c7;color:#92400e;}
 
 /* ── Status Badges ── */
 .mu-status-badge{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:20px;}

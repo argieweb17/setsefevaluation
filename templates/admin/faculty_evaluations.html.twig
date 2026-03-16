@@ -85,10 +85,18 @@
 </div>
 {% endif %}
 
-{# ── Section Title ── #}
-<div class="fe-section-title">
-    <div class="d-flex align-items-center justify-content-between">
-        <h6><i class="bi bi-journal-text me-2"></i>Evaluation History</h6>
+{# ── Filter Toolbar ── #}
+<div class="fe-toolbar">
+    <div class="d-flex align-items-center flex-nowrap gap-2">
+        <div class="ev-filter-group" id="feTypeFilter">
+            <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
+            <button class="ev-filter-btn" data-type="SET" onclick="feFilterType('SET', this)">SET <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SET')|length }}</span></button>
+            <button class="ev-filter-btn" data-type="SEF" onclick="feFilterType('SEF', this)">SEF <span class="ev-filter-count">{{ evaluations|filter(e => e.evaluation.evaluationType == 'SEF' or e.evaluation.evaluationType == 'SUPERIOR')|length }}</span></button>
+        </div>
+        <div class="ev-search-box">
+            <i class="bi bi-search ev-search-icon"></i>
+            <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
+        </div>
         <label class="fe-select-all" id="feSelectAllWrap" style="display:none;">
             <input type="checkbox" id="feSelectAll" class="form-check-input">
             <span>Select All</span>
@@ -118,9 +126,9 @@
             {% for item in evaluations %}
             {% set ev = item.evaluation %}
             {% set pct = (item.average / 5 * 100)|round(0) %}
-            <tr class="fe-row" data-eval-id="{{ ev.id }}">
+            <tr class="fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" data-search="{{ ev.evaluationType }} {{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }} {{ ev.subject ?? '' }} {{ ev.section ?? '' }}">
                 <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
-                <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType }}</span></td>
+                <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
                 <td>
                     <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
                 </td>
@@ -339,20 +347,18 @@
     font-weight: 500;
 }
 
-/* ── Section Title ── */
-.fe-section-title {
-    margin-bottom: .75rem;
-}
-.fe-section-title h6 {
-    font-size: .82rem;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    margin: 0;
-    display: flex;
-    align-items: center;
-}
+/* ── Toolbar ── */
+.fe-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem;overflow-x:auto;}
+.ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
+.ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
+.ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
+.ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
+.ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
+.ev-search-box{position:relative;min-width:150px;flex:1;}
+.ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
+.ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
+.ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 
 /* ── Evaluation Table ── */
 .fe-table-wrap {
@@ -631,6 +637,26 @@
 </style>
 
 <script>
+/* ── Type Filter & Search ── */
+var feCurrentType = 'all';
+
+function feFilterType(type, btn) {
+    feCurrentType = type;
+    document.querySelectorAll('#feTypeFilter .ev-filter-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+    feApplyFilters();
+}
+
+function feApplyFilters() {
+    var q = document.getElementById('feSearchInput').value.toLowerCase().trim();
+    document.querySelectorAll('.fe-row').forEach(function(row) {
+        var rowType = row.dataset.type;
+        var tMatch = feCurrentType === 'all' || (feCurrentType === 'SEF' ? (rowType === 'SEF' || rowType === 'SUPERIOR') : rowType === feCurrentType);
+        var qMatch = !q || row.dataset.search.toLowerCase().indexOf(q) !== -1;
+        row.style.display = (tMatch && qMatch) ? '' : 'none';
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('feToggleSelect');
     const selectAllWrap = document.getElementById('feSelectAllWrap');
