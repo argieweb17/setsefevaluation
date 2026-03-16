@@ -133,7 +133,7 @@
                         </button>
                     </div>
 
-                    {{ form_start(registrationForm, {'attr': {'id': 'regForm', 'class': 'rg-form', 'novalidate': 'novalidate'}}) }}
+                    {{ form_start(registrationForm, {'attr': {'id': 'regForm', 'class': 'rg-form', 'novalidate': 'novalidate', 'data-turbo': 'false'}}) }}
 
                         {# Hidden role select + unused Symfony widgets #}
                         <div class="d-none">
@@ -2159,6 +2159,18 @@ a.rg-contact-item:hover {
         regForm.addEventListener('submit', function(e) {
             var selectedRole = roleSelect ? roleSelect.value : '';
             var needsApproval = (selectedRole === 'faculty' || selectedRole === 'staff' || selectedRole === 'superior');
+
+            /* Disable validation on hidden role-specific fields so they don't block submission */
+            regForm.querySelectorAll('.role-field').forEach(function(section) {
+                var roles = (section.getAttribute('data-for') || '').split(' ');
+                var isVisible = roles.indexOf(selectedRole) !== -1;
+                section.querySelectorAll('input, select, textarea').forEach(function(field) {
+                    if (!isVisible) {
+                        field.removeAttribute('required');
+                        field.disabled = true;
+                    }
+                });
+            });
 
             /* Always validate the form first — if invalid, let the browser show errors */
             if (!regForm.checkValidity()) {
