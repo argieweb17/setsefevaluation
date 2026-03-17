@@ -170,6 +170,8 @@ class ReportController extends AbstractController
     #[Route('/evaluations', name: 'staff_evaluations', methods: ['GET'])]
     public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo): Response
     {
+        $evaluations = $repo->findAllOrdered();
+
         $departments = $deptRepo->findAllOrdered();
         $colleges = [];
         foreach ($departments as $d) {
@@ -193,8 +195,24 @@ class ReportController extends AbstractController
             $facultyPositionMap[$fu->getFullName()] = $fu->getEmploymentStatus() ?? '';
         }
 
+        $scheduleRows = $this->buildScheduleMergedRows($evaluations, $evaluatorCounts);
+        $activeScheduleRows = [];
+        $expiredScheduleRows = [];
+        $nowTs = (new \DateTimeImmutable())->getTimestamp();
+
+        foreach ($scheduleRows as $row) {
+            /** @var EvaluationPeriod $eval */
+            $eval = $row['eval'];
+            $endTs = $eval->getEndDate()->getTimestamp();
+            if ($nowTs > $endTs || !$eval->isStatus()) {
+                $expiredScheduleRows[] = $row;
+            } else {
+                $activeScheduleRows[] = $row;
+            }
+        }
+
         return $this->render('admin/evaluations.html.twig', [
-            'evaluations' => $repo->findAllOrdered(),
+            'evaluations' => $evaluations,
             'departments' => $departments,
             'colleges' => $colleges,
             'currentAY' => $ayRepo->findCurrent(),
@@ -202,7 +220,98 @@ class ReportController extends AbstractController
             'facultyUsers' => $facultyUsers,
             'evaluatorCounts' => $evaluatorCounts,
             'facultyPositionMap' => $facultyPositionMap,
+            'activeScheduleRows' => $activeScheduleRows,
+            'expiredScheduleRows' => $expiredScheduleRows,
             'staffMode' => true,
+        ]);
+    }
+
+    private function buildScheduleMergedRows(array $evaluations, array $evaluatorCounts): array
+    {
+        $rows = [];
+        $indexByKey = [];
+
+        foreach ($evaluations as $eval) {
+            if (!$eval instanceof EvaluationPeriod) {
+                continue;
+            }
+
+            $key = $this->buildScheduleMergeKey($eval);
+            $schedule = trim((string) ($eval->getTime() ?? ''));
+            $subject = trim((string) ($eval->getSubject() ?? ''));
+            $section = strtoupper(trim((string) ($eval->getSection() ?? '')));
+            $baseCount = (int) ($evaluatorCounts[$eval->getId()] ?? 0);
+
+            if (!isset($indexByKey[$key])) {
+                $rows[] = [
+                    'eval' => $eval,
+                    'items' => [[
+                        'eval' => $eval,
+                        'subject' => $subject,
+                        'section' => $section,
+                        'schedule' => $schedule,
+                        'evaluatorCount' => $baseCount,
+                    ]],
+                    'subjects' => $subject !== '' ? [$subject] : [],
+                    'sections' => $section !== '' ? [$section] : [],
+                    'schedules' => $schedule !== '' ? [$schedule] : [],
+                    'evaluatorCount' => $baseCount,
+                    'mergedCount' => 1,
+                    'searchText' => trim($subject . ' ' . $section . ' ' . $schedule),
+                ];
+                $indexByKey[$key] = count($rows) - 1;
+                continue;
+            }
+
+            $idx = $indexByKey[$key];
+            $rows[$idx]['items'][] = [
+                'eval' => $eval,
+                'subject' => $subject,
+                'section' => $section,
+                'schedule' => $schedule,
+                'evaluatorCount' => $baseCount,
+            ];
+            $rows[$idx]['evaluatorCount'] += $baseCount;
+            $rows[$idx]['mergedCount']++;
+
+            if ($subject !== '' && !in_array($subject, $rows[$idx]['subjects'], true)) {
+                $rows[$idx]['subjects'][] = $subject;
+            }
+            if ($section !== '' && !in_array($section, $rows[$idx]['sections'], true)) {
+                $rows[$idx]['sections'][] = $section;
+            }
+
+            if ($schedule !== '' && !in_array($schedule, $rows[$idx]['schedules'], true)) {
+                $rows[$idx]['schedules'][] = $schedule;
+            }
+
+            $rows[$idx]['searchText'] = trim($rows[$idx]['searchText'] . ' ' . $subject . ' ' . $section . ' ' . $schedule);
+        }
+
+        return $rows;
+    }
+
+    private function buildScheduleMergeKey(EvaluationPeriod $eval): string
+    {
+        if ($eval->getEvaluationType() !== 'SET') {
+            return 'single:' . (string) $eval->getId();
+        }
+
+        $deptId = (string) ($eval->getDepartment()?->getId() ?? 0);
+
+        return implode('|', [
+            'SET',
+            (string) ($eval->getSchoolYear() ?? ''),
+            (string) ($eval->getSemester() ?? ''),
+            (string) ($eval->getFaculty() ?? ''),
+            (string) ($eval->getYearLevel() ?? ''),
+            (string) ($eval->getCollege() ?? ''),
+            $deptId,
+            $eval->getStartDate()->format('c'),
+            $eval->getEndDate()->format('c'),
+            $eval->isStatus() ? '1' : '0',
+            $eval->isAnonymousMode() ? '1' : '0',
+            $eval->isResultsLocked() ? '1' : '0',
         ]);
     }
 
@@ -277,28 +386,69 @@ class ReportController extends AbstractController
     public function editEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('edit_eval' . $eval->getId(), $request->request->get('_token'))) {
-            $eval->setEvaluationType($request->request->get('evaluationType', 'SET'));
-            $eval->setSchoolYear($request->request->get('schoolYear'));
+            $evaluationType = $request->request->get('evaluationType', 'SET');
+            $schoolYear = $request->request->get('schoolYear');
             $sem = $request->request->get('semester');
-            $eval->setSemester($sem !== '' ? $sem : null);
-            $eval->setFaculty($request->request->get('faculty'));
-            $eval->setSubject($request->request->get('subject'));
-            $eval->setTime($request->request->get('time'));
-            $eval->setSection($request->request->get('section'));
-            $eval->setStartDate(new \DateTime($request->request->get('startDate')));
-            $eval->setEndDate(new \DateTime($request->request->get('endDate')));
-            $eval->setStatus($request->request->getBoolean('status', false));
-            $eval->setAnonymousMode($request->request->getBoolean('anonymousMode', false));
-
+            $faculty = $request->request->get('faculty');
+            $subject = $request->request->get('subject');
+            $time = $request->request->get('time');
+            $section = $request->request->get('section');
+            $startDate = new \DateTime($request->request->get('startDate'));
+            $endDate = new \DateTime($request->request->get('endDate'));
+            $status = $request->request->getBoolean('status', false);
+            $anonymous = $request->request->getBoolean('anonymousMode', false);
             $yl = $request->request->get('yearLevel');
-            $eval->setYearLevel($yl !== '' ? $yl : null);
+            $yearLevel = $yl !== '' ? $yl : null;
+
+            $college = $request->request->get('college');
+            $collegeValue = $college !== '' ? $college : null;
 
             $deptId = $request->request->get('department');
+            $dept = null;
             if ($deptId) {
                 $dept = $em->getRepository(Department::class)->find($deptId);
-                $eval->setDepartment($dept);
-            } else {
-                $eval->setDepartment(null);
+            }
+
+            $targets = [$eval];
+            $mergedIdsRaw = trim((string) $request->request->get('applyToMergedIds', ''));
+            if ($eval->getEvaluationType() === 'SET' && $mergedIdsRaw !== '') {
+                $mergedIds = array_values(array_unique(array_filter(array_map('intval', explode(',', $mergedIdsRaw)), fn(int $id): bool => $id > 0)));
+                if (!in_array((int) $eval->getId(), $mergedIds, true)) {
+                    $mergedIds[] = (int) $eval->getId();
+                }
+                if (count($mergedIds) > 1) {
+                    $targets = $em->getRepository(EvaluationPeriod::class)
+                        ->createQueryBuilder('e')
+                        ->where('e.id IN (:ids)')
+                        ->setParameter('ids', $mergedIds)
+                        ->getQuery()
+                        ->getResult();
+                }
+            }
+
+            $isMergedUpdate = count($targets) > 1;
+            foreach ($targets as $target) {
+                if (!$target instanceof EvaluationPeriod) {
+                    continue;
+                }
+
+                $target->setEvaluationType($evaluationType);
+                $target->setSchoolYear($schoolYear);
+                $target->setSemester($sem !== '' ? $sem : null);
+                $target->setFaculty($faculty);
+                $target->setStartDate(clone $startDate);
+                $target->setEndDate(clone $endDate);
+                $target->setStatus($status);
+                $target->setAnonymousMode($anonymous);
+                $target->setYearLevel($yearLevel);
+                $target->setCollege($collegeValue);
+                $target->setDepartment($dept);
+
+                if (!$isMergedUpdate || $target->getEvaluationType() !== 'SET') {
+                    $target->setSubject($subject);
+                    $target->setTime($time);
+                    $target->setSection($section);
+                }
             }
 
             $em->flush();
@@ -306,7 +456,7 @@ class ReportController extends AbstractController
             $this->audit->log(AuditLog::ACTION_CREATE_EVALUATION, 'EvaluationPeriod', $eval->getId(),
                 'Updated evaluation ' . $eval->getLabel());
 
-            $this->addFlash('success', 'Evaluation period updated.');
+            $this->addFlash('success', $isMergedUpdate ? ('Updated ' . count($targets) . ' merged evaluation periods.') : 'Evaluation period updated.');
         }
         return $this->redirectToRoute('staff_evaluations');
     }

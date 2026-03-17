@@ -107,6 +107,15 @@
 .ev-action-view:hover{background:#f3e8ff;color:#6d28d9;border-color:#c4b5fd;}
 .ev-action-qr{color:#0d9488;}
 .ev-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;}
+.ev-action-expand{color:#1d4ed8;}
+.ev-action-expand:hover{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+
+.ev-detail-row td{background:#f8fbff;border-top:0;}
+.ev-detail-box{border:1px solid #dbeafe;border-radius:10px;overflow:hidden;background:#fff;}
+.ev-detail-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+.ev-detail-table thead{background:#eff6ff;}
+.ev-detail-table th{padding:8px 10px;font-size:.66rem;text-transform:uppercase;letter-spacing:.4px;color:#1e3a8a;font-weight:700;}
+.ev-detail-table td{padding:8px 10px;border-top:1px solid #eef2ff;vertical-align:middle;}
 
 /* ──── Modal ──── */
 .ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
@@ -261,10 +270,10 @@
         {# Tab switches #}
         <div class="ev-filter-group" id="evSectionTabs">
             <button class="ev-filter-btn active" onclick="switchSection('active', this)">
-                <i class="bi bi-play-circle me-1"></i>Active <span class="ev-filter-count">{{ activeEvals|length }}</span>
+                <i class="bi bi-play-circle me-1"></i>Active <span class="ev-filter-count">{{ activeScheduleRows|length }}</span>
             </button>
             <button class="ev-filter-btn" onclick="switchSection('previous', this)">
-                <i class="bi bi-clock-history me-1"></i>Previous <span class="ev-filter-count">{{ expiredEvals|length }}</span>
+                <i class="bi bi-clock-history me-1"></i>Previous <span class="ev-filter-count">{{ expiredScheduleRows|length }}</span>
             </button>
         </div>
         <div class="ev-filter-group" id="evTypeFilter">
@@ -319,17 +328,22 @@
                 </tr>
             </thead>
             <tbody>
-                {% for eval in activeEvals %}
+                {% for row in activeScheduleRows %}
+                {% set eval = row.eval %}
                 {% set now = "now"|date("U") %}
                 {% set startTs = eval.startDate|date("U") %}
                 {% set endTs = eval.endDate|date("U") %}
                 {% set isActive = eval.status and now >= startTs and now <= endTs %}
                 {% set isPending = now < startTs %}
-                {% set responseCount = evaluatorCounts[eval.id] ?? 0 %}
+                {% set responseCount = row.evaluatorCount %}
                 {% set totalDuration = endTs - startTs %}
                 {% set elapsed = now - startTs %}
                 {% set progress = totalDuration > 0 ? ((elapsed / totalDuration) * 100)|round : 0 %}
-                <tr class="ev-row" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
+                {% set mergedIdsCsv = '' %}
+                {% for item in row.items %}
+                    {% set mergedIdsCsv = mergedIdsCsv ~ (mergedIdsCsv ? ',' : '') ~ item.eval.id %}
+                {% endfor %}
+                <tr class="ev-row" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-detail-id="{{ eval.evaluationType == 'SET' and row.mergedCount > 1 ? 'evDetailActive' ~ eval.id : '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }} {{ row.searchText }}">
                     <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
                         <div class="ev-cell-period">
@@ -346,14 +360,28 @@
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
                     <td>
-                        {% if eval.evaluationType == 'SET' and eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% elseif eval.evaluationType == 'SET' %}—{% else %}—{% endif %}
+                        {% if eval.evaluationType == 'SET' %}
+                            {% if row.mergedCount > 1 %}
+                                <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subjects</span>
+                            {% elseif eval.subject %}
+                                <span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>
+                            {% else %}—{% endif %}
+                        {% else %}—{% endif %}
                     </td>
                     <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
-                                {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
-                                {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                                {% if row.mergedCount > 1 %}
+                                    <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
+                                    <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
+                                    <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                {% else %}
+                                    {% for sched in row.schedules %}
+                                        <small><i class="bi bi-clock me-1"></i>{{ sched }}</small>
+                                    {% endfor %}
+                                    {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                                {% endif %}
                             </div>
                         {% else %}—{% endif %}
                     </td>
@@ -370,7 +398,10 @@
                     <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
                     <td>
                         <div class="ev-actions-cell">
-                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}"><i class="bi bi-pencil-square"></i></button>
+                            {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
+                                <button type="button" class="ev-action-btn ev-action-expand" title="Show merged details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% endif %}
+                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
@@ -387,6 +418,36 @@
                         </div>
                     </td>
                 </tr>
+                {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
+                <tr class="ev-detail-row" id="evDetailActive{{ eval.id }}" style="display:none;">
+                    <td colspan="11">
+                        <div class="ev-detail-box">
+                            <table class="ev-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Section</th>
+                                        <th>Schedule</th>
+                                        <th class="text-center">QR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in row.items %}
+                                    <tr>
+                                        <td>{{ item.subject ?: '—' }}</td>
+                                        <td>{{ item.section ?: '—' }}</td>
+                                        <td>{{ item.schedule ?: '—' }}</td>
+                                        <td class="text-center">
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
                 {% else %}
                 <tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
                 {% endfor %}
@@ -440,9 +501,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for eval in expiredEvals %}
-                {% set responseCount = evaluatorCounts[eval.id] ?? 0 %}
-                <tr class="ev-row ev-row-expired" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-school-year="{{ eval.schoolYear ?? '' }}" data-semester="{{ eval.semester ?? '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }}">
+                {% for row in expiredScheduleRows %}
+                {% set eval = row.eval %}
+                {% set responseCount = row.evaluatorCount %}
+                {% set mergedIdsCsv = '' %}
+                {% for item in row.items %}
+                    {% set mergedIdsCsv = mergedIdsCsv ~ (mergedIdsCsv ? ',' : '') ~ item.eval.id %}
+                {% endfor %}
+                <tr class="ev-row ev-row-expired" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-school-year="{{ eval.schoolYear ?? '' }}" data-semester="{{ eval.semester ?? '' }}" data-detail-id="{{ eval.evaluationType == 'SET' and row.mergedCount > 1 ? 'evDetailPrev' ~ eval.id : '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }} {{ row.searchText }}">
                     <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
                         <div class="ev-cell-period">
@@ -459,14 +525,28 @@
                         {% if eval.department %}<span class="ev-badge ev-badge-dark"><i class="bi bi-building me-1"></i>{{ eval.department.departmentName }}</span>{% else %}—{% endif %}
                     </td>
                     <td>
-                        {% if eval.evaluationType == 'SET' and eval.subject %}<span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>{% elseif eval.evaluationType == 'SET' %}—{% else %}—{% endif %}
+                        {% if eval.evaluationType == 'SET' %}
+                            {% if row.mergedCount > 1 %}
+                                <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subjects</span>
+                            {% elseif eval.subject %}
+                                <span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>
+                            {% else %}—{% endif %}
+                        {% else %}—{% endif %}
                     </td>
                     <td>{{ eval.evaluationType == 'SET' ? (eval.yearLevel ?? '—') : '—' }}</td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
                             <div class="ev-cell-schedule">
-                                {% if eval.time %}<small><i class="bi bi-clock me-1"></i>{{ eval.time }}</small>{% endif %}
-                                {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                                {% if row.mergedCount > 1 %}
+                                    <small><i class="bi bi-collection me-1"></i>{{ row.schedules|length }} schedule{{ row.schedules|length != 1 ? 's' : '' }}</small>
+                                    <small><i class="bi bi-diagram-3 me-1"></i>{{ row.sections|length }} section{{ row.sections|length != 1 ? 's' : '' }}</small>
+                                    <small class="text-primary"><i class="bi bi-plus-square me-1"></i>Use + to view details</small>
+                                {% else %}
+                                    {% for sched in row.schedules %}
+                                        <small><i class="bi bi-clock me-1"></i>{{ sched }}</small>
+                                    {% endfor %}
+                                    {% if eval.section %}<small><i class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</small>{% endif %}
+                                {% endif %}
                             </div>
                         {% else %}—{% endif %}
                     </td>
@@ -491,6 +571,9 @@
                     <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
                     <td>
                         <div class="ev-actions-cell">
+                            {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
+                                <button type="button" class="ev-action-btn ev-action-expand" title="Show merged details" onclick="toggleMergedRow('evDetailPrev{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% endif %}
                             {# View Results #}
                             <a href="{{ path(prefix ~ '_results', {evaluation: eval.id}) }}" class="ev-action-btn ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
                             {# QR Code #}
@@ -501,7 +584,7 @@
                                 <button class="ev-action-btn ev-action-reopen" title="Reopen evaluation"><i class="bi bi-arrow-counterclockwise"></i></button>
                             </form>
                             {# Edit #}
-                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}"><i class="bi bi-pencil-square"></i></button>
+                            <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
                             {# Lock/Unlock Results #}
                             <form method="post" action="{{ path(prefix ~ '_evaluation_lock_results', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('lock' ~ eval.id) }}">
@@ -515,6 +598,36 @@
                         </div>
                     </td>
                 </tr>
+                {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
+                <tr class="ev-detail-row" id="evDetailPrev{{ eval.id }}" style="display:none;">
+                    <td colspan="12">
+                        <div class="ev-detail-box">
+                            <table class="ev-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Section</th>
+                                        <th>Schedule</th>
+                                        <th class="text-center">QR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in row.items %}
+                                    <tr>
+                                        <td>{{ item.subject ?: '—' }}</td>
+                                        <td>{{ item.section ?: '—' }}</td>
+                                        <td>{{ item.schedule ?: '—' }}</td>
+                                        <td class="text-center">
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
                 {% else %}
                 <tr><td colspan="12" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
                 {% endfor %}
@@ -542,6 +655,7 @@
                 </div>
                 <form method="post" action="{{ path(prefix ~ '_evaluation_edit', {id: eval.id}) }}" data-turbo="false">
                     <input type="hidden" name="_token" value="{{ csrf_token('edit_eval' ~ eval.id) }}">
+                    <input type="hidden" name="applyToMergedIds" value="{{ eval.id }}">
                     <div class="modal-body p-4">
                         <div class="row g-3">
                             {% if eval.evaluationType == 'SUPERIOR' %}
@@ -1012,6 +1126,15 @@ function applyAllFilters() {
         }
 
         row.style.display = (tMatch && cMatch && dMatch && fMatch && qMatch && ayMatch && semMatch) ? '' : 'none';
+
+        var detailRow = row.nextElementSibling;
+        if (detailRow && detailRow.classList.contains('ev-detail-row')) {
+            if (row.style.display === 'none') {
+                detailRow.style.display = 'none';
+            } else {
+                detailRow.style.display = row.dataset.expanded === '1' ? '' : 'none';
+            }
+        }
     });
 }
 
@@ -1038,7 +1161,32 @@ function sortTable(tableId, colIdx) {
         return asc ? aText.localeCompare(bText) : bText.localeCompare(aText);
     });
 
-    rows.forEach(function(row){ tbody.appendChild(row); });
+    rows.forEach(function(row){
+        tbody.appendChild(row);
+        var detailId = row.dataset.detailId;
+        if (detailId) {
+            var detailRow = document.getElementById(detailId);
+            if (detailRow) {
+                tbody.appendChild(detailRow);
+                detailRow.style.display = row.dataset.expanded === '1' ? '' : 'none';
+            }
+        }
+    });
+}
+
+function toggleMergedRow(detailId, btn) {
+    var detail = document.getElementById(detailId);
+    var row = btn.closest('tr.ev-row');
+    if (!detail || !row) return;
+
+    var isExpanded = row.dataset.expanded === '1';
+    row.dataset.expanded = isExpanded ? '0' : '1';
+    detail.style.display = isExpanded ? 'none' : '';
+
+    var icon = btn.querySelector('i');
+    if (icon) {
+        icon.className = isExpanded ? 'bi bi-plus-lg' : 'bi bi-dash-lg';
+    }
 }
 
 /* ── Fetch subjects from API based on selected faculty ── */
@@ -1132,6 +1280,22 @@ document.querySelectorAll('.faculty-select').forEach(function(sel) {
             if (facIdField && opt) facIdField.value = opt.getAttribute('data-faculty-id') || '';
         }
     }
+});
+
+/* ── Edit modal: apply merged IDs when opened from grouped rows ── */
+document.querySelectorAll('.ev-action-edit[data-bs-target]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var modalSelector = this.getAttribute('data-bs-target');
+        if (!modalSelector) return;
+        var modal = document.querySelector(modalSelector);
+        if (!modal) return;
+
+        var ids = this.getAttribute('data-merge-ids') || '';
+        var idsInput = modal.querySelector('input[name="applyToMergedIds"]');
+        if (idsInput) {
+            idsInput.value = ids || idsInput.value;
+        }
+    });
 });
 
 /* ── Filter faculty options by selected department ── */
