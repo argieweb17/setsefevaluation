@@ -320,7 +320,6 @@
                     <th class="ev-th-sortable" onclick="sortTable('activeTable',5)">Subject <i class="bi bi-arrow-down-up"></i></th>
                     <th>Schedule</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('activeTable',8)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -391,20 +390,19 @@
                             <span class="ev-status-pill ev-status-pending"><span class="ev-dot ev-dot-warning"></span>Scheduled</span>
                         {% endif %}
                     </td>
-                    <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
                     <td>
                         <div class="ev-actions-cell">
                             {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
                                 <button type="button" class="ev-action-btn ev-action-expand" title="Show merged details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
                             {% endif %}
                             <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
-                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
                                 <button class="ev-action-btn ev-action-warning" title="Close"><i class="bi bi-pause-circle"></i></button>
                             </form>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_lock_results', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('lock' ~ eval.id) }}">
+                                <input type="hidden" name="mergedIds" value="{{ mergedIdsCsv }}">
                                 <button class="ev-action-btn {{ eval.resultsLocked ? 'ev-action-danger' : 'ev-action-success' }}" title="{{ eval.resultsLocked ? 'Unlock' : 'Lock' }} results"><i class="bi {{ eval.resultsLocked ? 'bi-lock-fill' : 'bi-unlock-fill' }}"></i></button>
                             </form>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_delete', {id: eval.id}) }}" class="d-inline" onsubmit="return confirm('Delete this evaluation period and all its responses?')">
@@ -447,7 +445,7 @@
                 </tr>
                 {% endif %}
                 {% else %}
-                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -493,7 +491,6 @@
                     <th>Schedule</th>
                     <th>Ended</th>
                     <th>Status</th>
-                    <th class="ev-th-sortable" onclick="sortTable('previousTable',9)">Evaluators <i class="bi bi-arrow-down-up"></i></th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -564,7 +561,6 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td class="text-center"><span class="fw-semibold">{{ responseCount }}</span></td>
                     <td>
                         <div class="ev-actions-cell">
                             {% if eval.evaluationType == 'SET' and row.mergedCount > 1 %}
@@ -572,8 +568,6 @@
                             {% endif %}
                             {# View Results #}
                             <a href="{{ path(prefix ~ '_results', {evaluation: eval.id}) }}" class="ev-action-btn ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
-                            {# QR Code #}
-                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {# Reopen #}
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
@@ -584,6 +578,7 @@
                             {# Lock/Unlock Results #}
                             <form method="post" action="{{ path(prefix ~ '_evaluation_lock_results', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('lock' ~ eval.id) }}">
+                                <input type="hidden" name="mergedIds" value="{{ mergedIdsCsv }}">
                                 <button class="ev-action-btn {{ eval.resultsLocked ? 'ev-action-danger' : 'ev-action-success' }}" title="{{ eval.resultsLocked ? 'Unlock' : 'Lock' }} results"><i class="bi {{ eval.resultsLocked ? 'bi-lock-fill' : 'bi-unlock-fill' }}"></i></button>
                             </form>
                             {# Delete #}
@@ -627,7 +622,7 @@
                 </tr>
                 {% endif %}
                 {% else %}
-                <tr><td colspan="11" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
+                <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
                 {% endfor %}
             </tbody>
         </table>

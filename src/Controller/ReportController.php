@@ -311,7 +311,6 @@ class ReportController extends AbstractController
             $eval->getEndDate()->format('c'),
             $eval->isStatus() ? '1' : '0',
             $eval->isAnonymousMode() ? '1' : '0',
-            $eval->isResultsLocked() ? '1' : '0',
         ]);
     }
 
@@ -465,7 +464,26 @@ class ReportController extends AbstractController
     public function lockResults(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('lock' . $eval->getId(), $request->request->get('_token'))) {
-            $eval->setResultsLocked(!$eval->isResultsLocked());
+            $newState = !$eval->isResultsLocked();
+            $eval->setResultsLocked($newState);
+
+            // Apply to all merged evaluations
+            $mergedIdsRaw = trim((string) $request->request->get('mergedIds', ''));
+            if ($eval->getEvaluationType() === 'SET' && $mergedIdsRaw !== '') {
+                $mergedIds = array_values(array_unique(array_filter(array_map('intval', explode(',', $mergedIdsRaw)), fn(int $id): bool => $id > 0)));
+                if (count($mergedIds) > 1) {
+                    $siblings = $em->getRepository(EvaluationPeriod::class)
+                        ->createQueryBuilder('e')
+                        ->where('e.id IN (:ids)')
+                        ->setParameter('ids', $mergedIds)
+                        ->getQuery()
+                        ->getResult();
+                    foreach ($siblings as $sib) {
+                        $sib->setResultsLocked($newState);
+                    }
+                }
+            }
+
             $em->flush();
 
             $this->audit->log(AuditLog::ACTION_LOCK_RESULTS, 'EvaluationPeriod', $eval->getId(),
