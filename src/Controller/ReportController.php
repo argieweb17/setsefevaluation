@@ -1338,6 +1338,7 @@ class ReportController extends AbstractController
             'messages'     => $messages,
             'repliesMap'   => $repliesMap,
             'pendingCount' => $msgRepo->countPending(),
+            'staffMode'    => true,
             'replyRoute'   => 'staff_faculty_message_reply',
             'deleteRoute'  => 'staff_faculty_message_delete',
         ]);

@@ -189,7 +189,7 @@
 
 {# ── Pending Approvals Section ── #}
 <div class="mu-table-card mb-3" id="pending-approvals">
-    <div class="mu-table-header" style="background:linear-gradient(135deg,#b45309,#d97706 60%,#eab308);">
+    <div class="mu-table-header" style="background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);">
         <span><i class="bi bi-hourglass-split me-2"></i>Pending Approvals</span>
         <span class="mu-table-badge">{{ pendingUsers|length }} pending</span>
     </div>
@@ -251,103 +251,7 @@
     </div>
 </div>
 
-{# ── All Users Table ── #}
-<div class="mu-table-card">
-    <div class="mu-table-header">
-        <span><i class="bi bi-people me-2"></i>All Users</span>
-        <span class="mu-table-badge">{{ users|length }} user{{ users|length != 1 ? 's' : '' }}</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="usersTable">
-            <thead>
-                <tr class="small text-muted" style="font-size:.78rem;background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-                    <th class="ps-3 fw-semibold" style="width:50px">#</th>
-                    <th class="fw-semibold">Name</th>
-                    <th class="fw-semibold">Email</th>
-                    <th class="fw-semibold text-center">Role</th>
-                    <th class="fw-semibold">Department</th>
-                    <th class="fw-semibold text-center">Status</th>
-                    <th class="fw-semibold">Registered</th>
-                    <th class="fw-semibold text-end pe-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr class="user-row"
-                    data-name="{{ user.fullName|lower }}"
-                    data-email="{{ user.email|lower }}"
-                    data-role="{% if 'ROLE_ADMIN' in user.roles %}Admin{% elseif 'ROLE_FACULTY' in user.roles %}Faculty{% elseif 'ROLE_STAFF' in user.roles %}Staff{% else %}Student{% endif %}"
-                    data-status="{% if user.accountStatus == 'active' %}Active{% elseif user.accountStatus == 'pending' %}Pending{% else %}Inactive{% endif %}"
-                    data-date="{{ user.createdAt|date('Y-m-d') }}">
-                    <td class="ps-3">
-                        <span class="fw-bold text-muted user-num">{{ loop.index }}</span>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="mu-avatar">{{ user.firstName|first|upper }}{{ user.lastName|first|upper }}</div>
-                            <div>
-                                <div class="fw-semibold small">{{ user.fullName }}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="small text-muted">{{ user.email }}</span></td>
-                    <td class="text-center">
-                        {% if 'ROLE_ADMIN' in user.roles %}
-                            <span class="mu-role-badge role-admin"><i class="bi bi-shield-fill me-1"></i>Admin</span>
-                        {% elseif 'ROLE_SUPERIOR' in user.roles %}
-                            <span class="mu-role-badge role-superior"><i class="bi bi-award-fill me-1"></i>Superior</span>
-                        {% elseif 'ROLE_FACULTY' in user.roles %}
-                            <span class="mu-role-badge role-faculty"><i class="bi bi-mortarboard-fill me-1"></i>Faculty</span>
-                        {% elseif 'ROLE_STAFF' in user.roles %}
-                            <span class="mu-role-badge role-staff"><i class="bi bi-clipboard-data me-1"></i>Staff</span>
-                        {% else %}
-                            <span class="mu-role-badge role-student"><i class="bi bi-backpack-fill me-1"></i>Student</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="small">{{ user.department ? user.department.departmentName : '—' }}</span>
-                    </td>
-                    <td class="text-center">
-                        {% if user.accountStatus == 'active' %}
-                            <span class="mu-status-badge status-active"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
-                        {% elseif user.accountStatus == 'pending' %}
-                            <span class="mu-status-badge status-pending"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
-                        {% else %}
-                            <span class="mu-status-badge status-inactive"><i class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
-                        {% endif %}
-                    </td>
-                    <td><span class="small text-muted">{{ user.createdAt|date('M d, Y') }}</span></td>
-                    <td class="text-end pe-3">
-                        <div class="d-flex gap-1 justify-content-end">
-                            <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary mu-action-btn" title="Edit"><i class="bi bi-pencil-square"></i></a>
-                            <form method="post" action="{{ path('admin_user_toggle_status', {id: user.id}) }}" class="d-inline">
-                                <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
-                                <button class="btn btn-sm btn-outline-{{ user.accountStatus == 'active' ? 'secondary' : 'success' }} mu-action-btn" title="{{ user.accountStatus == 'active' ? 'Deactivate' : 'Activate' }}">
-                                    <i class="bi {{ user.accountStatus == 'active' ? 'bi-pause-circle' : 'bi-play-circle' }}"></i>
-                                </button>
-                            </form>
-                            <button type="button" class="btn btn-sm btn-outline-warning mu-action-btn" title="Reset Password" data-bs-toggle="modal" data-bs-target="#resetModal{{ user.id }}">
-                                <i class="bi bi-key"></i>
-                            </button>
-                            {% if user != app.user %}
-                            <form method="post" action="{{ path('admin_user_delete', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Delete this user permanently?')">
-                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
-                                <button class="btn btn-sm btn-outline-danger mu-action-btn" title="Delete"><i class="bi bi-trash3"></i></button>
-                            </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="8" class="text-center py-5">
-                    <i class="bi bi-people display-4 text-muted d-block mb-2"></i>
-                    <span class="text-muted">No users found.</span>
-                </td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{# ── All Users Table hidden by request ── #}
 
 {# ── Reset Password Modals ── #}
 {% for user in users %}

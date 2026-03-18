@@ -83,9 +83,6 @@
                 {% endfor %}
             </select>
         </div>
-        <button type="button" class="rl-clear-btn" id="rlReset" title="Reset all filters">
-            <i class="bi bi-x-lg"></i>
-        </button>
     </div>
     <div class="rl-toolbar-info">
         <span class="rl-result-count" id="rlCount"></span>
@@ -172,7 +169,7 @@
 
 <script>
 (function(){
-    var search=document.getElementById('rlSearch'),college=document.getElementById('rlCollege'),dept=document.getElementById('rlDept'),reset=document.getElementById('rlReset'),countEl=document.getElementById('rlCount');
+    var search=document.getElementById('rlSearch'),college=document.getElementById('rlCollege'),dept=document.getElementById('rlDept'),countEl=document.getElementById('rlCount');
     if(!search)return;
 
     // Keep department options in sync with selected college.
@@ -212,7 +209,6 @@
     search.addEventListener('input',applyFilters);
     college.addEventListener('change',function(){updateDeptOptions();applyFilters();});
     dept.addEventListener('change',applyFilters);
-    reset.addEventListener('click',function(){search.value='';college.value='';updateDeptOptions();dept.value='';applyFilters();});
     applyFilters();
 })();
 </script>

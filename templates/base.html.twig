@@ -101,6 +101,7 @@
 
                 {# ── Faculty: Management ── #}
                 {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                    <div class="sidebar-header">Subject Management</div>
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
                         <i class="bi bi-book-fill sidebar-icon"></i> Subject Load
@@ -113,12 +114,6 @@
                     <a class="nav-link {% if 'faculty_loaded_subjects' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('faculty_loaded_subjects') }}">
                         <i class="bi bi-journal-bookmark-fill sidebar-icon"></i> Class Schedule
-                    </a>
-
-                    <a class="nav-link {% if 'faculty_academic_years' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                       href="{{ path('faculty_academic_years') }}">
-                        <i class="bi bi-calendar3 sidebar-icon"></i> Academic Year
-                        <span class="sidebar-count">{{ sc.academic_years }}</span>
                     </a>
                 {% endif %}
 
@@ -189,10 +184,27 @@
                     <i class="bi bi-list-check sidebar-icon"></i> Questionnaire
                     <span class="sidebar-count">{{ sc.questions }}</span>
                 </a>
-                <a class="nav-link {% if 'staff_results' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('staff_results') }}">
-                    <i class="bi bi-clipboard-data sidebar-icon"></i> Results
-                </a>
+                {% set _staff_results_routes = ['staff_results','staff_results_faculty_detail','staff_results_export'] %}
+                {% set _staff_results_route = app.request.attributes.get('_route')|default('') %}
+                {% set _staff_results_view = app.request.query.get('view')|default('') %}
+                {% set _staff_sef_active = _staff_results_route in _staff_results_routes and _staff_results_view == 'sef' %}
+                {% set _staff_set_active = _staff_results_route in _staff_results_routes and not _staff_sef_active %}
+                <div class="sidebar-dropdown {% if _staff_results_route in _staff_results_routes %}open{% endif %}">
+                    <a class="nav-link sidebar-dropdown-toggle {% if _staff_results_route in _staff_results_routes %}active{% endif %}" href="#">
+                        <i class="bi bi-clipboard-data sidebar-icon"></i> Results
+                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                    </a>
+                    <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
+                        <a class="sidebar-sub-link {% if _staff_set_active %}active{% endif %}"
+                           href="{{ path('staff_results') }}">
+                            <i class="bi bi-mortarboard me-1"></i> SET Results
+                        </a>
+                        <a class="sidebar-sub-link {% if _staff_sef_active %}active{% endif %}"
+                           href="{{ path('staff_results') }}?view=sef">
+                            <i class="bi bi-person-badge me-1"></i> SEF Results
+                        </a>
+                    </div>
+                </div>
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">
                     <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
