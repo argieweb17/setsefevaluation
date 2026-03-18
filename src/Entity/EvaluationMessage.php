@@ -55,6 +55,13 @@ class EvaluationMessage
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $attachmentOriginalName = null;
 
+    #[ORM\ManyToOne(targetEntity: EvaluationMessage::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
+    private ?EvaluationMessage $parentMessage = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $senderType = null; // 'faculty' or 'admin'
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -94,4 +101,10 @@ class EvaluationMessage
 
     public function getAttachmentOriginalName(): ?string { return $this->attachmentOriginalName; }
     public function setAttachmentOriginalName(?string $name): static { $this->attachmentOriginalName = $name; return $this; }
+
+    public function getParentMessage(): ?EvaluationMessage { return $this->parentMessage; }
+    public function setParentMessage(?EvaluationMessage $parent): static { $this->parentMessage = $parent; return $this; }
+
+    public function getSenderType(): ?string { return $this->senderType; }
+    public function setSenderType(?string $type): static { $this->senderType = $type; return $this; }
 }

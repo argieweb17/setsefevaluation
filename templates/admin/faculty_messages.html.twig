@@ -570,8 +570,10 @@
     line-height: 1.45;
     white-space: pre-wrap;
     word-break: break-word;
-    width: fit-content;
+    display: inline-flex;
+    width: max-content;
     max-width: 100%;
+    align-self: flex-start;
     box-shadow: var(--msg-shadow-sm);
 }
 .fm-message.incoming .fm-bubble {
@@ -584,6 +586,7 @@
     background: linear-gradient(135deg, var(--msg-success) 0%, #10b981 100%);
     color: #fff;
     border-bottom-right-radius: 4px;
+    align-self: flex-end;
 }
 .fm-bubble-subject {
     font-weight: 700;
@@ -1088,8 +1091,8 @@
                         <i class="bi bi-person-fill"></i> {{ msg.sender.fullName }}
                     </div>
                     <div class="fm-bubble">
-                        {{ msg.message }}
-                        {% if msg.attachment %}
+                        {{- msg.message|trim -}}
+                        {%- if msg.attachment %}
                         <div class="fm-attachment">
                             <a href="{{ asset('uploads/attachments/' ~ msg.attachment) }}" target="_blank" class="fm-attachment-link">
                                 <i class="bi bi-file-earmark-pdf-fill"></i>
@@ -1097,23 +1100,47 @@
                                 <i class="bi bi-download"></i>
                             </a>
                         </div>
-                        {% endif %}
+                        {%- endif %}
                     </div>
                     <div class="fm-message-time">
                         <i class="bi bi-clock"></i> {{ msg.createdAt|date('h:i A') }}
                     </div>
                 </div>
 
-                {# Admin's reply #}
+                {# Old admin reply (for backward compatibility) #}
                 {% if msg.adminReply %}
                 <div class="fm-message outgoing">
-                    <div class="fm-bubble">{{ msg.adminReply }}</div>
+                    <div class="fm-bubble">{{ msg.adminReply|trim }}</div>
                     <div class="fm-message-time">
                         {% if msg.repliedBy %}<i class="bi bi-person-check"></i> {{ msg.repliedBy.fullName }} &bull; {% endif %}
                         {{ msg.repliedAt|date('h:i A') }}
                         <i class="bi bi-check2-all read-icon"></i>
                     </div>
                 </div>
+                {% endif %}
+
+                {# Conversation thread replies #}
+                {% if repliesMap[msg.id] is defined %}
+                {% for reply in repliesMap[msg.id] %}
+                <div class="fm-message outgoing">
+                    <div class="fm-bubble">
+                        {{- reply.message|trim -}}
+                        {%- if reply.attachment %}
+                        <div class="fm-attachment">
+                            <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" target="_blank" class="fm-attachment-link">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                                {{ reply.attachmentOriginalName }}
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </div>
+                        {%- endif %}
+                    </div>
+                    <div class="fm-message-time">
+                        <i class="bi bi-clock"></i> {{ reply.createdAt|date('h:i A') }}
+                        <i class="bi bi-check2-all read-icon"></i>
+                    </div>
+                </div>
+                {% endfor %}
                 {% endif %}
             </div>
             {% endfor %}
@@ -1126,10 +1153,10 @@
                 <div class="fm-compose-inner">
                     <div class="fm-compose-header">
                         <i class="bi bi-reply-fill"></i>
-                        {{ msg.adminReply ? 'Update your reply' : 'Write a reply' }}
+                        Write a reply
                     </div>
                     <div class="fm-compose-body">
-                        <textarea name="reply" class="fm-textarea" placeholder="Type your response here..." required>{{ msg.adminReply }}</textarea>
+                        <textarea name="reply" class="fm-textarea" placeholder="Type your response here..." required></textarea>
                     </div>
                     <div class="fm-compose-footer">
                         <div class="fm-compose-tools">
@@ -1168,8 +1195,8 @@
 <div class="modal fade" id="deleteCurrentMsg" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:var(--msg-radius-lg);overflow:hidden;">
-            <form method="post" id="deleteCurrentForm" action="">
-                <input type="hidden" name="_token" id="deleteCurrentToken" value="">
+            <form method="post" id="deleteCurrentForm" action="{% if messages|length > 0 %}{{ path(prefix ~ '_faculty_message_delete', {id: messages|first.id}) }}{% endif %}">
+                <input type="hidden" name="_token" id="deleteCurrentToken" value="{% if messages|length > 0 %}{{ csrf_token('admin_delete_msg' ~ messages|first.id) }}{% endif %}">
                 <div class="fm-modal-danger-header">
                     <div class="fm-modal-icon">
                         <i class="bi bi-exclamation-triangle-fill"></i>
@@ -1182,11 +1209,11 @@
                 </div>
                 <div class="modal-body p-4">
                     <p class="mb-3" style="font-size:.88rem;color:var(--msg-text-secondary);">
-                        Delete this conversation with <strong id="deleteCurrentName" style="color:var(--msg-text-primary);"></strong>?
+                        Delete this conversation with <strong id="deleteCurrentName" style="color:var(--msg-text-primary);">{% if messages|length > 0 %}{{ messages|first.sender.fullName }}{% endif %}</strong>?
                     </p>
                     <div class="p-3 rounded" style="background:var(--msg-sidebar-bg);border:1px solid var(--msg-border);">
-                        <strong class="d-block mb-1" style="font-size:.85rem;color:var(--msg-text-primary);" id="deleteCurrentSubject"></strong>
-                        <small style="color:var(--msg-text-muted);" id="deleteCurrentDate"></small>
+                        <strong class="d-block mb-1" style="font-size:.85rem;color:var(--msg-text-primary);" id="deleteCurrentSubject">{% if messages|length > 0 %}{{ messages|first.subject }}{% endif %}</strong>
+                        <small style="color:var(--msg-text-muted);" id="deleteCurrentDate">{% if messages|length > 0 %}{{ messages|first.createdAt|date('M d, Y h:i A') }}{% endif %}</small>
                     </div>
                 </div>
                 <div class="modal-footer" style="background:var(--msg-sidebar-bg);border-top:1px solid var(--msg-border);padding:16px 20px;">

@@ -435,14 +435,17 @@
     line-height: 1.45;
     white-space: pre-wrap;
     word-break: break-word;
-    width: fit-content;
+    display: inline-flex;
+    width: max-content;
     max-width: 100%;
+    align-self: flex-start;
     box-shadow: var(--msg-shadow-sm);
 }
 .fm-message.outgoing .fm-bubble {
     background: linear-gradient(160deg, var(--msg-primary-dark), var(--msg-primary));
     color: #fff;
     border-bottom-right-radius: 4px;
+    align-self: flex-end;
 }
 .fm-message.incoming .fm-bubble {
     background: #ffffff;
@@ -947,9 +950,7 @@
 
                 {# Faculty's message (sent) #}
                 <div class="fm-message outgoing">
-                    <div class="fm-bubble">
-                        {{ msg.message }}
-                    </div>
+                    <div class="fm-bubble">{{- msg.message|trim -}}</div>
                     <div class="fm-message-time">
                         {{ msg.createdAt|date('h:i A') }}
                         <i class="bi bi-check2-all read-icon"></i>
@@ -962,7 +963,7 @@
                     <div class="fm-message-sender">
                         <i class="bi bi-shield-check"></i> Admin{% if msg.repliedBy %} ({{ msg.repliedBy.fullName }}){% endif %}
                     </div>
-                    <div class="fm-bubble">{{ msg.adminReply }}</div>
+                    <div class="fm-bubble">{{ msg.adminReply|trim }}</div>
                     <div class="fm-message-time">
                         {% if msg.repliedAt %}{{ msg.repliedAt|date('h:i A') }}{% endif %}
                     </div>

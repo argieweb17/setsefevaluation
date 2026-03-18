@@ -2730,8 +2730,14 @@ class AdminController extends AbstractController
     public function facultyMessages(
         EvaluationMessageRepository $msgRepo,
     ): Response {
+        $messages = $msgRepo->findAllMessages();
+        $repliesMap = [];
+        foreach ($messages as $msg) {
+            $repliesMap[$msg->getId()] = $msgRepo->findRepliesForMessage($msg->getId());
+        }
         return $this->render('admin/faculty_messages.html.twig', [
-            'messages' => $msgRepo->findAllMessages(),
+            'messages' => $messages,
+            'repliesMap' => $repliesMap,
             'pendingCount' => $msgRepo->countPending(),
             'deleteRoute' => 'admin_faculty_message_delete',
         ]);
@@ -2745,8 +2751,8 @@ class AdminController extends AbstractController
         EntityManagerInterface $em,
         SluggerInterface $slugger,
     ): Response {
-        $msg = $msgRepo->find($id);
-        if (!$msg) {
+        $parentMsg = $msgRepo->find($id);
+        if (!$parentMsg) {
             throw $this->createNotFoundException('Message not found.');
         }
 
@@ -2754,26 +2760,35 @@ class AdminController extends AbstractController
         $status = $request->request->get('status', EvaluationMessage::STATUS_REVIEWED);
 
         if ($reply) {
-            $msg->setAdminReply($reply);
-            $msg->setRepliedBy($this->getUser());
-            $msg->setRepliedAt(new \DateTime());
+            // Create a new message as a reply in the conversation
+            $newMsg = new EvaluationMessage();
+            $newMsg->setSender($this->getUser());
+            $newMsg->setMessage($reply);
+            $newMsg->setSenderType('admin');
+            $newMsg->setParentMessage($parentMsg);
+            $newMsg->setSubject('Re: ' . $parentMsg->getSubject());
+            $newMsg->setStatus(EvaluationMessage::STATUS_REVIEWED);
+            $newMsg->setCreatedAt(new \DateTime());
+
+            $file = $request->files->get('attachment');
+            if ($file) {
+                $originalName = $file->getClientOriginalName();
+                $safeName = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
+                $newFilename = $safeName . '-' . uniqid() . '.' . $file->guessExtension();
+                $file->move(
+                    $this->getParameter('kernel.project_dir') . '/public/uploads/attachments',
+                    $newFilename
+                );
+                $newMsg->setAttachment($newFilename);
+                $newMsg->setAttachmentOriginalName($originalName);
+            }
+
+            $em->persist($newMsg);
         }
 
-        $file = $request->files->get('attachment');
-        if ($file) {
-            $originalName = $file->getClientOriginalName();
-            $safeName = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
-            $newFilename = $safeName . '-' . uniqid() . '.' . $file->guessExtension();
-            $file->move(
-                $this->getParameter('kernel.project_dir') . '/public/uploads/attachments',
-                $newFilename
-            );
-            $msg->setAttachment($newFilename);
-            $msg->setAttachmentOriginalName($originalName);
-        }
-
+        // Update parent message status
         if (in_array($status, [EvaluationMessage::STATUS_REVIEWED, EvaluationMessage::STATUS_RESOLVED])) {
-            $msg->setStatus($status);
+            $parentMsg->setStatus($status);
         }
 
         $em->flush();

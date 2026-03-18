@@ -35,7 +35,21 @@ class EvaluationMessageRepository extends ServiceEntityRepository
             ->addSelect('s')
             ->leftJoin('m.evaluationPeriod', 'e')
             ->addSelect('e')
+            ->andWhere('m.parentMessage IS NULL')
             ->orderBy('m.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return EvaluationMessage[] */
+    public function findRepliesForMessage(int $parentId): array
+    {
+        return $this->createQueryBuilder('m')
+            ->leftJoin('m.sender', 's')
+            ->addSelect('s')
+            ->andWhere('m.parentMessage = :parentId')
+            ->setParameter('parentId', $parentId)
+            ->orderBy('m.createdAt', 'ASC')
             ->getQuery()
             ->getResult();
     }
