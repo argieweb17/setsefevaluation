@@ -1,548 +1,474 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Evaluation Request | SET-SEF Evaluation{% endblock %}
+{% block title %}Messages | SET-SEF Evaluation{% endblock %}
 
 {% block stylesheets %}
 <style>
-/* ─── Header ─── */
-.rq-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
-.rq-header-inner{padding:22px 26px 18px;}
-.rq-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
-.rq-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.1);color:rgba(255,255,255,.82);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
-.rq-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);}
-.rq-stat{flex:1;text-align:center;}
-.rq-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
-.rq-stat-lbl{display:block;font-size:.6rem;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
-.rq-stat-divider{width:1px;background:rgba(255,255,255,.1);margin:0 2px;}
-.rq-val-accent{color:#34d399!important;}
+/* ═══════════════════════════════════════
+   MESSENGER CONTAINER
+   ═══════════════════════════════════════ */
+.msg-container{display:flex;height:calc(100vh - 120px);min-height:500px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);border:1px solid #e2e8f0;}
 
-/* ─── Tabs ─── */
-.rq-tabs{display:flex;gap:4px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:6px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
-.rq-tab{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border:none;background:none;font-size:.82rem;font-weight:600;color:#64748b;cursor:pointer;border-radius:8px;transition:all .2s;}
-.rq-tab:hover{color:#1e293b;background:#f8fafc;}
-.rq-tab.active{color:#fff;background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);box-shadow:0 2px 8px rgba(30,64,175,.25);}
-.rq-tab-count{font-size:.68rem;font-weight:700;padding:1px 7px;border-radius:10px;background:rgba(0,0,0,.06);color:#64748b;}
-.rq-tab.active .rq-tab-count{background:rgba(255,255,255,.2);color:#fff;}
-.rq-tab-count-warn{background:#FEF2F2!important;color:#DC2626!important;}
+/* ═══════════════════════════════════════
+   LEFT SIDEBAR - CONVERSATIONS
+   ═══════════════════════════════════════ */
+.msg-sidebar{width:320px;min-width:280px;background:#f8fafc;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;}
+.msg-sidebar-header{padding:16px 18px;background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);color:#fff;}
+.msg-sidebar-title{font-size:1rem;font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+.msg-sidebar-subtitle{font-size:.72rem;opacity:.8;margin:0;}
+.msg-search-wrap{padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#fff;}
+.msg-search{width:100%;padding:10px 14px 10px 38px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.82rem;outline:none;background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 12px center;transition:all .2s;}
+.msg-search:focus{border-color:#3b82f6;background-color:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 
-/* ─── Toolbar ─── */
-.rq-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
-.rq-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
-.rq-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
-.rq-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
-.rq-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
-.rq-toolbar-info{margin-left:auto;}
-.rq-result-count{font-size:.75rem;color:#9ca3af;font-weight:500;}
+/* Conversation List */
+.msg-conv-list{flex:1;overflow-y:auto;padding:8px;}
+.msg-conv-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;transition:all .15s;margin-bottom:4px;position:relative;}
+.msg-conv-item:hover{background:#e8f0fe;}
+.msg-conv-item.active{background:linear-gradient(135deg,#dbeafe,#e0e7ff);border-left:3px solid #2563eb;}
+.msg-conv-avatar{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#1E3A8A,#3B82F6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0;}
+.msg-conv-avatar.admin{background:linear-gradient(135deg,#059669,#10b981);}
+.msg-conv-info{flex:1;min-width:0;}
+.msg-conv-name{font-size:.85rem;font-weight:600;color:#1e293b;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.msg-conv-preview{font-size:.75rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.msg-conv-meta{text-align:right;flex-shrink:0;}
+.msg-conv-time{font-size:.68rem;color:#94a3b8;display:block;margin-bottom:4px;}
+.msg-conv-badge{display:inline-block;min-width:18px;height:18px;padding:0 6px;border-radius:10px;background:#ef4444;color:#fff;font-size:.65rem;font-weight:700;text-align:center;line-height:18px;}
+.msg-conv-status{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.65rem;font-weight:600;}
+.msg-status-pending{background:#fef3c7;color:#d97706;}
+.msg-status-reviewed{background:#dbeafe;color:#2563eb;}
+.msg-status-resolved{background:#dcfce7;color:#16a34a;}
 
-/* ─── Table ─── */
-.rq-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);margin-bottom:1rem;}
-.rq-table{width:100%;border-collapse:collapse;font-size:.82rem;}
-.rq-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;}
-.rq-table thead th{padding:10px 14px;font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none;cursor:default;user-select:none;}
-.rq-sort-label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:color .15s;}
-.rq-sort-label:hover{color:#1a56db;}
-.rq-sort-icon{font-size:.62rem;opacity:.35;transition:opacity .15s;}
-.rq-sort-label:hover .rq-sort-icon{opacity:.7;}
-.rq-table tbody tr.rq-row{border-bottom:1px solid #f1f5f9;transition:background .12s ease;}
-.rq-table tbody tr.rq-row:last-child{border-bottom:none;}
-.rq-table tbody tr.rq-row:hover{background:#f8faff;}
-.rq-table tbody td{padding:10px 14px;vertical-align:middle;}
-.rq-td-num{color:#94a3b8;font-size:.72rem;font-weight:600;text-align:center;}
-.rq-td-name{font-weight:600;color:#1e293b;}
-.rq-td-meta{color:#64748b;font-size:.78rem;}
+/* New Message Button */
+.msg-new-btn{margin:12px 14px;padding:12px;border-radius:12px;border:2px dashed #cbd5e1;background:#fff;color:#64748b;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.msg-new-btn:hover{border-color:#3b82f6;color:#2563eb;background:#eff6ff;}
 
-/* Subject avatar */
-.rq-subj-avatar{width:28px;height:28px;min-width:28px;border-radius:7px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;letter-spacing:.3px;}
+/* ═══════════════════════════════════════
+   RIGHT PANEL - CHAT AREA
+   ═══════════════════════════════════════ */
+.msg-chat-area{flex:1;display:flex;flex-direction:column;background:#fff;}
+.msg-chat-header{padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;}
+.msg-chat-header-left{display:flex;align-items:center;gap:12px;}
+.msg-chat-avatar{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;}
+.msg-chat-title{font-size:.95rem;font-weight:700;color:#1e293b;margin:0;}
+.msg-chat-status{font-size:.72rem;color:#10b981;display:flex;align-items:center;gap:4px;}
+.msg-chat-status i{font-size:.5rem;}
 
-/* ─── Type Badges ─── */
-.rq-type-badge{display:inline-block;padding:3px 12px;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
-.rq-type-set{background:#EFF6FF;color:#2563EB;}
-.rq-type-sef{background:#F0FDF4;color:#16A34A;}
+/* Chat Messages */
+.msg-chat-body{flex:1;overflow-y:auto;padding:20px;background:linear-gradient(180deg,#f8fafc 0%,#fff 100%);display:flex;flex-direction:column;gap:12px;}
+.msg-bubble-wrap{display:flex;flex-direction:column;max-width:75%;}
+.msg-bubble-wrap.sent{align-self:flex-end;align-items:flex-end;}
+.msg-bubble-wrap.received{align-self:flex-start;align-items:flex-start;}
+.msg-bubble{padding:12px 16px;border-radius:16px;font-size:.84rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05);}
+.msg-bubble-wrap.sent .msg-bubble{background:linear-gradient(135deg,#1E3A8A,#2563eb);color:#fff;border-bottom-right-radius:4px;}
+.msg-bubble-wrap.received .msg-bubble{background:#f1f5f9;color:#1e293b;border:1px solid #e2e8f0;border-bottom-left-radius:4px;}
+.msg-bubble-subject{font-weight:600;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.2);font-size:.78rem;opacity:.9;}
+.msg-bubble-wrap.received .msg-bubble-subject{border-color:#e2e8f0;color:#475569;}
+.msg-bubble-time{font-size:.68rem;color:#94a3b8;margin-top:4px;display:flex;align-items:center;gap:6px;}
+.msg-bubble-wrap.sent .msg-bubble-time{justify-content:flex-end;}
+.msg-bubble-sender{font-size:.72rem;font-weight:600;color:#64748b;margin-bottom:4px;}
 
-/* ─── Pills ─── */
-.rq-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.rq-pill-section{background:#eef2ff;color:#4338ca;}
-.rq-pill-general{background:#f1f5f9;color:#64748b;}
+/* Date Divider */
+.msg-date-divider{display:flex;align-items:center;justify-content:center;margin:16px 0;gap:16px;}
+.msg-date-divider::before,.msg-date-divider::after{content:'';flex:1;height:1px;background:#e2e8f0;}
+.msg-date-divider span{font-size:.72rem;color:#94a3b8;font-weight:500;padding:4px 12px;background:#f1f5f9;border-radius:12px;}
 
-/* ─── Status Tags ─── */
-.rq-status-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.rq-status-tag i{font-size:.4rem;}
-.rq-status-open{background:rgba(16,185,129,.1);color:#059669;}
-.rq-status-closed{background:rgba(239,68,68,.08);color:#ef4444;}
+/* Empty Chat State */
+.msg-empty-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;text-align:center;padding:40px;}
+.msg-empty-icon{width:80px;height:80px;border-radius:20px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:16px;}
+.msg-empty-title{font-size:1.1rem;font-weight:600;color:#64748b;margin-bottom:4px;}
+.msg-empty-text{font-size:.84rem;max-width:300px;}
 
-/* ─── Evaluator Badge ─── */
-.rq-evaluator-badge{display:inline-block;min-width:28px;padding:2px 10px;border-radius:6px;font-size:.75rem;font-weight:600;background:#EFF6FF;color:#2563EB;text-align:center;}
+/* ═══════════════════════════════════════
+   COMPOSE MESSAGE INPUT
+   ═══════════════════════════════════════ */
+.msg-compose{padding:16px 20px;background:#fff;border-top:1px solid #e2e8f0;}
+.msg-compose-form{display:flex;flex-direction:column;gap:10px;}
+.msg-compose-row{display:flex;align-items:flex-end;gap:10px;}
+.msg-input-wrap{flex:1;position:relative;}
+.msg-input{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.84rem;outline:none;resize:none;min-height:46px;max-height:120px;font-family:inherit;transition:all .2s;}
+.msg-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.msg-input::placeholder{color:#94a3b8;}
+.msg-subject-input{padding:10px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.82rem;outline:none;width:100%;transition:all .2s;margin-bottom:8px;}
+.msg-subject-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.msg-send-btn{width:46px;height:46px;border-radius:12px;border:none;background:linear-gradient(135deg,#1E3A8A,#2563eb);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s;flex-shrink:0;}
+.msg-send-btn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(37,99,235,.3);}
+.msg-send-btn:disabled{background:#cbd5e1;cursor:not-allowed;transform:none;}
+.msg-eval-select{padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.78rem;outline:none;background:#f8fafc;cursor:pointer;}
+.msg-eval-select:focus{border-color:#3b82f6;}
 
-/* ─── Message Status ─── */
-.rq-msg-status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.rq-msg-pending{background:#FFF7ED;color:#EA580C;}
-.rq-msg-reviewed{background:#EFF6FF;color:#2563EB;}
-.rq-msg-resolved{background:#F0FDF4;color:#16A34A;}
+/* ═══════════════════════════════════════
+   NEW MESSAGE MODAL
+   ═══════════════════════════════════════ */
+.msg-modal-header{background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);padding:18px 24px;display:flex;align-items:center;gap:12px;}
+.msg-modal-icon{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;}
+.msg-modal-title{color:#fff;font-weight:700;font-size:1rem;margin:0;}
+.msg-modal-body{padding:24px;}
+.msg-form-group{margin-bottom:16px;}
+.msg-form-label{display:block;font-size:.78rem;font-weight:600;color:#475569;margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px;}
+.msg-form-input{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.84rem;outline:none;transition:all .2s;}
+.msg-form-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.msg-form-select{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.84rem;outline:none;background:#fff;cursor:pointer;}
+.msg-form-textarea{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.84rem;outline:none;resize:vertical;min-height:100px;font-family:inherit;}
+.msg-form-textarea:focus,.msg-form-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
+.msg-modal-footer{padding:16px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;}
+.msg-btn{padding:10px 20px;border-radius:10px;font-size:.84rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;}
+.msg-btn-secondary{background:#e2e8f0;color:#475569;}
+.msg-btn-secondary:hover{background:#cbd5e1;}
+.msg-btn-primary{background:linear-gradient(135deg,#1E3A8A,#2563eb);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.2);}
+.msg-btn-primary:hover{box-shadow:0 4px 16px rgba(37,99,235,.3);transform:translateY(-1px);}
 
-/* ─── Message Row Expandable ─── */
-.rq-msg-row{cursor:pointer;}
-.rq-detail-row{background:#f8fafc;}
-.rq-detail-row td{padding:0!important;}
-.rq-detail-content{padding:14px 20px 18px 54px;}
-.rq-detail-section{margin-bottom:12px;}
-.rq-detail-section:last-child{margin-bottom:0;}
-.rq-detail-label{font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
-.rq-detail-text{font-size:.82rem;color:#1e293b;line-height:1.6;white-space:pre-wrap;}
-.rq-detail-reply{background:#F0FDF4;border-radius:8px;padding:12px 14px;border-left:3px solid #16A34A;}
-.rq-detail-by{font-size:.68rem;color:#94a3b8;font-weight:500;text-transform:none;letter-spacing:0;}
-
-/* ─── Compose Form ─── */
-.rq-compose-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
-.rq-compose-header{padding:16px 22px;background:linear-gradient(135deg,#f8fafc,#f1f5f9);border-bottom:2px solid #e2e8f0;display:flex;align-items:center;gap:12px;}
-.rq-compose-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
-.rq-compose-form{padding:22px;}
-.rq-form-group{margin-bottom:1.15rem;}
-.rq-form-label{display:block;font-size:.76rem;font-weight:600;color:#475569;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
-.rq-input-wrap{position:relative;}
-.rq-input-wrap>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.85rem;pointer-events:none;z-index:1;}
-.rq-form-input,.rq-form-select{width:100%;padding:9px 14px 9px 36px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.82rem;color:#1e293b;background:#fafbfc;transition:border-color .2s,box-shadow .2s;outline:none;}
-.rq-form-textarea{width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.82rem;color:#1e293b;background:#fafbfc;transition:border-color .2s,box-shadow .2s;outline:none;resize:vertical;min-height:100px;}
-.rq-form-input:focus,.rq-form-select:focus,.rq-form-textarea:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1);background:#fff;}
-.rq-form-select{appearance:auto;}
-
-/* ─── Buttons ─── */
-.rq-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:8px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .2s;}
-.rq-btn-primary{background:linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.2);}
-.rq-btn-primary:hover{box-shadow:0 4px 16px rgba(30,64,175,.3);transform:translateY(-1px);}
-.rq-btn-secondary{background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0;}
-.rq-btn-secondary:hover{background:#e2e8f0;color:#475569;}
-
-/* ─── Delete Button ─── */
-.rq-delete-btn{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1.5px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:.78rem;cursor:pointer;transition:all .2s;}
-.rq-delete-btn:hover{background:#FEE2E2;border-color:#F87171;transform:translateY(-1px);box-shadow:0 2px 8px rgba(220,38,38,.15);}
-
-/* ─── Delete Modal ─── */
-.rq-modal-header-danger{background:linear-gradient(135deg,#991B1B,#DC2626 50%,#F87171);padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between;}
-.rq-modal-icon{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;backdrop-filter:blur(4px);}
-.rq-delete-preview{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 14px;}
-.rq-delete-preview-subject{font-size:.82rem;font-weight:600;color:#1E293B;margin-bottom:2px;}
-.rq-delete-preview-date{font-size:.72rem;color:#94A3B8;}
-
-/* ─── Empty ─── */
-.rq-empty{text-align:center;padding:3rem 1rem;color:#94a3b8;}
-.rq-empty-icon{width:64px;height:64px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:1.6rem;color:#94a3b8;}
-.rq-no-results{text-align:center;padding:24px;color:#94a3b8;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;}
-
-/* ─── Flash ─── */
-.rq-flash{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;font-size:.82rem;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.1);display:flex;align-items:center;animation:rqFlashIn .3s ease;}
-.rq-flash-success{background:#F0FDF4;color:#16A34A;border:1px solid #bbf7d0;}
-.rq-flash-error{background:#FEF2F2;color:#DC2626;border:1px solid #fecaca;}
-@keyframes rqFlashIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-
-/* ─── Responsive ─── */
+/* ═══════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════ */
 @media(max-width:768px){
-    .rq-header-inner{padding:16px 18px 14px;}
-    .rq-header-icon{width:42px;height:42px;font-size:1.1rem;border-radius:11px;}
-    .rq-tabs{flex-wrap:nowrap;overflow-x:auto;padding:4px;border-radius:10px;}
-    .rq-tab{white-space:nowrap;padding:7px 12px;font-size:.76rem;border-radius:6px;}
-    .rq-search-wrap{max-width:100%;}
-    .rq-table{font-size:.75rem;}
-    .rq-table thead th{padding:8px 10px;font-size:.62rem;}
-    .rq-table tbody td{padding:8px 10px;}
-    .rq-detail-content{padding:10px 12px 14px 12px;}
-    .rq-compose-form{padding:16px;}
+    .msg-container{flex-direction:column;height:auto;min-height:calc(100vh - 100px);}
+    .msg-sidebar{width:100%;min-width:100%;max-height:300px;border-right:none;border-bottom:1px solid #e2e8f0;}
+    .msg-conv-list{max-height:200px;}
+    .msg-chat-body{min-height:300px;}
+    .msg-bubble-wrap{max-width:90%;}
 }
 
-/* ─── Animations ─── */
-.rq-header,.rq-tabs,.rq-toolbar,.rq-table-wrap,.rq-compose-wrap{animation:rqFadeIn .25s ease;}
-@keyframes rqFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* Animations */
+.msg-bubble-wrap{animation:msgFadeIn .2s ease;}
+@keyframes msgFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 {% endblock %}
 
 {% block body %}
-
 {% set pendingMsgs = messages|filter(m => m.status == 'pending')|length %}
 
-{# ── Gradient Header Card ── #}
-<div class="rq-header">
-    <div class="rq-header-inner">
-        <div class="d-flex align-items-center gap-3">
-            <div class="rq-header-icon"><i class="bi bi-send-fill"></i></div>
-            <div>
-                <h5 class="mb-0 text-white fw-bold" style="font-size:1.1rem;">Evaluation Request</h5>
-                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                    <span class="rq-meta-pill" style="font-size:.72rem;"><i class="bi bi-calendar-event me-1"></i>{{ periods|length }} period{{ periods|length != 1 ? 's' : '' }}</span>
-                    <span class="rq-meta-pill" style="font-size:.72rem;"><i class="bi bi-chat-dots me-1"></i>{{ messages|length }} message{{ messages|length != 1 ? 's' : '' }}</span>
+<div class="msg-container">
+    {# ═══════ LEFT SIDEBAR ═══════ #}
+    <div class="msg-sidebar">
+        <div class="msg-sidebar-header">
+            <h5 class="msg-sidebar-title"><i class="bi bi-chat-dots-fill"></i> Messages</h5>
+            <p class="msg-sidebar-subtitle">{{ messages|length }} conversation{{ messages|length != 1 ? 's' : '' }}</p>
+        </div>
+
+        <div class="msg-search-wrap">
+            <input type="text" class="msg-search" placeholder="Search messages..." id="msgSearch" oninput="filterConversations()">
+        </div>
+
+        <button class="msg-new-btn" data-bs-toggle="modal" data-bs-target="#newMessageModal">
+            <i class="bi bi-plus-lg"></i> New Message
+        </button>
+
+        <div class="msg-conv-list" id="convList">
+            {% for msg in messages %}
+            <div class="msg-conv-item{% if loop.first %} active{% endif %}"
+                 data-msg-id="{{ msg.id }}"
+                 data-search="{{ msg.subject|lower }} {{ msg.message|lower }}"
+                 onclick="selectConversation(this, {{ msg.id }})">
+                <div class="msg-conv-avatar admin">
+                    <i class="bi bi-shield-check"></i>
                 </div>
-            </div>
-        </div>
-        <div class="rq-stats-row">
-            <div class="rq-stat">
-                <span class="rq-stat-val">{{ periods|length }}</span>
-                <span class="rq-stat-lbl">Periods</span>
-            </div>
-            <div class="rq-stat-divider"></div>
-            <div class="rq-stat">
-                <span class="rq-stat-val rq-val-accent">{{ messages|length }}</span>
-                <span class="rq-stat-lbl">Messages</span>
-            </div>
-            <div class="rq-stat-divider"></div>
-            <div class="rq-stat">
-                <span class="rq-stat-val" style="color:#fbbf24;">{{ pendingMsgs }}</span>
-                <span class="rq-stat-lbl">Pending</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# ═══════ TABS ═══════ #}
-<div class="rq-tabs">
-    <button class="rq-tab active" data-tab="periods" onclick="rqSwitchTab('periods')">
-        <i class="bi bi-calendar-event"></i> Evaluation Periods
-        <span class="rq-tab-count">{{ periods|length }}</span>
-    </button>
-    <button class="rq-tab" data-tab="messages" onclick="rqSwitchTab('messages')">
-        <i class="bi bi-chat-dots"></i> My Messages
-        <span class="rq-tab-count{% if pendingMsgs > 0 %} rq-tab-count-warn{% endif %}">{{ messages|length }}</span>
-    </button>
-    <button class="rq-tab" data-tab="compose" onclick="rqSwitchTab('compose')">
-        <i class="bi bi-pencil-square"></i> Send Message
-    </button>
-</div>
-
-{# ═══════ TAB 1: EVALUATION PERIODS ═══════ #}
-<div class="rq-panel" id="panel-periods">
-    {% if periods|length > 0 %}
-    <div class="rq-toolbar">
-        <div class="rq-search-wrap">
-            <i class="bi bi-search"></i>
-            <input type="text" class="rq-search" id="rqPeriodSearch" placeholder="Search evaluations..." oninput="rqFilterPeriods()">
-        </div>
-        <div class="rq-toolbar-info">
-            <span class="rq-result-count" id="rqResultCount">{{ periods|length }} result{{ periods|length != 1 ? 's' : '' }}</span>
-        </div>
-    </div>
-
-    <div class="rq-table-wrap">
-        <table class="rq-table" id="rqPeriodTable">
-            <thead>
-                <tr>
-                    <th style="width:40px">#</th>
-                    <th><span class="rq-sort-label" onclick="rqSortPeriods('type')">Type <i class="bi bi-arrow-down-up rq-sort-icon" data-col="type"></i></span></th>
-                    <th><span class="rq-sort-label" onclick="rqSortPeriods('period')">Period <i class="bi bi-arrow-down-up rq-sort-icon" data-col="period"></i></span></th>
-                    <th>Subject</th>
-                    <th>Date Range</th>
-                    <th class="text-center"><span class="rq-sort-label" onclick="rqSortPeriods('evaluators')">Evaluators <i class="bi bi-arrow-down-up rq-sort-icon" data-col="evaluators"></i></span></th>
-                    <th class="text-center">Section</th>
-                    <th class="text-center">Year Level</th>
-                    <th class="text-center">Status</th>
-                </tr>
-            </thead>
-            <tbody id="rqPeriodBody">
-                {% for item in periods %}
-                {% set eval = item.evaluation %}
-                <tr class="rq-row"
-                    data-search="{{ eval.evaluationType|lower }} {{ eval.semester|default('')|lower }} {{ eval.schoolYear|default('')|lower }} {{ eval.subject|default('')|lower }} {{ eval.section|default('')|lower }}"
-                    data-sort-type="{{ eval.evaluationType|lower }}"
-                    data-sort-period="{{ eval.semester|default('')|lower }} {{ eval.schoolYear|default('')|lower }}"
-                    data-sort-evaluators="{{ item.evaluators }}">
-                    <td class="rq-td-num">{{ loop.index }}</td>
-                    <td>
-                        <span class="rq-type-badge rq-type-{{ eval.evaluationType|lower }}">{{ eval.evaluationType }}</span>
-                    </td>
-                    <td class="rq-td-name">{{ eval.semester ?? 'N/A' }} — {{ eval.schoolYear ?? 'N/A' }}</td>
-                    <td class="rq-td-meta">
-                        {% if eval.subject %}
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="rq-subj-avatar">{{ eval.subject|slice(0,2)|upper }}</div>
-                                <span>{{ eval.subject }}</span>
-                            </div>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="rq-td-meta">
-                        <i class="bi bi-calendar3 me-1" style="color:#94a3b8;"></i>{{ eval.startDate|date('M d, Y') }} – {{ eval.endDate|date('M d, Y') }}
-                    </td>
-                    <td class="text-center">
-                        <span class="rq-evaluator-badge">{{ item.evaluators }}</span>
-                    </td>
-                    <td class="text-center">
-                        {% if eval.section %}
-                            <span class="rq-pill rq-pill-section">{{ eval.section|upper }}</span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-center rq-td-meta">{{ eval.yearLevel ?? '—' }}</td>
-                    <td class="text-center">
-                        {% if eval.isOpen() %}
-                            <span class="rq-status-tag rq-status-open"><i class="bi bi-circle-fill"></i> Open</span>
-                        {% else %}
-                            <span class="rq-status-tag rq-status-closed"><i class="bi bi-circle-fill"></i> Closed</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="rq-no-results" id="rqNoResults" style="display:none;">
-        <i class="bi bi-search me-2"></i>No evaluations match your search.
-    </div>
-    {% else %}
-    <div class="rq-table-wrap">
-        <div class="rq-empty">
-            <div class="rq-empty-icon"><i class="bi bi-calendar-x"></i></div>
-            <h6 class="fw-semibold text-muted">No evaluation periods found</h6>
-            <p class="text-muted mb-0" style="font-size:.82rem">Evaluation periods will appear here when created by the administrator.</p>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-{# ═══════ TAB 2: MY MESSAGES ═══════ #}
-<div class="rq-panel" id="panel-messages" style="display:none">
-    {% if messages|length > 0 %}
-    <div class="rq-table-wrap">
-        <table class="rq-table">
-            <thead>
-                <tr>
-                    <th style="width:40px">#</th>
-                    <th>Subject</th>
-                    <th>Related Evaluation</th>
-                    <th>Date Sent</th>
-                    <th class="text-center">Status</th>
-                    <th>Admin Reply</th>
-                    <th class="text-center" style="width:60px">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for msg in messages %}
-                <tr class="rq-row rq-msg-row" onclick="rqToggleMsg(this)">
-                    <td class="rq-td-num">{{ loop.index }}</td>
-                    <td class="rq-td-name">{{ msg.subject }}</td>
-                    <td class="rq-td-meta">
-                        {% if msg.evaluationPeriod %}
-                            {{ msg.evaluationPeriod.evaluationType }} — {{ msg.evaluationPeriod.semester ?? '' }} {{ msg.evaluationPeriod.schoolYear ?? '' }}
-                        {% else %}
-                            <span class="rq-pill rq-pill-general">General</span>
-                        {% endif %}
-                    </td>
-                    <td class="rq-td-meta">{{ msg.createdAt|date('M d, Y h:ia') }}</td>
-                    <td class="text-center">
-                        {% if msg.status == 'pending' %}
-                            <span class="rq-msg-status rq-msg-pending"><i class="bi bi-clock"></i> Pending</span>
-                        {% elseif msg.status == 'reviewed' %}
-                            <span class="rq-msg-status rq-msg-reviewed"><i class="bi bi-eye"></i> Reviewed</span>
-                        {% else %}
-                            <span class="rq-msg-status rq-msg-resolved"><i class="bi bi-check-circle"></i> Resolved</span>
-                        {% endif %}
-                    </td>
-                    <td class="rq-td-meta">
+                <div class="msg-conv-info">
+                    <div class="msg-conv-name">{{ msg.subject|length > 25 ? msg.subject|slice(0,25) ~ '...' : msg.subject }}</div>
+                    <div class="msg-conv-preview">
                         {% if msg.adminReply %}
-                            <span style="color:#059669;font-weight:600;"><i class="bi bi-reply-fill me-1"></i>Replied</span>
+                            <i class="bi bi-reply-fill"></i> {{ msg.adminReply|slice(0,30) }}...
                         {% else %}
-                            <span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Awaiting</span>
+                            {{ msg.message|slice(0,35) }}{% if msg.message|length > 35 %}...{% endif %}
                         {% endif %}
-                    </td>
-                    <td class="text-center" onclick="event.stopPropagation()">
-                        <button type="button" class="rq-delete-btn" title="Delete message"
-                                data-bs-toggle="modal" data-bs-target="#deleteMsg{{ msg.id }}">
-                            <i class="bi bi-trash3"></i>
-                        </button>
-                    </td>
-                </tr>
-                {# Expandable detail row #}
-                <tr class="rq-detail-row" style="display:none">
-                    <td colspan="7">
-                        <div class="rq-detail-content">
-                            <div class="rq-detail-section">
-                                <div class="rq-detail-label"><i class="bi bi-chat-left-text"></i> Your Message</div>
-                                <div class="rq-detail-text">{{ msg.message|nl2br }}</div>
-                            </div>
-                            {% if msg.adminReply %}
-                            <div class="rq-detail-section rq-detail-reply">
-                                <div class="rq-detail-label"><i class="bi bi-reply-fill"></i> Admin Reply
-                                    {% if msg.repliedBy %}
-                                        <span class="rq-detail-by">by {{ msg.repliedBy.fullName }}</span>
-                                    {% endif %}
-                                    {% if msg.repliedAt %}
-                                        <span class="rq-detail-by">• {{ msg.repliedAt|date('M d, Y h:ia') }}</span>
-                                    {% endif %}
-                                </div>
-                                <div class="rq-detail-text">{{ msg.adminReply|nl2br }}</div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {# Delete Confirmation Modals #}
-    {% for msg in messages %}
-    <div class="modal fade" id="deleteMsg{{ msg.id }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-sm modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-                <form method="post" action="{{ path('faculty_eval_request') }}">
-                    <input type="hidden" name="_action" value="delete_message">
-                    <input type="hidden" name="msg_id" value="{{ msg.id }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('delete_msg' ~ msg.id) }}">
-                    <div class="rq-modal-header-danger">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="rq-modal-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
-                            <h6 class="modal-title text-white fw-bold mb-0">Delete Message</h6>
-                        </div>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body p-4">
-                        <p class="small text-muted mb-2">Are you sure you want to delete this message?</p>
-                        <div class="rq-delete-preview">
-                            <div class="rq-delete-preview-subject"><i class="bi bi-tag me-1"></i>{{ msg.subject }}</div>
-                            <div class="rq-delete-preview-date"><i class="bi bi-clock me-1"></i>{{ msg.createdAt|date('M d, Y h:i A') }}</div>
-                        </div>
-                        <p class="small text-danger mb-0 mt-2"><i class="bi bi-info-circle me-1"></i>This action cannot be undone.</p>
-                    </div>
-                    <div class="modal-footer border-top-0" style="background:#f8fafc;padding:.75rem 1.25rem;">
-                        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3 me-1"></i>Delete</button>
-                    </div>
-                </form>
+                </div>
+                <div class="msg-conv-meta">
+                    <span class="msg-conv-time">{{ msg.createdAt|date('M d') }}</span>
+                    <span class="msg-conv-status msg-status-{{ msg.status }}">
+                        {% if msg.status == 'pending' %}Pending
+                        {% elseif msg.status == 'reviewed' %}Reviewed
+                        {% else %}Resolved{% endif %}
+                    </span>
+                </div>
             </div>
+            {% else %}
+            <div class="msg-empty-chat" style="padding:30px 20px;">
+                <div class="msg-empty-icon" style="width:60px;height:60px;font-size:1.4rem;margin-bottom:12px;">
+                    <i class="bi bi-chat-square-dots"></i>
+                </div>
+                <div class="msg-empty-title" style="font-size:.9rem;">No messages yet</div>
+                <div class="msg-empty-text" style="font-size:.78rem;">Start a new conversation with the admin</div>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
 
-    {% else %}
-    <div class="rq-table-wrap">
-        <div class="rq-empty">
-            <div class="rq-empty-icon"><i class="bi bi-chat-dots"></i></div>
-            <h6 class="fw-semibold text-muted">No messages yet</h6>
-            <p class="text-muted mb-0" style="font-size:.82rem">Send a message to the administrator using the "Send Message" tab.</p>
-        </div>
-    </div>
-    {% endif %}
-</div>
+    {# ═══════ RIGHT CHAT AREA ═══════ #}
+    <div class="msg-chat-area">
+        {% if messages|length > 0 %}
+        {% set firstMsg = messages|first %}
 
-{# ═══════ TAB 3: COMPOSE MESSAGE ═══════ #}
-<div class="rq-panel" id="panel-compose" style="display:none">
-    <div class="rq-compose-wrap">
-        <div class="rq-compose-header">
-            <div class="rq-compose-icon"><i class="bi bi-pencil-square"></i></div>
+        <div class="msg-chat-header" id="chatHeader">
+            <div class="msg-chat-header-left">
+                <div class="msg-chat-avatar">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <h6 class="msg-chat-title" id="chatTitle">{{ firstMsg.subject }}</h6>
+                    <div class="msg-chat-status" id="chatStatus">
+                        <i class="bi bi-circle-fill"></i>
+                        {% if firstMsg.status == 'resolved' %}Resolved{% elseif firstMsg.status == 'reviewed' %}Reviewed{% else %}Awaiting Response{% endif %}
+                    </div>
+                </div>
+            </div>
             <div>
-                <h6 class="mb-0 fw-bold" style="font-size:.92rem;color:#1e293b;">New Message</h6>
-                <span style="font-size:.72rem;color:#64748b;">Send a message to Admin / Staff</span>
+                {% if firstMsg.evaluationPeriod %}
+                <span class="badge bg-primary-subtle text-primary" style="font-size:.72rem;" id="chatEval">
+                    <i class="bi bi-clipboard2-check me-1"></i>{{ firstMsg.evaluationPeriod.evaluationType }} - {{ firstMsg.evaluationPeriod.semester ?? '' }} {{ firstMsg.evaluationPeriod.schoolYear ?? '' }}
+                </span>
+                {% endif %}
             </div>
         </div>
-        <form method="post" action="{{ path('faculty_eval_request') }}" class="rq-compose-form">
-            <input type="hidden" name="_action" value="send_message">
 
-            <div class="rq-form-group">
-                <label class="rq-form-label">Related Evaluation <span class="text-muted" style="font-size:.7rem;text-transform:none;">(optional)</span></label>
-                <div class="rq-input-wrap">
-                    <i class="bi bi-calendar-event"></i>
-                    <select name="msg_evaluation" class="rq-form-select">
-                        <option value="">— General Inquiry —</option>
-                        {% for eval in evaluations %}
-                            <option value="{{ eval.id }}">{{ eval.evaluationType }} — {{ eval.semester ?? '' }} {{ eval.schoolYear ?? '' }}{% if eval.subject %} ({{ eval.subject }}){% endif %}</option>
-                        {% endfor %}
-                    </select>
+        <div class="msg-chat-body" id="chatBody">
+            {% for msg in messages %}
+            <div class="msg-thread" id="thread-{{ msg.id }}"{% if not loop.first %} style="display:none"{% endif %}>
+                <div class="msg-date-divider">
+                    <span>{{ msg.createdAt|date('F d, Y') }}</span>
                 </div>
-            </div>
 
-            <div class="rq-form-group">
-                <label class="rq-form-label">Subject <span class="text-danger">*</span></label>
-                <div class="rq-input-wrap">
-                    <i class="bi bi-tag"></i>
-                    <input type="text" name="msg_subject" class="rq-form-input" placeholder="e.g. Request for evaluation schedule change" required maxlength="255">
+                {# Faculty's message (sent) #}
+                <div class="msg-bubble-wrap sent">
+                    <div class="msg-bubble">
+                        <div class="msg-bubble-subject"><i class="bi bi-tag me-1"></i>{{ msg.subject }}</div>
+                        {{ msg.message }}
+                    </div>
+                    <div class="msg-bubble-time">
+                        {{ msg.createdAt|date('h:i A') }}
+                        <i class="bi bi-check2-all" style="color:#60a5fa;"></i>
+                    </div>
                 </div>
-            </div>
 
-            <div class="rq-form-group">
-                <label class="rq-form-label">Message <span class="text-danger">*</span></label>
-                <textarea name="msg_body" class="rq-form-textarea" rows="5" placeholder="Describe your request or concern in detail..." required></textarea>
+                {# Admin's reply (received) #}
+                {% if msg.adminReply %}
+                <div class="msg-bubble-wrap received">
+                    <div class="msg-bubble-sender"><i class="bi bi-shield-check me-1"></i>Admin{% if msg.repliedBy %} ({{ msg.repliedBy.fullName }}){% endif %}</div>
+                    <div class="msg-bubble">
+                        {{ msg.adminReply }}
+                    </div>
+                    <div class="msg-bubble-time">
+                        {% if msg.repliedAt %}{{ msg.repliedAt|date('h:i A') }}{% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="msg-bubble-wrap received">
+                    <div class="msg-bubble" style="background:#fef3c7;border-color:#fde68a;color:#92400e;">
+                        <i class="bi bi-hourglass-split me-1"></i> Waiting for admin response...
+                    </div>
+                </div>
+                {% endif %}
             </div>
+            {% endfor %}
+        </div>
 
-            <div class="d-flex justify-content-end gap-2">
-                <button type="reset" class="rq-btn rq-btn-secondary">
-                    <i class="bi bi-x-lg"></i> Clear
-                </button>
-                <button type="submit" class="rq-btn rq-btn-primary">
-                    <i class="bi bi-send-fill"></i> Send Message
-                </button>
+        {# Quick reply for existing conversation #}
+        <div class="msg-compose" id="msgCompose" style="display:none;">
+            <form method="post" action="{{ path('faculty_eval_request') }}" class="msg-compose-form">
+                <input type="hidden" name="_action" value="send_message">
+                <input type="hidden" name="msg_evaluation" value="" id="replyEvalId">
+                <input type="hidden" name="reply_to" value="" id="replyToId">
+                <div class="msg-compose-row">
+                    <div class="msg-input-wrap">
+                        <input type="text" name="msg_subject" class="msg-subject-input" placeholder="Subject..." required id="replySubject">
+                        <textarea name="msg_body" class="msg-input" placeholder="Type your message..." rows="1" required></textarea>
+                    </div>
+                    <button type="submit" class="msg-send-btn" title="Send">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% else %}
+        <div class="msg-empty-chat">
+            <div class="msg-empty-icon">
+                <i class="bi bi-chat-square-dots"></i>
             </div>
-        </form>
+            <h5 class="msg-empty-title">No conversations yet</h5>
+            <p class="msg-empty-text">Send a message to the administration to get started</p>
+            <button class="msg-btn msg-btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#newMessageModal">
+                <i class="bi bi-plus-lg me-1"></i> Start Conversation
+            </button>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-{# ─── Flash Messages ─── #}
-{% for label, msgs in app.flashes %}
-<div class="rq-flash rq-flash-{{ label }}" style="display:none" id="rqFlash">
-    <i class="bi bi-{% if label == 'success' %}check-circle-fill{% else %}exclamation-triangle-fill{% endif %} me-2"></i>
-    {% for m in msgs %}{{ m }}{% endfor %}
+{# ═══════ NEW MESSAGE MODAL ═══════ #}
+<div class="modal fade" id="newMessageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path('faculty_eval_request') }}">
+                <input type="hidden" name="_action" value="send_message">
+
+                <div class="msg-modal-header">
+                    <div class="msg-modal-icon">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <h5 class="msg-modal-title">New Message</h5>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="msg-modal-body">
+                    <div class="msg-form-group">
+                        <label class="msg-form-label">Related Evaluation <span class="text-muted" style="font-weight:400;text-transform:none;">(optional)</span></label>
+                        <select name="msg_evaluation" class="msg-form-select">
+                            <option value="">— General Inquiry —</option>
+                            {% for eval in evaluations %}
+                                <option value="{{ eval.id }}">{{ eval.evaluationType }} — {{ eval.semester ?? '' }} {{ eval.schoolYear ?? '' }}{% if eval.subject %} ({{ eval.subject }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="msg-form-group">
+                        <label class="msg-form-label">Subject <span class="text-danger">*</span></label>
+                        <input type="text" name="msg_subject" class="msg-form-input" placeholder="e.g., Request for schedule change" required maxlength="255">
+                    </div>
+
+                    <div class="msg-form-group mb-0">
+                        <label class="msg-form-label">Message <span class="text-danger">*</span></label>
+                        <textarea name="msg_body" class="msg-form-textarea" rows="4" placeholder="Type your message here..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="msg-modal-footer">
+                    <button type="button" class="msg-btn msg-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="msg-btn msg-btn-primary">
+                        <i class="bi bi-send-fill me-1"></i> Send Message
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ═══════ DELETE CONFIRMATION MODALS ═══════ #}
+{% for msg in messages %}
+<div class="modal fade" id="deleteMsg{{ msg.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
+            <form method="post" action="{{ path('faculty_eval_request') }}">
+                <input type="hidden" name="_action" value="delete_message">
+                <input type="hidden" name="msg_id" value="{{ msg.id }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete_msg' ~ msg.id) }}">
+                <div class="modal-header bg-danger text-white py-3">
+                    <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Delete Message</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-2">Delete this conversation?</p>
+                    <div class="p-3 bg-light rounded">
+                        <strong class="d-block small">{{ msg.subject }}</strong>
+                        <small class="text-muted">{{ msg.createdAt|date('M d, Y h:i A') }}</small>
+                    </div>
+                    <p class="small text-danger mb-0 mt-2"><i class="bi bi-info-circle me-1"></i>This cannot be undone.</p>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3 me-1"></i>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endfor %}
 
-{# ═══════════════════════════════════════
-   SCOPED STYLES
-   ═══════════════════════════════════════ #}
+{# ─── Flash Messages ─── #}
+{% for label, msgs in app.flashes %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index:9999;">
+    <div class="toast show align-items-center text-white bg-{{ label == 'error' ? 'danger' : label }}" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                {% for m in msgs %}{{ m }}{% endfor %}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
-{# ─── Script ─── #}
 <script>
-function rqSwitchTab(tab){
-    document.querySelectorAll('.rq-tab').forEach(function(t){t.classList.remove('active')});
-    document.querySelectorAll('.rq-panel').forEach(function(p){p.style.display='none'});
-    document.querySelector('.rq-tab[data-tab="'+tab+'"]').classList.add('active');
-    document.getElementById('panel-'+tab).style.display='block';
-}
+// Store message data
+const messagesData = {
+    {% for msg in messages %}
+    {{ msg.id }}: {
+        id: {{ msg.id }},
+        subject: "{{ msg.subject|e('js') }}",
+        message: "{{ msg.message|e('js')|replace({"\n": "\\n", "\r": ""}) }}",
+        status: "{{ msg.status }}",
+        createdAt: "{{ msg.createdAt|date('M d, Y h:i A') }}",
+        adminReply: {% if msg.adminReply %}"{{ msg.adminReply|e('js')|replace({"\n": "\\n", "\r": ""}) }}"{% else %}null{% endif %},
+        repliedBy: {% if msg.repliedBy %}"{{ msg.repliedBy.fullName|e('js') }}"{% else %}null{% endif %},
+        repliedAt: {% if msg.repliedAt %}"{{ msg.repliedAt|date('M d, Y h:i A') }}"{% else %}null{% endif %},
+        evalId: {% if msg.evaluationPeriod %}{{ msg.evaluationPeriod.id }}{% else %}null{% endif %},
+        evalLabel: {% if msg.evaluationPeriod %}"{{ msg.evaluationPeriod.evaluationType }} - {{ msg.evaluationPeriod.semester ?? '' }} {{ msg.evaluationPeriod.schoolYear ?? '' }}"{% else %}null{% endif %}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+};
 
-function rqFilterPeriods(){
-    var q=(document.getElementById('rqPeriodSearch').value||'').toLowerCase();
-    var count=0;
-    document.querySelectorAll('#rqPeriodBody .rq-row').forEach(function(r){
-        var show=r.dataset.search.includes(q);
-        r.style.display=show?'':'none';
-        if(show){count++;r.querySelector('.rq-td-num').textContent=count;}
-    });
-    var noRes=document.getElementById('rqNoResults');
-    if(noRes)noRes.style.display=count===0&&q?'flex':'none';
-    var countEl=document.getElementById('rqResultCount');
-    if(countEl)countEl.textContent=count+' result'+(count!==1?'s':'');
-}
+function selectConversation(el, msgId) {
+    // Update active state
+    document.querySelectorAll('.msg-conv-item').forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
 
-function rqSortPeriods(col){
-    var tb=document.getElementById('rqPeriodBody');
-    if(!tb)return;
-    var rows=Array.from(tb.querySelectorAll('.rq-row'));
-    var key='sort-'+col;
-    var dir=tb.dataset.sortDir===col?'desc':'asc';
-    tb.dataset.sortDir=dir==='asc'?col:'';
-    var isNum=col==='evaluators';
-    rows.sort(function(a,b){
-        var va=a.dataset[key]||'',vb=b.dataset[key]||'';
-        if(isNum)return dir==='asc'?Number(va)-Number(vb):Number(vb)-Number(va);
-        return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
-    });
-    rows.forEach(function(r,i){tb.appendChild(r);r.querySelector('.rq-td-num').textContent=i+1;});
-    document.querySelectorAll('.rq-sort-icon').forEach(function(i){
-        i.className='bi bi-arrow-down-up rq-sort-icon';i.style.opacity='.35';
-    });
-    var icon=document.querySelector('.rq-sort-icon[data-col="'+col+'"]');
-    if(icon){icon.className='bi '+(dir==='asc'?'bi-arrow-up':'bi-arrow-down')+' rq-sort-icon';icon.style.opacity='.85';}
-}
+    // Hide all threads, show selected
+    document.querySelectorAll('.msg-thread').forEach(thread => thread.style.display = 'none');
+    const thread = document.getElementById('thread-' + msgId);
+    if (thread) thread.style.display = 'block';
 
-function rqToggleMsg(row){
-    var detail=row.nextElementSibling;
-    if(detail&&detail.classList.contains('rq-detail-row')){
-        detail.style.display=detail.style.display==='none'?'table-row':'none';
+    // Update header
+    const msg = messagesData[msgId];
+    if (msg) {
+        document.getElementById('chatTitle').textContent = msg.subject;
+        const statusEl = document.getElementById('chatStatus');
+        if (msg.status === 'resolved') {
+            statusEl.innerHTML = '<i class="bi bi-circle-fill"></i> Resolved';
+            statusEl.style.color = '#16a34a';
+        } else if (msg.status === 'reviewed') {
+            statusEl.innerHTML = '<i class="bi bi-circle-fill"></i> Reviewed';
+            statusEl.style.color = '#2563eb';
+        } else {
+            statusEl.innerHTML = '<i class="bi bi-circle-fill"></i> Awaiting Response';
+            statusEl.style.color = '#d97706';
+        }
+
+        const evalBadge = document.getElementById('chatEval');
+        if (evalBadge) {
+            if (msg.evalLabel) {
+                evalBadge.innerHTML = '<i class="bi bi-clipboard2-check me-1"></i>' + msg.evalLabel;
+                evalBadge.style.display = '';
+            } else {
+                evalBadge.style.display = 'none';
+            }
+        }
     }
+
+    // Scroll to bottom
+    const chatBody = document.getElementById('chatBody');
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
 
-document.addEventListener('DOMContentLoaded',function(){
-    var flash=document.getElementById('rqFlash');
-    if(flash){
-        flash.style.display='flex';
-        setTimeout(function(){flash.style.opacity='0';flash.style.transition='opacity .3s';setTimeout(function(){flash.remove()},300);},4000);
-    }
+function filterConversations() {
+    const query = document.getElementById('msgSearch').value.toLowerCase();
+    document.querySelectorAll('.msg-conv-item').forEach(item => {
+        const searchText = item.dataset.search || '';
+        item.style.display = searchText.includes(query) ? '' : 'none';
+    });
+}
+
+// Auto-scroll chat to bottom on load
+document.addEventListener('DOMContentLoaded', function() {
+    const chatBody = document.getElementById('chatBody');
+    if (chatBody) chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Auto-hide toasts
+    document.querySelectorAll('.toast').forEach(toast => {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity .3s';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    });
 });
 </script>
 {% endblock %}

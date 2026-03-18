@@ -498,9 +498,37 @@ class ReportController extends AbstractController
     public function deleteEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('delete_eval' . $eval->getId(), $request->request->get('_token'))) {
-            $em->remove($eval);
+            $targets = [$eval];
+            $mergedIdsRaw = trim((string) $request->request->get('mergedIds', ''));
+            if ($eval->getEvaluationType() === 'SET' && $mergedIdsRaw !== '') {
+                $mergedIds = array_values(array_unique(array_filter(array_map('intval', explode(',', $mergedIdsRaw)), fn(int $id): bool => $id > 0)));
+                if (!in_array((int) $eval->getId(), $mergedIds, true)) {
+                    $mergedIds[] = (int) $eval->getId();
+                }
+                if (count($mergedIds) > 1) {
+                    $targets = $em->getRepository(EvaluationPeriod::class)
+                        ->createQueryBuilder('e')
+                        ->where('e.id IN (:ids)')
+                        ->setParameter('ids', $mergedIds)
+                        ->getQuery()
+                        ->getResult();
+                }
+            }
+
+            foreach ($targets as $target) {
+                if (!$target instanceof EvaluationPeriod) {
+                    continue;
+                }
+                $em->createQuery('DELETE FROM App\Entity\SuperiorEvaluation se WHERE se.evaluationPeriod = :ep')
+                    ->setParameter('ep', $target)
+                    ->execute();
+                $em->createQuery('DELETE FROM App\Entity\EvaluationMessage em WHERE em.evaluationPeriod = :ep')
+                    ->setParameter('ep', $target)
+                    ->execute();
+                $em->remove($target);
+            }
             $em->flush();
-            $this->addFlash('success', 'Evaluation period deleted.');
+            $this->addFlash('success', count($targets) > 1 ? (count($targets) . ' merged evaluation periods deleted.') : 'Evaluation period deleted.');
         }
         return $this->redirectToRoute('staff_evaluations');
     }

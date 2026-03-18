@@ -438,6 +438,7 @@ class HomeController extends AbstractController
     ): Response {
         $subjects = $subjectRepo->findByFaculty($user->getId());
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
+        $facultyName = $user->getFullName();
         $allOpenEvals = $evalRepo->findOpen();
 
         // Filter open evaluations to only those relevant to this faculty's department
@@ -449,6 +450,9 @@ class HomeController extends AbstractController
             }
             $evalDept = $eval->getDepartment();
             if ($evalDept === null || ($deptId && $evalDept->getId() === $deptId)) {
+                if ($eval->getFaculty() !== null && $eval->getFaculty() !== $facultyName) {
+                    continue;
+                }
                 $openEvals[] = $eval;
             }
         }
@@ -2137,7 +2141,7 @@ class HomeController extends AbstractController
         }
 
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $evaluations = $evalRepo->findForFaculty($deptId);
+        $evaluations = $evalRepo->findForFaculty($deptId, $user->getFullName());
         $periods = [];
         foreach ($evaluations as $eval) {
             $count = $responseRepo->countEvaluators($user->getId(), $eval->getId());
@@ -2196,7 +2200,7 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $evaluations = $evalRepo->findForFaculty($deptId);
+        $evaluations = $evalRepo->findForFaculty($deptId, $user->getFullName());
         $summaries = [];
         foreach ($evaluations as $eval) {
             $avg = $responseRepo->getOverallAverage($user->getId(), $eval->getId());
@@ -2223,7 +2227,7 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $evaluations = $evalRepo->findForFaculty($deptId);
+        $evaluations = $evalRepo->findForFaculty($deptId, $user->getFullName());
         $chartData = [];
         foreach ($evaluations as $eval) {
             $avg = $responseRepo->getOverallAverage($user->getId(), $eval->getId());
@@ -2251,7 +2255,7 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $allEvals = $evalRepo->findForFaculty($deptId);
+        $allEvals = $evalRepo->findForFaculty($deptId, $user->getFullName());
         $evaluations = [];
         foreach ($allEvals as $eval) {
             $count = $responseRepo->countEvaluators($user->getId(), $eval->getId());

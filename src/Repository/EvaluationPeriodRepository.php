@@ -113,7 +113,7 @@ class EvaluationPeriodRepository extends ServiceEntityRepository
         return $qb->setMaxResults(1)->getQuery()->getOneOrNullResult();
     }
 
-    public function findForFaculty(?int $departmentId): array
+    public function findForFaculty(?int $departmentId, ?string $facultyName = null): array
     {
         $qb = $this->createQueryBuilder('ep')
             ->where('ep.evaluationType IN (:types)')
@@ -123,6 +123,11 @@ class EvaluationPeriodRepository extends ServiceEntityRepository
         if ($departmentId) {
             $qb->andWhere('ep.department IS NULL OR ep.department = :dept')
                ->setParameter('dept', $departmentId);
+        }
+
+        if ($facultyName) {
+            $qb->andWhere('ep.faculty IS NULL OR ep.faculty = :facultyName')
+                ->setParameter('facultyName', $facultyName);
         }
 
         return $qb->getQuery()->getResult();

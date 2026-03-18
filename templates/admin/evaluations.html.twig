@@ -407,6 +407,7 @@
                             </form>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_delete', {id: eval.id}) }}" class="d-inline" onsubmit="return confirm('Delete this evaluation period and all its responses?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete_eval' ~ eval.id) }}">
+                                <input type="hidden" name="mergedIds" value="{{ mergedIdsCsv }}">
                                 <button class="ev-action-btn ev-action-delete" title="Delete"><i class="bi bi-trash3"></i></button>
                             </form>
                         </div>
@@ -584,6 +585,7 @@
                             {# Delete #}
                             <form method="post" action="{{ path(prefix ~ '_evaluation_delete', {id: eval.id}) }}" class="d-inline" onsubmit="return confirm('Delete this expired evaluation and all its responses?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete_eval' ~ eval.id) }}">
+                                <input type="hidden" name="mergedIds" value="{{ mergedIdsCsv }}">
                                 <button class="ev-action-btn ev-action-delete" title="Delete"><i class="bi bi-trash3"></i></button>
                             </form>
                         </div>
