@@ -357,8 +357,14 @@
                     </td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
-                            {% if row.mergedCount > 1 %}
-                                <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subject{{ row.subjects|length != 1 ? 's' : '' }}</span>
+                            {% if row.subjects and row.subjects|length > 0 %}
+                                {% if row.mergedCount > 1 %}
+                                    <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subject{{ row.subjects|length != 1 ? 's' : '' }}</span>
+                                {% else %}
+                                    {% for subject in row.subjects %}
+                                        <span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ subject }}</span>
+                                    {% endfor %}
+                                {% endif %}
                             {% else %}
                                 {% set firstSubject = (row.items and row.items[0] and row.items[0].subject) ? row.items[0].subject : eval.subject %}
                                 {% if firstSubject %}
@@ -520,8 +526,14 @@
                     </td>
                     <td>
                         {% if eval.evaluationType == 'SET' %}
-                            {% if row.mergedCount > 1 %}
-                                <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subject{{ row.subjects|length != 1 ? 's' : '' }}</span>
+                            {% if row.subjects and row.subjects|length > 0 %}
+                                {% if row.mergedCount > 1 %}
+                                    <span class="ev-badge ev-badge-success"><i class="bi bi-journals me-1"></i>{{ row.subjects|length }} Subject{{ row.subjects|length != 1 ? 's' : '' }}</span>
+                                {% else %}
+                                    {% for subject in row.subjects %}
+                                        <span class="ev-badge ev-badge-success"><i class="bi bi-journal-text me-1"></i>{{ subject }}</span>
+                                    {% endfor %}
+                                {% endif %}
                             {% else %}
                                 {% set firstSubject = (row.items and row.items[0] and row.items[0].subject) ? row.items[0].subject : eval.subject %}
                                 {% if firstSubject %}
