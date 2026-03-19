@@ -412,6 +412,10 @@
                     <td>
                         <div class="ev-actions-cell">
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% if staffMode and row.items|length > 0 %}
+                            {% set firstItem = row.items[0] %}
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            {% endif %}
                             <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}" data-merge-ids="{{ mergedIdsCsv }}"><i class="bi bi-pencil-square"></i></button>
                             <form method="post" action="{{ path(prefix ~ '_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
@@ -597,6 +601,10 @@
                     <td>
                         <div class="ev-actions-cell">
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailPrev{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% if staffMode and row.items|length > 0 %}
+                            {% set firstItem = row.items[0] %}
+                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                            {% endif %}
                             {# View Results #}
                             <a href="{{ path(prefix ~ '_results', {evaluation: eval.id}) }}" class="ev-action-btn ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
                             {# Reopen #}
