@@ -262,12 +262,13 @@ class ReportController extends AbstractController
                     $facultyUser = $facultyUsers[0];
                     $allSubjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
 
-                    // Get evaluator counts per subject for this faculty
+                    // Get evaluator counts per subject+section for this faculty
                     $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($facultyUser->getId());
                     foreach ($evaluatedSubjects as $subjEval) {
                         if ($subjEval['evaluationPeriodId'] == $eval->getId()) {
-                            // Key by subject ID only (sections of same subject share the count)
-                            $subjectEvaluatorCounts[$subjEval['subjectId']] = (int) $subjEval['evaluatorCount'];
+                            // Key by subject ID + section (each section has its own count)
+                            $sectionKey = $subjEval['subjectId'] . '|' . ($subjEval['section'] ?? 'NOSECTION');
+                            $subjectEvaluatorCounts[$sectionKey] = (int) $subjEval['evaluatorCount'];
                         }
                     }
 
@@ -298,8 +299,9 @@ class ReportController extends AbstractController
                             $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                             $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                            // Get evaluator count for this subject (all sections share same count)
-                            $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
+                            // Get evaluator count for this subject+section
+                            $sectionKey = $subj->getId() . '|' . ($loadSection ?: 'NOSECTION');
+                            $subjCount = $subjectEvaluatorCounts[$sectionKey] ?? 0;
                             $items[] = [
                                 'eval' => $eval,
                                 'subject' => $subjName,
@@ -345,8 +347,9 @@ class ReportController extends AbstractController
                         $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                        // Get evaluator count for this subject (all sections share same count)
-                        $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
+                        // Get evaluator count for this subject+section
+                        $sectionKey = $subj->getId() . '|' . ($loadSection ?: 'NOSECTION');
+                        $subjCount = $subjectEvaluatorCounts[$sectionKey] ?? 0;
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
@@ -756,11 +759,28 @@ class ReportController extends AbstractController
             }
 
             if ($count > 0) {
+                // Get subject+section details
+                $subjectDetails = [];
+                $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
+                foreach ($allSubjects as $subj) {
+                    if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
+                        continue;
+                    }
+                    $subjectDetails[] = [
+                        'subjectCode' => $subj['subjectCode'] ?? 'N/A',
+                        'subjectName' => $subj['subjectName'] ?? '',
+                        'section' => $subj['section'] ?? '—',
+                        'average' => round((float) ($subj['avgRating'] ?? 0), 2),
+                        'evaluators' => (int) $subj['evaluatorCount'],
+                    ];
+                }
+
                 $facultyResults[] = [
                     'faculty' => $faculty,
                     'average' => $avg,
                     'evaluators' => $count,
                     'level' => $this->performanceLevel($avg),
+                    'subjectDetails' => $subjectDetails,
                 ];
             }
         }
@@ -1599,11 +1619,27 @@ class ReportController extends AbstractController
             $totalEvaluators += $count;
             $sumAvg += $avg;
 
+            // Get subject+section details for this evaluation period
+            $subjectDetails = [];
+            $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
+            foreach ($allSubjects as $subj) {
+                if ((int) $subj['evaluationPeriodId'] === (int) $row['evaluationPeriodId']) {
+                    $subjectDetails[] = [
+                        'subjectCode' => $subj['subjectCode'] ?? 'N/A',
+                        'subjectName' => $subj['subjectName'] ?? '',
+                        'section' => $subj['section'] ?? '—',
+                        'average' => round((float) ($subj['avgRating'] ?? 0), 2),
+                        'evaluators' => (int) $subj['evaluatorCount'],
+                    ];
+                }
+            }
+
             $results[] = [
                 'evaluation' => $eval,
                 'average' => $avg,
                 'evaluators' => $count,
                 'level' => $this->performanceLevel($avg),
+                'subjectDetails' => $subjectDetails,
             ];
         }
 

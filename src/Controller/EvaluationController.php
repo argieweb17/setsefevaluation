@@ -119,6 +119,9 @@ class EvaluationController extends AbstractController
             }
         }
 
+        // Determine final section to display
+        $finalSection = $sectionParam ?? $sectionFromLoad;
+
         // Otherwise, resolve subject from evaluation's subject string ("CODE — Name")
         if (!$subject) {
             $subjectStr = $eval->getSubject();
@@ -178,7 +181,8 @@ class EvaluationController extends AbstractController
             }
 
             if ($student && !$error) {
-                if ($responseRepo->hasSubmitted($student->getId(), $eval->getId(), $faculty->getId(), $subject->getId())) {
+                $sectionToCheck = $finalSection !== '' ? $finalSection : null;
+                if ($responseRepo->hasSubmitted($student->getId(), $eval->getId(), $faculty->getId(), $subject->getId(), $sectionToCheck)) {
                     $error = 'You have already submitted this evaluation.';
                 } else {
                     // Save responses
@@ -196,6 +200,7 @@ class EvaluationController extends AbstractController
                         $response->setQuestion($q);
                         $response->setFaculty($faculty);
                         $response->setSubject($subject);
+                        $response->setSection($finalSection !== '' ? $finalSection : null);
                         $response->setRating($rating);
                         // Attach the general comment to the first response
                         if (!$commentSaved && $generalComment !== '') {
@@ -216,9 +221,6 @@ class EvaluationController extends AbstractController
                 }
             }
         }
-
-        // Determine final section to display
-        $finalSection = $sectionParam ?? $sectionFromLoad;
 
         return $this->render('evaluation/qr_form.html.twig', [
             'evaluation' => $eval,

@@ -605,10 +605,31 @@
                 </td>
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-1">
+                        {% if item.subjectDetails %}
+                        <button class="btn btn-sm btn-outline-primary collapse-subjects" type="button" title="Collapse subjects" data-eval-id="{{ ev.id }}">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                        {% endif %}
                         <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
                     </div>
                 </td>
             </tr>
+            {% if item.subjectDetails %}
+                {% for subj in item.subjectDetails %}
+                <tr class="subject-details-row" data-eval-id="{{ ev.id }}" style="background:#f8f9fa;">
+                    <td style="display:none;"></td>
+                    <td></td>
+                    <td></td>
+                    <td style="padding-left:2rem;"><i class="bi bi-chevron-right" style="color:#999;"></i> <strong>{{ subj.subjectCode }}</strong></td>
+                    <td>{{ subj.subjectName }}</td>
+                    <td class="text-center"><span style="background:#e7f3ff;padding:2px 8px;border-radius:4px;font-size:0.85rem;">{{ subj.section }}</span></td>
+                    <td class="text-center"><strong>{{ subj.average|number_format(2) }}/5</strong></td>
+                    <td class="text-center">{{ subj.evaluators }}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                {% endfor %}
+            {% endif %}
             {% endfor %}
         </tbody>
     </table>

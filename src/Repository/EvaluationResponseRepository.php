@@ -17,9 +17,9 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
-     * Check if a student has already submitted for a given evaluation period + faculty + subject.
+     * Check if a student has already submitted for a given evaluation period + faculty + subject + section.
      */
-    public function hasSubmitted(int $evaluatorId, int $evaluationPeriodId, int $facultyId, ?int $subjectId = null): bool
+    public function hasSubmitted(int $evaluatorId, int $evaluationPeriodId, int $facultyId, ?int $subjectId = null, ?string $section = null): bool
     {
         $qb = $this->createQueryBuilder('r')
             ->select('COUNT(r.id)')
@@ -33,6 +33,12 @@ class EvaluationResponseRepository extends ServiceEntityRepository
 
         if ($subjectId) {
             $qb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        }
+
+        if ($section !== null) {
+            $qb->andWhere('r.section = :section')->setParameter('section', $section);
+        } else {
+            $qb->andWhere('r.section IS NULL');
         }
 
         return (int) $qb->getQuery()->getSingleScalarResult() > 0;
@@ -264,8 +270,35 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
+     * Get distinct subjects evaluated for a faculty, with average rating per subject+section.
+     * @return array<array{subjectId: int, subjectCode: string, subjectName: string, section: string|null, evaluationPeriodId: int, evaluatorCount: int, avgRating: float}>
+     */
+    public function getEvaluatedSubjectsWithRating(int $facultyId): array
+    {
+        return $this->createQueryBuilder('r')
+            ->select(
+                'IDENTITY(r.subject) as subjectId',
+                's.subjectCode',
+                's.subjectName',
+                'r.section',
+                'IDENTITY(r.evaluationPeriod) as evaluationPeriodId',
+                'COUNT(DISTINCT r.evaluator) as evaluatorCount',
+                'AVG(r.rating) as avgRating'
+            )
+            ->join('r.subject', 's')
+            ->where('r.faculty = :fid')
+            ->andWhere('r.isDraft = false')
+            ->andWhere('r.subject IS NOT NULL')
+            ->setParameter('fid', $facultyId)
+            ->groupBy('r.subject, r.section, r.evaluationPeriod')
+            ->orderBy('s.subjectCode', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Get distinct subjects evaluated for a faculty, grouped by evaluation period.
-     * @return array<array{subjectId: int, subjectCode: string, subjectName: string, evaluationPeriodId: int, evaluatorCount: int}>
+     * @return array<array{subjectId: int, subjectCode: string, subjectName: string, section: string|null, evaluationPeriodId: int, evaluatorCount: int}>
      */
     public function getEvaluatedSubjects(int $facultyId): array
     {
@@ -274,6 +307,7 @@ class EvaluationResponseRepository extends ServiceEntityRepository
                 'IDENTITY(r.subject) as subjectId',
                 's.subjectCode',
                 's.subjectName',
+                'r.section',
                 'IDENTITY(r.evaluationPeriod) as evaluationPeriodId',
                 'COUNT(DISTINCT r.evaluator) as evaluatorCount'
             )
@@ -282,7 +316,7 @@ class EvaluationResponseRepository extends ServiceEntityRepository
             ->andWhere('r.isDraft = false')
             ->andWhere('r.subject IS NOT NULL')
             ->setParameter('fid', $facultyId)
-            ->groupBy('r.subject, r.evaluationPeriod')
+            ->groupBy('r.subject, r.section, r.evaluationPeriod')
             ->orderBy('s.subjectCode', 'ASC')
             ->getQuery()
             ->getResult();

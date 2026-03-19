@@ -36,6 +36,9 @@ class EvaluationResponse
     #[ORM\JoinColumn(nullable: true)]
     private ?Subject $subject = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $section = null;
+
     #[ORM\Column]
     private int $rating = 0;
 
@@ -69,6 +72,9 @@ class EvaluationResponse
 
     public function getSubject(): ?Subject { return $this->subject; }
     public function setSubject(?Subject $v): static { $this->subject = $v; return $this; }
+
+    public function getSection(): ?string { return $this->section; }
+    public function setSection(?string $v): static { $this->section = $v; return $this; }
 
     public function getRating(): int { return $this->rating; }
     public function setRating(int $v): static { $this->rating = $v; return $this; }
