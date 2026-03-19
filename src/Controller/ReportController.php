@@ -367,7 +367,7 @@ class ReportController extends AbstractController
                 ];
             }
 
-            $rows[$idx]['evaluatorCount'] += $baseCount;
+            // Don't accumulate evaluator count - keep it as the period total
             $rows[$idx]['mergedCount']++;
 
             if ($subject !== '' && !in_array($subject, $rows[$idx]['subjects'], true)) {
