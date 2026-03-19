@@ -1197,10 +1197,11 @@ class AdminController extends AbstractController
             $schedule = trim((string) ($eval->getTime() ?? ''));
             $subject = trim((string) ($eval->getSubject() ?? ''));
             $section = strtoupper(trim((string) ($eval->getSection() ?? '')));
+            $schedule = trim((string) ($eval->getTime() ?? ''));
             $baseCount = (int) ($evaluatorCounts[$eval->getId()] ?? 0);
 
             // If subject is empty, try to fetch from faculty's subject load
-            $allSubjects = [];
+            $allSubjectLoads = [];
             if (empty($subject) && $eval->getFaculty()) {
                 $facultyName = $eval->getFaculty();
                 // Try to find faculty by full name (last, first)
@@ -1212,16 +1213,19 @@ class AdminController extends AbstractController
 
                 if (!empty($facultyUsers)) {
                     $facultyUser = $facultyUsers[0];
-                    $subjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
-                    if (!empty($subjectLoads)) {
-                        foreach ($subjectLoads as $load) {
-                            $subj = $load->getSubject();
-                            if ($subj) {
-                                $allSubjects[] = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
-                            }
+                    $allSubjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
+                    if (!empty($allSubjectLoads)) {
+                        // Use first subject's info for main display
+                        $firstLoad = $allSubjectLoads[0];
+                        $subj = $firstLoad->getSubject();
+                        if ($subj) {
+                            $subject = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         }
-                        if (!empty($allSubjects)) {
-                            $subject = $allSubjects[0]; // Use first subject as default for display
+                        if (empty($section) && $firstLoad->getSection()) {
+                            $section = strtoupper($firstLoad->getSection());
+                        }
+                        if (empty($schedule) && $firstLoad->getSchedule()) {
+                            $schedule = $firstLoad->getSchedule();
                         }
                     }
                 }
@@ -1230,15 +1234,21 @@ class AdminController extends AbstractController
             if (!isset($indexByKey[$key])) {
                 $items = [];
                 // Create items for all subjects (or just one if subject is already set)
-                if (!empty($allSubjects)) {
-                    foreach ($allSubjects as $subj) {
-                        $items[] = [
-                            'eval' => $eval,
-                            'subject' => $subj,
-                            'section' => $section,
-                            'schedule' => $schedule,
-                            'evaluatorCount' => $baseCount,
-                        ];
+                if (!empty($allSubjectLoads)) {
+                    foreach ($allSubjectLoads as $load) {
+                        $subj = $load->getSubject();
+                        if ($subj) {
+                            $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
+                            $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
+                            $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                            $items[] = [
+                                'eval' => $eval,
+                                'subject' => $subjName,
+                                'section' => $loadSection ?: $section,
+                                'schedule' => $loadSchedule ?: $schedule,
+                                'evaluatorCount' => $baseCount,
+                            ];
+                        }
                     }
                 } else {
                     $items[] = [
@@ -1265,13 +1275,34 @@ class AdminController extends AbstractController
             }
 
             $idx = $indexByKey[$key];
-            $rows[$idx]['items'][] = [
-                'eval' => $eval,
-                'subject' => $subject,
-                'section' => $section,
-                'schedule' => $schedule,
-                'evaluatorCount' => $baseCount,
-            ];
+
+            // If we have multiple subject loads, add items for each one
+            if (!empty($allSubjectLoads)) {
+                foreach ($allSubjectLoads as $load) {
+                    $subj = $load->getSubject();
+                    if ($subj) {
+                        $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
+                        $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
+                        $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
+                        $rows[$idx]['items'][] = [
+                            'eval' => $eval,
+                            'subject' => $subjName,
+                            'section' => $loadSection ?: $section,
+                            'schedule' => $loadSchedule ?: $schedule,
+                            'evaluatorCount' => $baseCount,
+                        ];
+                    }
+                }
+            } else {
+                $rows[$idx]['items'][] = [
+                    'eval' => $eval,
+                    'subject' => $subject,
+                    'section' => $section,
+                    'schedule' => $schedule,
+                    'evaluatorCount' => $baseCount,
+                ];
+            }
+
             $rows[$idx]['evaluatorCount'] += $baseCount;
             $rows[$idx]['mergedCount']++;
 
