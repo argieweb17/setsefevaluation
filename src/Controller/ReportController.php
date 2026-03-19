@@ -266,13 +266,8 @@ class ReportController extends AbstractController
                     $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($facultyUser->getId());
                     foreach ($evaluatedSubjects as $subjEval) {
                         if ($subjEval['evaluationPeriodId'] == $eval->getId()) {
-                            // Key by subject+section for per-section display
-                            foreach ($allSubjectLoads as $load) {
-                                if ($load->getSubject()->getId() == $subjEval['subjectId']) {
-                                    $countKey = $subjEval['subjectId'] . '|' . strtoupper(trim((string) $load->getSection() ?? ''));
-                                    $subjectEvaluatorCounts[$countKey] = (int) $subjEval['evaluatorCount'];
-                                }
-                            }
+                            // Key by subject ID only (sections of same subject share the count)
+                            $subjectEvaluatorCounts[$subjEval['subjectId']] = (int) $subjEval['evaluatorCount'];
                         }
                     }
 
@@ -303,9 +298,8 @@ class ReportController extends AbstractController
                             $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                             $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                            // Get evaluator count for this subject+section
-                            $countKey = $subj->getId() . '|' . $loadSection;
-                            $subjCount = $subjectEvaluatorCounts[$countKey] ?? 0;
+                            // Get evaluator count for this subject (all sections share same count)
+                            $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                             $items[] = [
                                 'eval' => $eval,
                                 'subject' => $subjName,
@@ -351,9 +345,8 @@ class ReportController extends AbstractController
                         $subjName = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                         $loadSection = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $loadSchedule = trim((string) ($load->getSchedule() ?? ''));
-                        // Get evaluator count for this subject+section
-                        $countKey = $subj->getId() . '|' . $loadSection;
-                        $subjCount = $subjectEvaluatorCounts[$countKey] ?? 0;
+                        // Get evaluator count for this subject (all sections share same count)
+                        $subjCount = $subjectEvaluatorCounts[$subj->getId()] ?? 0;
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
