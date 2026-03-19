@@ -720,34 +720,37 @@ class ReportController extends AbstractController
         $departments = $deptRepo->findAllOrdered();
         $facultyResults = [];
 
-        if ($evalId) {
-            $qb = $userRepo->createQueryBuilder('u')
-                ->where('u.roles LIKE :role')
-                ->setParameter('role', '%ROLE_FACULTY%')
-                ->orderBy('u.lastName', 'ASC');
+        $qb = $userRepo->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_FACULTY%')
+            ->orderBy('u.lastName', 'ASC');
 
-            if ($deptId) {
-                $qb->andWhere('u.department = :did')->setParameter('did', $deptId);
-            }
+        if ($deptId) {
+            $qb->andWhere('u.department = :did')->setParameter('did', $deptId);
+        }
 
-            $facultyList = $qb->getQuery()->getResult();
+        $facultyList = $qb->getQuery()->getResult();
 
-            foreach ($facultyList as $faculty) {
+        foreach ($facultyList as $faculty) {
+            if ($evalId) {
                 $avg = $responseRepo->getOverallAverage($faculty->getId(), (int) $evalId);
                 $count = $responseRepo->countEvaluators($faculty->getId(), (int) $evalId);
-
-                if ($count > 0) {
-                    $facultyResults[] = [
-                        'faculty' => $faculty,
-                        'average' => $avg,
-                        'evaluators' => $count,
-                        'level' => $this->performanceLevel($avg),
-                    ];
-                }
+            } else {
+                $avg = $responseRepo->getOverallAverageAll($faculty->getId());
+                $count = $responseRepo->countEvaluatorsAll($faculty->getId());
             }
 
-            usort($facultyResults, fn($a, $b) => $b['average'] <=> $a['average']);
+            if ($count > 0) {
+                $facultyResults[] = [
+                    'faculty' => $faculty,
+                    'average' => $avg,
+                    'evaluators' => $count,
+                    'level' => $this->performanceLevel($avg),
+                ];
+            }
         }
+
+        usort($facultyResults, fn($a, $b) => $b['average'] <=> $a['average']);
 
         $collegeNames = [];
         foreach ($departments as $d) {
