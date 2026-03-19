@@ -132,17 +132,13 @@
                    href="{{ path('faculty_eval_results') }}">
                     <i class="bi bi-clipboard-data sidebar-icon"></i> Result
                 </a>
-                <a class="nav-link {% if 'faculty_eval_summary' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('faculty_eval_summary') }}">
-                    <i class="bi bi-file-earmark-bar-graph sidebar-icon"></i> Summary
-                </a>
-                <a class="nav-link {% if 'faculty_eval_analytics' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('faculty_eval_analytics') }}">
-                    <i class="bi bi-graph-up-arrow sidebar-icon"></i> Analytics
-                </a>
-                <a class="nav-link {% if 'faculty_eval_download' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                   href="{{ path('faculty_eval_download') }}">
-                    <i class="bi bi-download sidebar-icon"></i> Download
+            </nav>
+
+            <div class="sidebar-header">SYSTEM LOGS</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_audit_log') }}">
+                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
                 </a>
             </nav>
             {% endif %}
@@ -186,6 +182,14 @@
                    href="{{ path('staff_faculty_messages') }}">
                     <i class="bi bi-envelope-fill sidebar-icon"></i> Faculty Messages
                     {% if sc.faculty_messages > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ sc.faculty_messages }}</span>{% endif %}
+                </a>
+            </nav>
+
+            <div class="sidebar-header">SYSTEM LOGS</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'staff_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_audit_log') }}">
+                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
                 </a>
             </nav>
             {% endif %}

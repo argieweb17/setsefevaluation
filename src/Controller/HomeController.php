@@ -2259,82 +2259,79 @@ class HomeController extends AbstractController
         ]);
     }
 
-    #[Route('/faculty/evaluation/summary', name: 'faculty_eval_summary')]
+    #[Route('/faculty/audit-log', name: 'faculty_audit_log')]
     #[IsGranted('ROLE_FACULTY')]
-    public function facultyEvalSummary(
-        EvaluationPeriodRepository $evalRepo,
-        EvaluationResponseRepository $responseRepo,
+    public function facultyAuditLog(
+        AuditLogRepository $auditRepo,
+        Request $request,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
-        $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $evaluations = $evalRepo->findForFaculty($deptId, $user->getFullName());
-        $summaries = [];
-        foreach ($evaluations as $eval) {
-            $avg = $responseRepo->getOverallAverage($user->getId(), $eval->getId());
-            $count = $responseRepo->countEvaluators($user->getId(), $eval->getId());
-            if ($count > 0) {
-                $summaries[] = [
-                    'evaluation' => $eval,
-                    'average' => $avg,
-                    'evaluators' => $count,
-                ];
-            }
-        }
-        return $this->render('home/faculty/eval_summary.html.twig', [
-            'summaries' => $summaries,
+
+        // Get logs performed by this faculty or related to this faculty
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        // Get logs where the faculty is the performer or the target
+        $qb = $auditRepo->createQueryBuilder('a')
+            ->where('a.performedBy = :user')
+            ->orWhere('a.entityType = :userType AND a.entityId = :userId')
+            ->orWhere('a.details LIKE :userName')
+            ->setParameter('user', $user)
+            ->setParameter('userType', 'User')
+            ->setParameter('userId', $user->getId())
+            ->setParameter('userName', '%' . $user->getFullName() . '%')
+            ->orderBy('a.createdAt', 'DESC');
+
+        $totalLogs = (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
+        $logs = $qb->setFirstResult($offset)->setMaxResults($limit)->getQuery()->getResult();
+
+        $totalPages = (int) ceil($totalLogs / $limit);
+
+        return $this->render('home/faculty/audit_log.html.twig', [
+            'logs' => $logs,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalLogs' => $totalLogs,
         ]);
     }
 
-    #[Route('/faculty/evaluation/analytics', name: 'faculty_eval_analytics')]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEvalAnalytics(
-        EvaluationPeriodRepository $evalRepo,
-        EvaluationResponseRepository $responseRepo,
+    #[Route('/staff/audit-log', name: 'staff_audit_log')]
+    #[IsGranted('ROLE_STAFF')]
+    public function staffAuditLog(
+        AuditLogRepository $auditRepo,
+        Request $request,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
-        $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $evaluations = $evalRepo->findForFaculty($deptId, $user->getFullName());
-        $chartData = [];
-        foreach ($evaluations as $eval) {
-            $avg = $responseRepo->getOverallAverage($user->getId(), $eval->getId());
-            $count = $responseRepo->countEvaluators($user->getId(), $eval->getId());
-            if ($count > 0) {
-                $chartData[] = [
-                    'label' => $eval->getLabel(),
-                    'average' => round($avg, 2),
-                    'evaluators' => $count,
-                ];
-            }
-        }
-        return $this->render('home/faculty/eval_analytics.html.twig', [
-            'chartData' => $chartData,
-        ]);
-    }
 
-    #[Route('/faculty/evaluation/download', name: 'faculty_eval_download')]
-    #[IsGranted('ROLE_FACULTY')]
-    public function facultyEvalDownload(
-        EvaluationPeriodRepository $evalRepo,
-        EvaluationResponseRepository $responseRepo,
-        EvaluationMessageRepository $msgRepo,
-    ): Response {
-        /** @var User $user */
-        $user = $this->getUser();
-        $deptId = $user->getDepartment() ? $user->getDepartment()->getId() : null;
-        $allEvals = $evalRepo->findForFaculty($deptId, $user->getFullName());
-        $evaluations = [];
-        foreach ($allEvals as $eval) {
-            $count = $responseRepo->countEvaluators($user->getId(), $eval->getId());
-            if ($count > 0) {
-                $evaluations[] = $eval;
-            }
-        }
-        $attachments = $msgRepo->findAttachmentsForUser($user->getId());
-        return $this->render('home/faculty/eval_download.html.twig', [
-            'evaluations' => $evaluations,
-            'attachments' => $attachments,
+        // Get logs performed by this staff or related to this staff
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        // Get logs where the staff is the performer or the target
+        $qb = $auditRepo->createQueryBuilder('a')
+            ->where('a.performedBy = :user')
+            ->orWhere('a.entityType = :userType AND a.entityId = :userId')
+            ->orWhere('a.details LIKE :userName')
+            ->setParameter('user', $user)
+            ->setParameter('userType', 'User')
+            ->setParameter('userId', $user->getId())
+            ->setParameter('userName', '%' . $user->getFullName() . '%')
+            ->orderBy('a.createdAt', 'DESC');
+
+        $totalLogs = (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
+        $logs = $qb->setFirstResult($offset)->setMaxResults($limit)->getQuery()->getResult();
+
+        $totalPages = (int) ceil($totalLogs / $limit);
+
+        return $this->render('home/staff/audit_log.html.twig', [
+            'logs' => $logs,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalLogs' => $totalLogs,
         ]);
     }
 

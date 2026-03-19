@@ -1,0 +1,176 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Activity Log | SET-SEF Evaluation{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── Header ── */
+.al-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.al-header-left{display:flex;align-items:center;gap:.85rem}
+.al-header-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#A855F7);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.al-title{font-size:1.35rem;font-weight:800;color:#0F172A;margin:0;letter-spacing:-.3px}
+.al-subtitle{font-size:.8rem;color:#64748B;margin:0}
+.al-count-badge{display:inline-flex;align-items:center;padding:6px 14px;border-radius:8px;font-size:.78rem;font-weight:600;background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
+
+/* ── Table ── */
+.al-table-card{background:#fff;border:1px solid #E8ECF1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.al-table-wrap{overflow-x:auto}
+.al-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.al-table thead{background:linear-gradient(135deg,#F8FAFC,#F1F5F9);border-bottom:2px solid #E2E8F0}
+.al-table thead th{padding:10px 14px;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;border:none}
+.al-table tbody tr{border-bottom:1px solid #F1F5F9;transition:background .12s}
+.al-table tbody tr:last-child{border-bottom:none}
+.al-table tbody tr:hover{background:#F8FAFF}
+.al-table tbody td{padding:10px 14px;vertical-align:middle}
+.al-td-num{color:#94A3B8;font-size:.7rem;font-weight:600;text-align:center}
+.al-td-time{white-space:nowrap;color:#475569;font-size:.78rem}
+.al-td-entity{font-size:.78rem;color:#475569}
+.al-entity-id{color:#94A3B8;font-size:.72rem}
+.al-td-details{font-size:.78rem;color:#64748B;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.al-td-ip code{font-size:.72rem;padding:2px 8px;border-radius:5px;background:#F1F5F9;color:#475569;font-family:'SF Mono',Monaco,monospace}
+
+/* ── Action Badges ── */
+.al-action-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.al-badge-default{background:#F1F5F9;color:#475569}
+.al-badge-green{background:#F0FDF4;color:#16A34A}
+.al-badge-red{background:#FEF2F2;color:#DC2626}
+.al-badge-blue{background:#EFF6FF;color:#2563EB}
+.al-badge-purple{background:#F5F3FF;color:#7C3AED}
+.al-badge-teal{background:#F0FDFA;color:#0D9488}
+.al-badge-emerald{background:#ECFDF5;color:#059669}
+.al-badge-orange{background:#FFF7ED;color:#EA580C}
+.al-badge-indigo{background:#EEF2FF;color:#4F46E5}
+
+/* ── Empty State ── */
+.al-empty{padding:0!important}
+.al-empty-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;color:#94A3B8}
+.al-empty-inner i{font-size:2.5rem;margin-bottom:.75rem;opacity:.4}
+.al-empty-inner strong{font-size:.88rem;color:#475569;margin-bottom:.25rem}
+.al-empty-inner span{font-size:.78rem}
+
+/* ── Pagination ── */
+.al-pagination{display:flex;justify-content:center;gap:.5rem;margin-top:1rem}
+.al-page-link{padding:6px 12px;border:1px solid #E2E8F0;border-radius:6px;font-size:.78rem;color:#475569;text-decoration:none;transition:all .2s}
+.al-page-link:hover{background:#F1F5F9;border-color:#CBD5E1}
+.al-page-link.active{background:#7C3AED;color:#fff;border-color:#7C3AED}
+.al-page-link.disabled{opacity:.5;pointer-events:none}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+    .al-header{flex-direction:column;align-items:flex-start}
+    .al-td-details{max-width:150px}
+}
+
+/* ── Animation ── */
+.al-header,.al-table-card{animation:alFadeIn .25s ease}
+@keyframes alFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+</style>
+{% endblock %}
+
+{% block body %}
+{# ═══════ PAGE HEADER ═══════ #}
+<div class="al-header">
+    <div class="al-header-left">
+        <div class="al-header-icon">
+            <i class="bi bi-journal-text"></i>
+        </div>
+        <div>
+            <h1 class="al-title">My Activity Log</h1>
+            <p class="al-subtitle">Track your actions and system activities</p>
+        </div>
+    </div>
+    <div>
+        <span class="al-count-badge">
+            <i class="bi bi-clock-history me-1"></i>{{ totalLogs }} total entries
+        </span>
+    </div>
+</div>
+
+{# ═══════ LOG TABLE ═══════ #}
+<div class="al-table-card">
+    <div class="al-table-wrap">
+        <table class="al-table">
+            <thead>
+                <tr>
+                    <th style="width:36px">#</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="al-td-num">{{ (currentPage - 1) * 20 + loop.index }}</td>
+                    <td class="al-td-time">
+                        <i class="bi bi-clock text-muted me-1"></i>{{ log.createdAt|date('M d, Y h:i A') }}
+                    </td>
+                    <td>
+                        {% set actionClass = 'al-badge-default' %}
+                        {% if 'create' in log.action or 'register' in log.action %}
+                            {% set actionClass = 'al-badge-green' %}
+                        {% elseif 'delete' in log.action %}
+                            {% set actionClass = 'al-badge-red' %}
+                        {% elseif 'edit' in log.action or 'change' in log.action %}
+                            {% set actionClass = 'al-badge-blue' %}
+                        {% elseif 'login' in log.action or 'logout' in log.action %}
+                            {% set actionClass = 'al-badge-purple' %}
+                        {% elseif 'submit' in log.action or 'save' in log.action %}
+                            {% set actionClass = 'al-badge-teal' %}
+                        {% elseif 'activate' in log.action or 'open' in log.action %}
+                            {% set actionClass = 'al-badge-emerald' %}
+                        {% elseif 'deactivate' in log.action or 'close' in log.action or 'lock' in log.action %}
+                            {% set actionClass = 'al-badge-orange' %}
+                        {% elseif 'export' in log.action %}
+                            {% set actionClass = 'al-badge-indigo' %}
+                        {% endif %}
+                        <span class="al-action-badge {{ actionClass }}">{{ log.actionLabel }}</span>
+                    </td>
+                    <td class="al-td-entity">
+                        {{ log.entityType }}
+                        {% if log.entityId %}
+                            <span class="al-entity-id">#{{ log.entityId }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="al-td-details">{{ log.details|default('—') }}</td>
+                    <td class="al-td-ip">
+                        <code>{{ log.ipAddress|default('—') }}</code>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="al-empty">
+                        <div class="al-empty-inner">
+                            <i class="bi bi-journal-x"></i>
+                            <strong>No activity log entries found</strong>
+                            <span>Your activities will appear here once actions are performed.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{# ═══════ PAGINATION ═══════ #}
+{% if totalPages > 1 %}
+<div class="al-pagination">
+    <a href="{{ path('faculty_audit_log', {page: currentPage - 1}) }}" class="al-page-link {% if currentPage == 1 %}disabled{% endif %}">
+        <i class="bi bi-chevron-left"></i> Prev
+    </a>
+    {% for p in 1..totalPages %}
+        {% if p <= 3 or p > totalPages - 3 or (p >= currentPage - 1 and p <= currentPage + 1) %}
+            <a href="{{ path('faculty_audit_log', {page: p}) }}" class="al-page-link {% if p == currentPage %}active{% endif %}">{{ p }}</a>
+        {% elseif p == 4 or p == totalPages - 3 %}
+            <span class="al-page-link disabled">...</span>
+        {% endif %}
+    {% endfor %}
+    <a href="{{ path('faculty_audit_log', {page: currentPage + 1}) }}" class="al-page-link {% if currentPage == totalPages %}disabled{% endif %}">
+        Next <i class="bi bi-chevron-right"></i>
+    </a>
+</div>
+{% endif %}
+{% endblock %}
