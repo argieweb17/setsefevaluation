@@ -1443,9 +1443,11 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
 
-        // Build the evaluation URL with subject ID
+        // Build the evaluation URL with subject ID and section for unique codes
         var baseUrl = window.location.origin;
-        if (subjectId) {
+        if (subjectId && section) {
+            currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId + '/' + encodeURIComponent(section);
+        } else if (subjectId) {
             currentQrUrl = baseUrl + '/evaluation/qr/' + evalId + '/' + subjectId;
         } else {
             currentQrUrl = baseUrl + '/evaluation/qr/' + evalId;

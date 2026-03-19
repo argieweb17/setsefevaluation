@@ -48,9 +48,11 @@ class EvaluationController extends AbstractController
 
     #[Route('/qr/{id}', name: 'evaluation_qr_redirect', methods: ['GET', 'POST'])]
     #[Route('/qr/{id}/{subjectId}', name: 'evaluation_qr_redirect_with_subject', methods: ['GET', 'POST'])]
+    #[Route('/qr/{id}/{subjectId}/{section}', name: 'evaluation_qr_redirect_with_section', methods: ['GET', 'POST'])]
     public function qrRedirect(
         int $id,
         ?int $subjectId = null,
+        ?string $section = null,
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SubjectRepository $subjectRepo,
@@ -71,8 +73,10 @@ class EvaluationController extends AbstractController
 
         // If subject ID is provided, use it directly
         $subject = null;
-        $section = '';
+        $sectionFromLoad = '';
         $schedule = '';
+        $sectionParam = null; // Store the section parameter separately
+
         if ($subjectId) {
             $subject = $subjectRepo->find($subjectId);
 
@@ -88,14 +92,27 @@ class EvaluationController extends AbstractController
                 if (!empty($facultyUsers)) {
                     $facultyUser = $facultyUsers[0];
                     $currentAY = $ayRepo->findCurrent();
-                    $load = $fslRepo->findOneBy([
-                        'faculty' => $facultyUser,
-                        'subject' => $subject,
-                        'academicYear' => $currentAY
-                    ]);
+
+                    // If section parameter is provided, search for that specific section
+                    if ($section) {
+                        $load = $fslRepo->findOneBy([
+                            'faculty' => $facultyUser,
+                            'subject' => $subject,
+                            'section' => $section,
+                            'academicYear' => $currentAY
+                        ]);
+                        $sectionParam = strtoupper(trim($section));
+                    } else {
+                        // Otherwise, get the first load
+                        $load = $fslRepo->findOneBy([
+                            'faculty' => $facultyUser,
+                            'subject' => $subject,
+                            'academicYear' => $currentAY
+                        ]);
+                    }
 
                     if ($load) {
-                        $section = strtoupper(trim((string) ($load->getSection() ?? '')));
+                        $sectionFromLoad = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $schedule = trim((string) ($load->getSchedule() ?? ''));
                     }
                 }
@@ -200,11 +217,14 @@ class EvaluationController extends AbstractController
             }
         }
 
+        // Determine final section to display
+        $finalSection = $sectionParam ?? $sectionFromLoad;
+
         return $this->render('evaluation/qr_form.html.twig', [
             'evaluation' => $eval,
             'subject' => $subject,
             'faculty' => $faculty,
-            'section' => $section,
+            'section' => $finalSection,
             'schedule' => $schedule,
             'questions' => $questions,
             'categoryDescriptions' => $descRepo->findDescriptionsByType('SET'),
