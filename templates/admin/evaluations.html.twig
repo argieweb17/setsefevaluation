@@ -837,12 +837,6 @@
                     <div class="qr-url-label"><i class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
                     <div class="qr-url-box" id="qrUrl"></div>
 
-                    <div class="qr-questionnaire-link" style="margin-top: 1rem; padding: 0.75rem; background-color: #f8f9fa; border-radius: 0.5rem; text-align: center;">
-                        <a id="qrQuestionnaireLink" href="#" target="_blank" style="text-decoration: none; color: #0d6efd; font-weight: 500;">
-                            <i class="bi bi-file-text me-2"></i>View Questionnaire
-                        </a>
-                    </div>
-
                     <div class="qr-actions">
                         <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
                             <i class="bi bi-download"></i> Download
@@ -1444,7 +1438,6 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var evalType = btn.getAttribute('data-eval-type');
         var faculty = btn.getAttribute('data-eval-faculty');
         var subject = btn.getAttribute('data-eval-subject');
-        var subjectId = btn.getAttribute('data-eval-subject-id');
         var section = btn.getAttribute('data-eval-section');
         var schedule = btn.getAttribute('data-eval-schedule');
         var schoolYear = btn.getAttribute('data-eval-school-year');
@@ -1470,16 +1463,6 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
         var detailsRow = document.getElementById('qrEvalDetailsRow');
         if (detailsRow) detailsRow.style.display = detailsText.length > 0 ? '' : 'none';
         document.getElementById('qrUrl').textContent = currentQrUrl;
-
-        // Set questionnaire link to the evaluation form with subject
-        var questionnaireLink = document.getElementById('qrQuestionnaireLink');
-        if (questionnaireLink) {
-            if (subjectId) {
-                questionnaireLink.href = baseUrl + '/evaluation/set/' + evalId + '/' + subjectId;
-            } else {
-                questionnaireLink.href = currentQrUrl;
-            }
-        }
 
         // Generate QR code via API
         var qrImg = document.getElementById('qrImage');
