@@ -1289,6 +1289,7 @@ class AdminController extends AbstractController
                         $rows[$idx]['items'][] = [
                             'eval' => $eval,
                             'subject' => $subjName,
+                            'subjectId' => $subj->getId(),
                             'section' => $loadSection ?: $section,
                             'schedule' => $loadSchedule ?: $schedule,
                             'evaluatorCount' => $baseCount,
@@ -1299,6 +1300,7 @@ class AdminController extends AbstractController
                 $rows[$idx]['items'][] = [
                     'eval' => $eval,
                     'subject' => $subject,
+                    'subjectId' => null,
                     'section' => $section,
                     'schedule' => $schedule,
                     'evaluatorCount' => $baseCount,
