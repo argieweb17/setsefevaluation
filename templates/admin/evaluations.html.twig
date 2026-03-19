@@ -412,7 +412,7 @@
                     <td>
                         <div class="ev-actions-cell">
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
-                            {% if staffMode and row.items|length > 0 %}
+                            {% if not staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {% endif %}
@@ -601,7 +601,7 @@
                     <td>
                         <div class="ev-actions-cell">
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailPrev{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
-                            {% if staffMode and row.items|length > 0 %}
+                            {% if not staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                             {% endif %}
