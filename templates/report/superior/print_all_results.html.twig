@@ -524,6 +524,48 @@
     </div>
 
     {# ═══════════════════════════════════════════
+       EVALUATOR COMMENTS — SEPARATED BY EVALUATION
+       ═══════════════════════════════════════════ #}
+    {% if allEvaluations|length > 0 %}
+    <div style="margin-top: 20px; page-break-inside: avoid;">
+        <h3 style="font-size: 11px; font-weight: 700; margin-bottom: 10px; text-decoration: underline;">Evaluator Comments</h3>
+
+        {% for item in allEvaluations %}
+            {% if item.subjectComments|length > 0 or item.comments|length > 0 %}
+            <div style="margin-bottom: 15px; page-break-inside: avoid;">
+                <h4 style="font-size: 10px; font-weight: 700; margin-bottom: 6px;">
+                    {{ item.evaluation.position ?? item.evaluation.evaluationType }} — {{ item.evaluation.semester ?? '' }} {{ item.evaluation.schoolYear ?? '' }}
+                </h4>
+
+                {% if item.subjectComments|length > 0 %}
+                    {% for subjCom in item.subjectComments %}
+                    <div style="margin-left: 12px; margin-bottom: 8px; font-size: 10px;">
+                        <strong>{{ subjCom.subjectCode }}{% if subjCom.section %} (Section {{ subjCom.section }}){% endif %}:</strong>
+                        <ol style="margin: 4px 0; padding-left: 20px;">
+                            {% for c in subjCom.comments %}
+                            <li style="margin-bottom: 3px;">{{ c }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                    {% endfor %}
+                {% elseif item.comments|length > 0 %}
+                    <div style="margin-left: 12px; font-size: 10px;">
+                        <ol style="margin: 0; padding-left: 20px;">
+                            {% for c in item.comments %}
+                            <li style="margin-bottom: 3px;">{{ c }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                {% else %}
+                    <div style="margin-left: 12px; font-size: 10px; font-style: italic; color: #666;">No comments submitted.</div>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ═══════════════════════════════════════════
        SIGNATURES
        ═══════════════════════════════════════════ #}
     <div class="signature-section">

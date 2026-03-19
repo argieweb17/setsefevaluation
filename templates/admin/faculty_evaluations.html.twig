@@ -652,7 +652,7 @@
                     </td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
-                            <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
+                            <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id, subject: subj.subjectId, section: subj.section}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
                         </div>
                     </td>
                 </tr>

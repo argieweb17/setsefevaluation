@@ -1642,6 +1642,7 @@ class ReportController extends AbstractController
                     }
 
                     $subjectDetails[] = [
+                        'subjectId' => (int) $subj['subjectId'],
                         'subjectCode' => $subj['subjectCode'] ?? 'N/A',
                         'subjectName' => $subj['subjectName'] ?? '',
                         'section' => $subj['section'] ?? '—',
@@ -1686,6 +1687,8 @@ class ReportController extends AbstractController
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $facultyId = (int) $request->query->get('faculty', 0);
+        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
+        $section = $request->query->get('section') ?? null;
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -1741,7 +1744,12 @@ class ReportController extends AbstractController
             $idx++;
         }
 
-        $comments = $responseRepo->getComments($facultyId, $evalId);
+        // Get comments filtered by subject and section if provided
+        if ($subjectId && $section !== null) {
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+        }
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
         $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
@@ -1836,6 +1844,28 @@ class ReportController extends AbstractController
             $comments = $responseRepo->getComments($facultyId, $evalId);
             $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
+            // Get subject/section details with their comments
+            $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
+            $subjectComments = [];
+            foreach ($allSubjects as $subj) {
+                if ((int) $subj['evaluationPeriodId'] === (int) $evalId) {
+                    $subjComments = $responseRepo->getCommentsBySubjectAndSection(
+                        $facultyId,
+                        $evalId,
+                        $subj['subjectId'],
+                        $subj['section']
+                    );
+                    $filteredSubjComments = array_values(array_filter($subjComments, fn($c) => trim($c) !== ''));
+                    if (!empty($filteredSubjComments)) {
+                        $subjectComments[] = [
+                            'subjectCode' => $subj['subjectCode'] ?? 'N/A',
+                            'section' => $subj['section'] ?? '—',
+                            'comments' => $filteredSubjComments,
+                        ];
+                    }
+                }
+            }
+
             $allEvaluations[] = [
                 'evaluation' => $eval,
                 'average' => $avg,
@@ -1844,6 +1874,7 @@ class ReportController extends AbstractController
                 'categorySummary' => $catSummary,
                 'compositeTotal' => round($composite,2),
                 'comments' => $filteredComments,
+                'subjectComments' => $subjectComments,
             ];
         }
 

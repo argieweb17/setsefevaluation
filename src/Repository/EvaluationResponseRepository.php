@@ -126,6 +126,34 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
+     * Get comments filtered by subject and section for a specific evaluation.
+     * @return string[]
+     */
+    public function getCommentsBySubjectAndSection(int $facultyId, int $evaluationPeriodId, ?int $subjectId = null, ?string $section = null): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select('r.comment')
+            ->where('r.faculty = :fid')
+            ->andWhere('r.evaluationPeriod = :epid')
+            ->andWhere('r.comment IS NOT NULL')
+            ->andWhere('r.comment != :empty')
+            ->andWhere('r.isDraft = false')
+            ->setParameter('fid', $facultyId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->setParameter('empty', '');
+
+        if ($subjectId) {
+            $qb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        }
+
+        if ($section !== null) {
+            $qb->andWhere('r.section = :section')->setParameter('section', $section);
+        }
+
+        return $qb->getQuery()->getSingleColumnResult();
+    }
+
+    /**
      * Count total unique evaluators for a faculty in an evaluation period.
      */
     public function countEvaluators(int $facultyId, int $evaluationPeriodId): int
