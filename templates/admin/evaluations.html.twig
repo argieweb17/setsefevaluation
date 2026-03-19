@@ -430,12 +430,12 @@
                                 <tbody>
                                     {% for item in row.items %}
                                     <tr>
-                                        <td>{{ item.subject ?: '—' }}</td>
+                                        <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
-                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -607,12 +607,12 @@
                                 <tbody>
                                     {% for item in row.items %}
                                     <tr>
-                                        <td>{{ item.subject ?: '—' }}</td>
+                                        <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
-                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                            <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
                                     </tr>
                                     {% endfor %}
