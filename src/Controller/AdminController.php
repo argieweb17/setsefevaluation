@@ -1200,6 +1200,7 @@ class AdminController extends AbstractController
             $baseCount = (int) ($evaluatorCounts[$eval->getId()] ?? 0);
 
             // If subject is empty, try to fetch from faculty's subject load
+            $allSubjects = [];
             if (empty($subject) && $eval->getFaculty()) {
                 $facultyName = $eval->getFaculty();
                 // Try to find faculty by full name (last, first)
@@ -1213,30 +1214,45 @@ class AdminController extends AbstractController
                     $facultyUser = $facultyUsers[0];
                     $subjectLoads = $fslRepo->findByFacultyAndAcademicYear($facultyUser->getId(), $currentAY ? $currentAY->getId() : null);
                     if (!empty($subjectLoads)) {
-                        $subjectNames = [];
                         foreach ($subjectLoads as $load) {
                             $subj = $load->getSubject();
                             if ($subj) {
-                                $subjectNames[] = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
+                                $allSubjects[] = $subj->getSubjectCode() . ' — ' . $subj->getSubjectName();
                             }
                         }
-                        if (!empty($subjectNames)) {
-                            $subject = $subjectNames[0]; // Use first subject if multiple
+                        if (!empty($allSubjects)) {
+                            $subject = $allSubjects[0]; // Use first subject as default for display
                         }
                     }
                 }
             }
 
             if (!isset($indexByKey[$key])) {
-                $rows[] = [
-                    'eval' => $eval,
-                    'items' => [[
+                $items = [];
+                // Create items for all subjects (or just one if subject is already set)
+                if (!empty($allSubjects)) {
+                    foreach ($allSubjects as $subj) {
+                        $items[] = [
+                            'eval' => $eval,
+                            'subject' => $subj,
+                            'section' => $section,
+                            'schedule' => $schedule,
+                            'evaluatorCount' => $baseCount,
+                        ];
+                    }
+                } else {
+                    $items[] = [
                         'eval' => $eval,
                         'subject' => $subject,
                         'section' => $section,
                         'schedule' => $schedule,
                         'evaluatorCount' => $baseCount,
-                    ]],
+                    ];
+                }
+
+                $rows[] = [
+                    'eval' => $eval,
+                    'items' => $items,
                     'subjects' => $subject !== '' ? [$subject] : [],
                     'sections' => $section !== '' ? [$section] : [],
                     'schedules' => $schedule !== '' ? [$schedule] : [],
