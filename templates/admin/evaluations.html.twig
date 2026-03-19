@@ -741,20 +741,6 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-4" style="display:none;">
-                                    <label class="form-label ev-form-label">Subject</label>
-                                    <select name="subject" id="editSubject{{ eval.id }}" class="form-select ev-form-control subject-select" data-target-time="#editTime{{ eval.id }}" data-target-section="#editSection{{ eval.id }}" data-current-value="{{ eval.subject }}">
-                                        <option value="" data-schedule="" data-section="">— Select Subject —</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4" style="display:none;">
-                                    <label class="form-label ev-form-label">Time</label>
-                                    <input type="text" name="time" id="editTime{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.time }}" placeholder="Auto-filled from subject" readonly>
-                                </div>
-                                <div class="col-md-4" style="display:none;">
-                                    <label class="form-label ev-form-label">Section</label>
-                                    <input type="text" name="section" id="editSection{{ eval.id }}" class="form-control ev-form-control" value="{{ eval.section }}" placeholder="Auto-filled from subject" readonly>
-                                </div>
                                 <div class="col-md-4">
                                     <label class="form-label ev-form-label">Start Date & Time</label>
                                     <input type="datetime-local" name="startDate" class="form-control ev-form-control" value="{{ eval.startDate|date('Y-m-d\\TH:i') }}" required>
@@ -908,20 +894,6 @@
                                 {% endfor %}
                             </select>
                             <input type="hidden" name="facultyId" id="createFacultyId" value="">
-                        </div>
-                        <div class="col-md-4" style="display:none;">
-                            <label class="form-label ev-form-label">Subject</label>
-                            <select name="subject" id="createSubject" class="form-select ev-form-control subject-select" data-target-time="#createTime" data-target-section="#createSection" data-current-value="">
-                                <option value="" data-schedule="" data-section="">— Select Faculty first —</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4" style="display:none;">
-                            <label class="form-label ev-form-label">Time</label>
-                            <input type="text" name="time" id="createTime" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
-                        </div>
-                        <div class="col-md-4" style="display:none;">
-                            <label class="form-label ev-form-label">Section</label>
-                            <input type="text" name="section" id="createSection" class="form-control ev-form-control" placeholder="Auto-filled from subject" readonly>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Start Date & Time</label>
