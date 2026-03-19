@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\Entity\AuditLog;
 use App\Entity\EvaluationResponse;
+use App\Repository\AcademicYearRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\EnrollmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
+use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\UserRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
@@ -57,6 +59,8 @@ class EvaluationController extends AbstractController
         QuestionRepository $questionRepo,
         QuestionCategoryDescriptionRepository $descRepo,
         EvaluationResponseRepository $responseRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
         EntityManagerInterface $em,
     ): Response {
         $eval = $evalRepo->find($id);
@@ -67,8 +71,35 @@ class EvaluationController extends AbstractController
 
         // If subject ID is provided, use it directly
         $subject = null;
+        $section = '';
+        $schedule = '';
         if ($subjectId) {
             $subject = $subjectRepo->find($subjectId);
+
+            // Fetch section and schedule from FacultySubjectLoad
+            if ($subject && $eval->getFaculty()) {
+                $facultyName = $eval->getFaculty();
+                $facultyUsers = $userRepo->createQueryBuilder('u')
+                    ->where('CONCAT(u.lastName, \', \', u.firstName) = :fullName')
+                    ->orWhere('CONCAT(u.firstName, \' \', u.lastName) = :fullName')
+                    ->setParameter('fullName', $facultyName)
+                    ->getQuery()->getResult();
+
+                if (!empty($facultyUsers)) {
+                    $facultyUser = $facultyUsers[0];
+                    $currentAY = $ayRepo->findCurrent();
+                    $load = $fslRepo->findOneBy([
+                        'faculty' => $facultyUser,
+                        'subject' => $subject,
+                        'academicYear' => $currentAY
+                    ]);
+
+                    if ($load) {
+                        $section = strtoupper(trim((string) ($load->getSection() ?? '')));
+                        $schedule = trim((string) ($load->getSchedule() ?? ''));
+                    }
+                }
+            }
         }
 
         // Otherwise, resolve subject from evaluation's subject string ("CODE — Name")
@@ -173,6 +204,8 @@ class EvaluationController extends AbstractController
             'evaluation' => $eval,
             'subject' => $subject,
             'faculty' => $faculty,
+            'section' => $section,
+            'schedule' => $schedule,
             'questions' => $questions,
             'categoryDescriptions' => $descRepo->findDescriptionsByType('SET'),
             'error' => $error,

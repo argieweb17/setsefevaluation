@@ -142,7 +142,8 @@
     <div class="eval-info-bar">
         <div><i class="bi bi-person-fill text-primary me-1"></i><strong>Faculty:</strong> {{ faculty.fullName }}</div>
         <div><i class="bi bi-journal-text text-success me-1"></i><strong>Subject:</strong> {{ subject.subjectCode }} — {{ subject.subjectName }}</div>
-        {% if evaluation.section %}<div><i class="bi bi-diagram-3 text-info me-1"></i><strong>Section:</strong> {{ evaluation.section }}</div>{% endif %}
+        {% if section %}<div><i class="bi bi-diagram-3 text-info me-1"></i><strong>Section:</strong> {{ section }}</div>{% endif %}
+        {% if schedule %}<div><i class="bi bi-calendar-event text-warning me-1"></i><strong>Schedule:</strong> {{ schedule }}</div>{% endif %}
     </div>
 
     <div class="eval-form-instructions">
