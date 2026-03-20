@@ -567,7 +567,7 @@
                     <tbody>
                         {% for cc in compositeCategories %}
                         <tr>
-                            <td>{{ cc.weightedMean|number_format(2) }}</td>
+                            <td>{{ cc.mean|number_format(2) }}</td>
                             <td>{{ cc.weightedRating|number_format(2) }}</td>
                         </tr>
                         {% endfor %}
