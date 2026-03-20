@@ -283,55 +283,65 @@
     {# ═══════════════════════════════════════════
        SUMMARY RESULTS TABLE
        ═══════════════════════════════════════════ #}
-    <table class="results-table">
-        <thead>
-            <tr>
-                <th rowspan="3" style="width:30%">Areas of Instruction</th>
-                <th colspan="3">{{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</th>
-                <th colspan="2">Composite Results</th>
-            </tr>
-            <tr>
-                <th colspan="3">Baccalaureate Course</th>
-                <th rowspan="2">Weighted<br>Mean</th>
-                <th rowspan="2">Weighted<br>Rating</th>
-            </tr>
-            <tr>
-                <th>Weighted<br>Mean</th>
-                <th>Weight<br>(%)</th>
-                <th>Weighted<br>Rating</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cat in categorySummary %}
-            <tr>
-                <td class="area-cell">{{ cat.name }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightPct }}%</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
-            </tr>
-            {% endfor %}
-            <tr class="total-row">
-                <td class="area-cell">Total</td>
-                <td></td>
-                <td>100%</td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
-                <td></td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
-            </tr>
-            <tr class="verbal-row">
-                <td class="area-cell" style="font-weight:400;">Verbal Description</td>
-                <td colspan="3">{{ performanceLevel|upper }}</td>
-                <td colspan="2">{{ performanceLevel|upper }}</td>
-            </tr>
-            <tr class="subject-row">
-                <td class="area-cell">{{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</td>
-                <td>{{ evaluatorCount }}</td>
+    {% for result in sectionResults %}
+    <div class="section-result" style="margin-bottom: 15px;">
+        <h3 style="text-align: center; margin-bottom: 10px; font-size: 12px; font-weight: 700;">
+            {{ result.subjectCode }} {% if result.section %} - Section {{ result.section }}{% endif %}
+        </h3>
 
-            </tr>
-        </tbody>
-    </table>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th rowspan="3" style="width:30%">Areas of Instruction</th>
+                    <th colspan="3">{{ result.subjectCode }}{% if result.section %} Section {{ result.section }}{% endif %}</th>
+                    <th colspan="2">Composite Results</th>
+                </tr>
+                <tr>
+                    <th colspan="3">Baccalaureate Course</th>
+                    <th rowspan="2">Weighted<br>Mean</th>
+                    <th rowspan="2">Weighted<br>Rating</th>
+                </tr>
+                <tr>
+                    <th>Weighted<br>Mean</th>
+                    <th>Weight<br>(%)</th>
+                    <th>Weighted<br>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in result.categorySummary %}
+                <tr>
+                    <td class="area-cell">{{ cat.name }}</td>
+                    <td>{{ cat.mean|number_format(2) }}</td>
+                    <td>{{ cat.weightPct }}%</td>
+                    <td>{{ cat.weightedRating|number_format(2) }}</td>
+                    <td>{{ cat.mean|number_format(2) }}</td>
+                    <td>{{ cat.weightedRating|number_format(2) }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="total-row">
+                    <td class="area-cell">Total</td>
+                    <td></td>
+                    <td>100%</td>
+                    <td>{{ result.compositeTotal|number_format(2) }}</td>
+                    <td></td>
+                    <td>{{ result.compositeTotal|number_format(2) }}</td>
+                </tr>
+                <tr class="verbal-row">
+                    <td class="area-cell" style="font-weight:400;">Verbal Description</td>
+                    <td colspan="3">{{ result.performanceLevel|upper }}</td>
+                    <td colspan="2">{{ result.performanceLevel|upper }}</td>
+                </tr>
+                <tr class="subject-row">
+                    <td class="area-cell">{{ result.subjectCode }}{% if result.section %} Section {{ result.section }}{% endif %}</td>
+                    <td>{{ result.evaluatorCount }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% if not loop.last %}
+        <div style="page-break-after: always; margin-bottom: 20px;"></div>
+    {% endif %}
+    {% endfor %}
 
     {# ═══════════════════════════════════════════
        RATING SCALE
@@ -464,14 +474,15 @@
     {# ═══════════════════════════════════════════
        COMMENTS (PAGE 2)
        ═══════════════════════════════════════════ #}
-    <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
+    {% for result in sectionResults %}
+    <div class="comments-section" style="{% if not loop.first %}page-break-before: always; padding-top: 20px;{% endif %}">
+        <h3>Evaluator Comments — {{ result.subjectCode }}{% if result.section %} Section {{ result.section }}{% endif %}</h3>
         <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
-            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
+            <strong>Evaluators:</strong> {{ result.evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ result.comments|length }}
         </div>
-        {% if comments|length > 0 %}
+        {% if result.comments|length > 0 %}
         <ol>
-            {% for c in comments %}
+            {% for c in result.comments %}
                 <li>{{ c }}</li>
             {% endfor %}
         </ol>
@@ -479,6 +490,7 @@
         <p class="no-comments">No comments were submitted for this evaluation.</p>
         {% endif %}
     </div>
+    {% endfor %}
 
     {# ═══════════════════════════════════════════
        SIGNATURE SECTION (PAGE 2)

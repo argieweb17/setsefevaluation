@@ -72,6 +72,89 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
+     * Get average ratings grouped by subject and section for a faculty in an evaluation period.
+     * If subjectId and section are provided, returns results for that specific combination only.
+     * Otherwise returns all subject/section combinations evaluated.
+     * @return array<int, array{subjectId: int|null, subjectCode: string|null, subjectName: string|null, section: string|null, questionAverages: array<int, array{average: float, count: int}>}>
+     */
+    public function getAverageRatingsByFacultyAndSection(int $facultyId, int $evaluationPeriodId, ?int $subjectId = null, ?string $section = null): array
+    {
+        // First get subject/section combinations evaluated
+        $subjectQb = $this->createQueryBuilder('r')
+            ->select(
+                'IDENTITY(r.subject) as subjectId',
+                'COALESCE(s.subjectCode, \'N/A\') as subjectCode',
+                'COALESCE(s.subjectName, \'General\') as subjectName',
+                'r.section'
+            )
+            ->leftJoin('r.subject', 's')
+            ->where('r.faculty = :fid')
+            ->andWhere('r.evaluationPeriod = :epid')
+            ->andWhere('r.isDraft = false')
+            ->setParameter('fid', $facultyId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->groupBy('r.subject, r.section');
+
+        // Apply filters if provided
+        if ($subjectId !== null) {
+            $subjectQb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        }
+        if ($section !== null) {
+            $subjectQb->andWhere('r.section = :sec')->setParameter('sec', $section);
+        }
+
+        $subjectSections = $subjectQb->orderBy('COALESCE(s.subjectCode, \'N/A\')', 'ASC')
+            ->addOrderBy('r.section', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        // For each subject/section, get question averages
+        $result = [];
+        foreach ($subjectSections as $idx => $ss) {
+            $questionQb = $this->createQueryBuilder('r')
+                ->select('IDENTITY(r.question) as questionId, AVG(r.rating) as avgRating, COUNT(r.id) as totalResponses')
+                ->where('r.faculty = :fid')
+                ->andWhere('r.evaluationPeriod = :epid')
+                ->andWhere('r.isDraft = false')
+                ->setParameter('fid', $facultyId)
+                ->setParameter('epid', $evaluationPeriodId);
+
+            if ($ss['subjectId'] !== null) {
+                $questionQb->andWhere('r.subject = :sid')->setParameter('sid', $ss['subjectId']);
+            } else {
+                $questionQb->andWhere('r.subject IS NULL');
+            }
+
+            if ($ss['section'] !== null) {
+                $questionQb->andWhere('r.section = :sec')->setParameter('sec', $ss['section']);
+            } else {
+                $questionQb->andWhere('r.section IS NULL');
+            }
+
+            $questionQb->groupBy('r.question');
+            $questionResults = $questionQb->getQuery()->getResult();
+
+            $questionAverages = [];
+            foreach ($questionResults as $row) {
+                $questionAverages[$row['questionId']] = [
+                    'average' => round((float) $row['avgRating'], 2),
+                    'count' => (int) $row['totalResponses'],
+                ];
+            }
+
+            $result[$idx] = [
+                'subjectId' => $ss['subjectId'],
+                'subjectCode' => $ss['subjectCode'],
+                'subjectName' => $ss['subjectName'],
+                'section' => $ss['section'],
+                'questionAverages' => $questionAverages,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Get overall average rating for a faculty in an evaluation period.
      */
     public function getOverallAverage(int $facultyId, int $evaluationPeriodId): float

@@ -1698,95 +1698,121 @@ class ReportController extends AbstractController
             throw $this->createNotFoundException('Evaluation or faculty not found.');
         }
 
-        $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+        // Get question averages grouped by subject and section
+        $subjectSectionResults = $responseRepo->getAverageRatingsByFacultyAndSection($facultyId, $evalId, $subjectId, $section);
         $questions = $questionRepo->findByType($evaluation->getEvaluationType());
 
-        $questionData = [];
-        $categoryAverages = [];
-        foreach ($questions as $q) {
-            $qId = $q->getId();
-            $avgData = $questionAverages[$qId] ?? null;
-            $avg = is_array($avgData) ? $avgData['average'] : null;
-            $cnt = is_array($avgData) ? $avgData['count'] : 0;
-            $questionData[] = [
-                'category' => $q->getCategory(),
-                'text' => $q->getQuestionText(),
-                'average' => $avg,
-                'count' => $cnt,
-            ];
-            $cat = $q->getCategory();
-            if (!isset($categoryAverages[$cat])) {
-                $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+        // Helper function to calculate category averages for a question averages array
+        $calculateCategoryAverages = function($questionAverages) use ($questions) {
+            $categoryAverages = [];
+            foreach ($questions as $q) {
+                $qId = $q->getId();
+                $avgData = $questionAverages[$qId] ?? null;
+                $avg = is_array($avgData) ? $avgData['average'] : null;
+                $cat = $q->getCategory();
+                if (!isset($categoryAverages[$cat])) {
+                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+                }
+                if ($avg !== null) {
+                    $categoryAverages[$cat]['sum'] += $avg;
+                    $categoryAverages[$cat]['n']++;
+                }
             }
-            if ($avg !== null) {
-                $categoryAverages[$cat]['sum'] += $avg;
-                $categoryAverages[$cat]['n']++;
-            }
-        }
+            return $categoryAverages;
+        };
 
-        $catCount = count($categoryAverages);
-        $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
-        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
-        $categorySummary = [];
-        $compositeTotal = 0.0;
-        $romNum = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-        $idx = 0;
-        foreach ($categoryAverages as $cat => $data) {
-            $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
-            $weightedRating = $mean * $weightFrac;
-            $compositeTotal += $weightedRating;
-            $categorySummary[] = [
-                'roman' => $romNum[$idx] ?? (string)($idx + 1),
-                'name' => $cat,
-                'mean' => round($mean, 2),
+        // Helper function to build category summary from category averages
+        $buildCategorySummary = function($categoryAverages) {
+            $romNum = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            $catCount = count($categoryAverages);
+            $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
+            $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+            $categorySummary = [];
+            $compositeTotal = 0.0;
+            $idx = 0;
+            foreach ($categoryAverages as $cat => $data) {
+                $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+                $weightedRating = $mean * $weightFrac;
+                $compositeTotal += $weightedRating;
+                $categorySummary[] = [
+                    'roman' => $romNum[$idx] ?? (string)($idx + 1),
+                    'name' => $cat,
+                    'mean' => round($mean, 2),
+                    'weightPct' => $weightPct,
+                    'weightedRating' => round($weightedRating, 2),
+                ];
+                $idx++;
+            }
+            return [$categorySummary, round($compositeTotal, 2), $weightPct];
+        };
+
+        // Build results for each subject/section combination
+        $sectionResults = [];
+        foreach ($subjectSectionResults as $subjectSection) {
+            $categoryAverages = $calculateCategoryAverages($subjectSection['questionAverages']);
+            list($categorySummary, $compositeTotal, $weightPct) = $buildCategorySummary($categoryAverages);
+
+            // Calculate overall average for this section
+            $sectionOverallAvg = 0.0;
+            if (count($subjectSection['questionAverages']) > 0) {
+                $sum = 0.0;
+                $count = 0;
+                foreach ($subjectSection['questionAverages'] as $avgData) {
+                    $sum += $avgData['average'];
+                    $count++;
+                }
+                $sectionOverallAvg = $count > 0 ? round($sum / $count, 2) : 0.0;
+            }
+
+            // Get evaluator count for this section
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection(
+                $facultyId,
+                $evalId,
+                $subjectSection['subjectId'],
+                $subjectSection['section']
+            );
+
+            // Get comments for this section
+            $comments = $responseRepo->getCommentsBySubjectAndSection(
+                $facultyId,
+                $evalId,
+                $subjectSection['subjectId'],
+                $subjectSection['section']
+            );
+            $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
+
+            $sectionResults[] = [
+                'subjectCode' => $subjectSection['subjectCode'],
+                'subjectName' => $subjectSection['subjectName'],
+                'section' => $subjectSection['section'],
+                'categorySummary' => $categorySummary,
+                'compositeTotal' => $compositeTotal,
                 'weightPct' => $weightPct,
-                'weightedRating' => round($weightedRating, 2),
+                'overallAvg' => $sectionOverallAvg,
+                'performanceLevel' => $this->performanceLevel($sectionOverallAvg),
+                'evaluatorCount' => $evaluatorCount,
+                'comments' => $filteredComments,
             ];
-            $idx++;
         }
 
-        // Get comments filtered by subject and section if provided
-        if ($subjectId !== null || $section !== null) {
-            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-        } else {
-            $comments = $responseRepo->getComments($facultyId, $evalId);
-        }
-        $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
-
-        $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
-
-        // Get evaluator count filtered by subject and section if provided
-        if ($subjectId !== null || $section !== null) {
-            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-        } else {
-            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
-        }
-
-        // Get subject info if specific subject is being printed
-        $subjectCode = null;
-        $subjectName = null;
-        if ($subjectId !== null) {
-            $subject = $subjectRepo->find($subjectId);
-            if ($subject) {
-                $subjectCode = $subject->getSubjectCode();
-                $subjectName = $subject->getSubjectName();
-            }
-        }
+        // For backward compatibility, also pass single section data if filtered
+        $firstResult = $sectionResults[0] ?? null;
+        $isSingleSection = count($sectionResults) === 1;
 
         return $this->render('report/print_results.html.twig', [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
-            'questions' => $questionData,
-            'comments' => $filteredComments,
-            'overallAverage' => $overallAvg,
-            'evaluatorCount' => $evaluatorCount,
-            'performanceLevel' => $this->performanceLevel($overallAvg),
-            'categorySummary' => $categorySummary,
-            'compositeTotal' => round($compositeTotal, 2),
-            'weightPct' => $weightPct,
-            'printSubjectCode' => $subjectCode,
-            'printSubjectName' => $subjectName,
-            'printSection' => $section,
+            'sectionResults' => $sectionResults,
+            'isSingleSection' => $isSingleSection,
+            // Backward compatibility fields (for single section)
+            'printSubjectCode' => $firstResult ? $firstResult['subjectCode'] : null,
+            'printSubjectName' => $firstResult ? $firstResult['subjectName'] : null,
+            'printSection' => $firstResult ? $firstResult['section'] : null,
+            'categorySummary' => $firstResult ? $firstResult['categorySummary'] : [],
+            'compositeTotal' => $firstResult ? $firstResult['compositeTotal'] : 0,
+            'performanceLevel' => $firstResult ? $firstResult['performanceLevel'] : '',
+            'evaluatorCount' => $firstResult ? $firstResult['evaluatorCount'] : 0,
+            'comments' => $firstResult ? $firstResult['comments'] : [],
         ]);
     }
 
@@ -1850,10 +1876,10 @@ class ReportController extends AbstractController
     #[Route('/results/print-all', name: 'staff_results_print_all', methods: ['GET'])]
     public function resultsPrintAll(
         Request $request,
+        EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
-        EvaluationPeriodRepository $evalRepo,
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
@@ -1862,166 +1888,196 @@ class ReportController extends AbstractController
             throw $this->createNotFoundException('Faculty not found.');
         }
 
-        // Get all subject evaluations for this faculty organized by course
-        $subjectEvals = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
+        $selectedEvals = $request->query->all('evals');
+        $evalData = $responseRepo->getEvaluationsByFaculty($facultyId);
+        $allEvaluations = [];
 
-        // Organize by evaluation period and course
-        $evalsByPeriod = []; // evalId => [courseNum => subjects, ...]
-
-        foreach ($subjectEvals as $seval) {
-            $courseNum = (int)($seval['courseNumber'] ?? 1);
-            $evalId = (int)$seval['evaluationPeriodId'];
-
-            if (!isset($evalsByPeriod[$evalId])) {
-                $evalsByPeriod[$evalId] = [];
-            }
-            if (!isset($evalsByPeriod[$evalId][$courseNum])) {
-                $evalsByPeriod[$evalId][$courseNum] = [];
-            }
-            $evalsByPeriod[$evalId][$courseNum][] = $seval;
-        }
-
-        // For each evaluation period, calculate ratings per category per course
-        $categoryNames = [];
-        $perCourseData = []; // course# => [category => {mean, weightPct, weightedRating}, ...]
-        $courseTotals = []; // course# => {compositeTotal, level}
-        $evaluationType = 'SET';
-        $semester = '';
-        $schoolYear = '';
-
-        foreach ($evalsByPeriod as $evalId => $coursesByNum) {
-            $eval = $evalRepo->find($evalId);
+        foreach ($evalData as $row) {
+            $eval = $evalRepo->find((int) $row['evaluationPeriodId']);
             if (!$eval) continue;
 
-            if ($evaluationType === 'SET' && $eval->getEvaluationType() !== null) {
-                $evaluationType = $eval->getEvaluationType();
-                $semester = $eval->getSemester() ?? '';
-                $schoolYear = $eval->getSchoolYear() ?? '';
+            if (!empty($selectedEvals) && !in_array((string) $eval->getId(), $selectedEvals, true)) {
+                continue;
             }
 
-            $questions = $questionRepo->findByType($eval->getEvaluationType());
-            $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+            $evalId = $eval->getId();
+            $avg = round((float) $row['avgRating'], 2);
+            $count = (int) $row['evaluatorCount'];
 
-            // Calculate per-category averages from questions
+            // Category summary
+            $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+            $questions = $questionRepo->findByType($eval->getEvaluationType());
             $categoryAverages = [];
             foreach ($questions as $q) {
                 $qId = $q->getId();
                 $avgData = $questionAverages[$qId] ?? null;
                 $qAvg = is_array($avgData) ? $avgData['average'] : null;
                 $cat = $q->getCategory();
-
                 if (!isset($categoryAverages[$cat])) {
                     $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
                 }
-                if ($qAvg !== null && $qAvg > 0) {
+                if ($qAvg !== null) {
                     $categoryAverages[$cat]['sum'] += $qAvg;
                     $categoryAverages[$cat]['n']++;
                 }
             }
 
             $catCount = count($categoryAverages);
+            $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
             $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
-
-            // For each course in this evaluation
-            foreach ($coursesByNum as $courseNum => $_) {
-                if (!isset($perCourseData[$courseNum])) {
-                    $perCourseData[$courseNum] = [];
-                }
-                if (!isset($courseTotals[$courseNum])) {
-                    $courseTotals[$courseNum] = ['sum' => 0.0, 'catCount' => 0];
-                }
-
-                $courseCompositeTotal = 0.0;
-                $romNum = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-                $idx = 0;
-
-                foreach ($categoryAverages as $cat => $data) {
-                    $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
-                    $wr = $mean * $weightFrac;
-                    $courseCompositeTotal += $wr;
-
-                    if (!in_array($cat, $categoryNames)) {
-                        $categoryNames[] = $cat;
-                    }
-
-                    $roman = $romNum[$idx] ?? (string)($idx+1);
-                    $catKey = $roman . '. ' . $cat;
-
-                    $perCourseData[$courseNum][$catKey] = [
-                        'mean' => round($mean, 2),
-                        'weightPct' => $catCount > 0 ? round(100/$catCount) : 0,
-                        'weightedRating' => round($wr, 2),
-                    ];
-                    $idx++;
-                }
-
-                $courseTotals[$courseNum] = [
-                    'compositeTotal' => round($courseCompositeTotal, 2),
-                    'level' => $this->performanceLevel(round($courseCompositeTotal, 2)),
+            $categorySummary = [];
+            $compositeTotal = 0.0;
+            foreach ($categoryAverages as $cat => $data) {
+                $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+                $weightedRating = $mean * $weightFrac;
+                $compositeTotal += $weightedRating;
+                $categorySummary[] = [
+                    'name' => $cat,
+                    'mean' => round($mean, 2),
+                    'weightPct' => $weightPct,
+                    'weightedRating' => round($weightedRating, 2),
                 ];
             }
+
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+            $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
+
+            // Get subject/section details with their comments
+            $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
+            $subjectComments = [];
+            foreach ($allSubjects as $subj) {
+                if ((int) $subj['evaluationPeriodId'] === (int) $evalId) {
+                    $subjComments = $responseRepo->getCommentsBySubjectAndSection(
+                        $facultyId,
+                        $evalId,
+                        $subj['subjectId'],
+                        $subj['section']
+                    );
+                    $filteredSubjComments = array_values(array_filter($subjComments, fn($c) => trim($c) !== ''));
+                    if (!empty($filteredSubjComments)) {
+                        $subjectComments[] = [
+                            'subjectCode' => $subj['subjectCode'] ?? 'N/A',
+                            'section' => $subj['section'] ?? '—',
+                            'comments' => $filteredSubjComments,
+                        ];
+                    }
+                }
+            }
+
+            $allEvaluations[] = [
+                'evaluation' => $eval,
+                'average' => $avg,
+                'evaluators' => $count,
+                'level' => $this->performanceLevel($avg),
+                'categorySummary' => $categorySummary,
+                'compositeTotal' => round($compositeTotal, 2),
+                'comments' => $filteredComments,
+                'subjectComments' => $subjectComments,
+            ];
         }
 
-        // Build formatted category names with roman numerals
-        $categoryNamesFormatted = [];
-        $romNum = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-        foreach ($categoryNames as $idx => $cat) {
-            $roman = $romNum[$idx] ?? (string)($idx+1);
-            $categoryNamesFormatted[] = $roman . '. ' . $cat;
-        }
-
-
-        // Build course data for template (courses 1-7 and 8-14)
-        $baccCourseData = [];
-        $gradCourseData = [];
-
-        for ($i = 1; $i <= 7; $i++) {
-            $baccCourseData[$i] = $perCourseData[$i] ?? [];
-        }
-
-        for ($i = 8; $i <= 14; $i++) {
-            $gradCourseData[$i] = $perCourseData[$i] ?? [];
-        }
-
-        // Calculate composite overall across all courses
+        // ── Build composite averages across all courses per category ──
+        $categoryNames = [];
         $compositeSums = [];
         $compositeCounts = [];
-        foreach ($perCourseData as $courseData) {
-            foreach ($courseData as $catKey => $data) {
-                if (!isset($compositeSums[$catKey])) {
-                    $compositeSums[$catKey] = 0.0;
-                    $compositeCounts[$catKey] = 0;
+
+        foreach ($allEvaluations as $item) {
+            foreach ($item['categorySummary'] as $cat) {
+                $name = $cat['name'];
+                if (!in_array($name, $categoryNames, true)) {
+                    $categoryNames[] = $name;
                 }
-                $compositeSums[$catKey] += $data['mean'];
-                $compositeCounts[$catKey]++;
+                if (!isset($compositeSums[$name])) {
+                    $compositeSums[$name] = 0.0;
+                    $compositeCounts[$name] = 0;
+                }
+                $compositeSums[$name] += $cat['mean'];
+                $compositeCounts[$name]++;
             }
         }
 
+        $catCount = count($categoryNames);
+        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+        $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
         $compositeCategories = [];
         $compositeGrandTotal = 0.0;
-        $catCount = count($categoryNamesFormatted);
-        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
 
-        foreach ($categoryNamesFormatted as $catKey) {
-            $wMean = isset($compositeCounts[$catKey]) && $compositeCounts[$catKey] > 0
-                ? round($compositeSums[$catKey] / $compositeCounts[$catKey], 2)
+        foreach ($categoryNames as $name) {
+            $wMean = $compositeCounts[$name] > 0
+                ? round($compositeSums[$name] / $compositeCounts[$name], 2)
                 : 0;
             $wRating = round($wMean * $weightFrac, 2);
             $compositeGrandTotal += $wRating;
             $compositeCategories[] = [
-                'name' => $catKey,
-                'weightedMean' => $wMean,
-                'weightPct' => $catCount > 0 ? round(100 / $catCount) : 0,
+                'name' => $name,
+                'mean' => $wMean,
+                'weightPct' => $weightPct,
                 'weightedRating' => $wRating,
             ];
         }
 
+        // ── Split into Baccalaureate vs Graduate, pad to 7 each ──
+        $baccEvaluations = [];
+        $gradEvaluations = [];
+
+        foreach ($allEvaluations as $item) {
+            $college = $item['evaluation']->getCollege() ?? '';
+            if (stripos($college, 'Graduate') !== false) {
+                $gradEvaluations[] = $item;
+            } else {
+                $baccEvaluations[] = $item;
+            }
+        }
+
+        // Create empty slot template
+        $emptyCategories = [];
+        foreach ($categoryNames as $name) {
+            $emptyCategories[] = [
+                'name' => $name,
+                'mean' => 0.00,
+                'weightPct' => $weightPct,
+                'weightedRating' => 0.00,
+            ];
+        }
+
+        $emptySlot = [
+            'evaluation' => null,
+            'average' => 0.00,
+            'evaluators' => 0,
+            'level' => 'N/A',
+            'categorySummary' => $emptyCategories,
+            'compositeTotal' => 0.00,
+            'comments' => [],
+            'subjectComments' => [],
+        ];
+
+        // Pad each group to exactly 7 slots
+        while (count($baccEvaluations) < 7) {
+            $baccEvaluations[] = $emptySlot;
+        }
+        while (count($gradEvaluations) < 7) {
+            $gradEvaluations[] = $emptySlot;
+        }
+
+        // Extract metadata from first evaluation
+        $evaluationType = 'SET';
+        $semester = '';
+        $schoolYear = '';
+        if (!empty($allEvaluations)) {
+            $first = reset($allEvaluations);
+            if ($first['evaluation']) {
+                $evaluationType = $first['evaluation']->getEvaluationType() ?? 'SET';
+                $semester = $first['evaluation']->getSemester() ?? '';
+                $schoolYear = $first['evaluation']->getSchoolYear() ?? '';
+            }
+        }
+
         return $this->render('report/print_all_results.html.twig', [
             'faculty' => $faculty,
-            'baccCourseData' => $baccCourseData,
-            'gradCourseData' => $gradCourseData,
-            'courseTotals' => $courseTotals,
-            'categoryNames' => $categoryNamesFormatted,
+            'allEvaluations' => $allEvaluations,
+            'baccEvaluations' => $baccEvaluations,
+            'gradEvaluations' => $gradEvaluations,
+            'categoryNames' => $categoryNames,
             'compositeCategories' => $compositeCategories,
             'compositeGrandTotal' => round($compositeGrandTotal, 2),
             'compositeLevel' => $this->performanceLevel(round($compositeGrandTotal, 2)),
