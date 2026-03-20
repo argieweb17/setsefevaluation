@@ -1949,6 +1949,7 @@ class ReportController extends AbstractController
             $allCoursesSummary[$courseNum] = [
                 'categorySummary' => $courseSummary,
                 'compositeTotal' => round($compositeTotal, 2),
+                'level' => $this->performanceLevel(round($compositeTotal, 2)),
             ];
         }
 

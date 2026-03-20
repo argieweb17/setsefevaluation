@@ -415,7 +415,7 @@
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
                         {% for item in baccEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                                 {% set found = false %}
                                 {% for cat in item.categorySummary %}
                                     {% if cat.name == catName and not found %}
@@ -442,7 +442,7 @@
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
                         {% for item in baccEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                             <td></td>
                             <td>100%</td>
                             <td>{{ item.compositeTotal|number_format(2) }}</td>
@@ -457,7 +457,7 @@
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
                         {% for item in baccEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                             <td colspan="3">{{ item.level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
@@ -492,7 +492,7 @@
                     <tr>
                         <td class="item-cell">{{ catName }}</td>
                         {% for item in gradEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                                 {% set found = false %}
                                 {% for cat in item.categorySummary %}
                                     {% if cat.name == catName and not found %}
@@ -519,7 +519,7 @@
                     <tr class="total-row">
                         <td class="item-cell">TOTAL</td>
                         {% for item in gradEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                             <td></td>
                             <td>100%</td>
                             <td>{{ item.compositeTotal|number_format(2) }}</td>
@@ -534,7 +534,7 @@
                     <tr class="verbal-row">
                         <td class="item-cell">RATING</td>
                         {% for item in gradEvaluations %}
-                            {% if item.evaluation is not null %}
+                            {% if item.categorySummary is not empty %}
                             <td colspan="3">{{ item.level }}</td>
                             {% else %}
                             <td colspan="3" class="empty-cell" style="font-style:italic; color:#999;">N/A</td>
