@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
 
 {% block title %}{{ faculty.fullName }} | SEF Evaluations{% endblock %}
 
@@ -516,15 +517,15 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <a href="{{ path('admin_results_superior') }}" class="btn btn-sm fes-btn-back">
+                <a href="{{ path(prefix ~ '_results_superior') }}" class="btn btn-sm fes-btn-back">
                     <i class="bi bi-arrow-left me-1"></i>Back to SEF Results
                 </a>
                 {% if evaluations|length > 0 %}
-                <a href="{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fes-btn-print">
+                <a href="{{ path(prefix ~ '_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fes-btn-print">
                     <i class="bi bi-printer me-1"></i>Print All
                 </a>
                 <button type="button" id="fesToggleSelect" class="btn btn-sm fes-btn-select">
-                    <i class="bi bi-check2-square me-1"></i>Select to Print
+                    <i class="bi bi-check2-square me-1"></i>Choose the subject to print
                 </button>
                 {% endif %}
             </div>
@@ -622,7 +623,7 @@
             {% else %}
                 <span class="fes-badge badge-red"><i class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
             {% endif %}
-            <a href="{{ path('admin_results_superior_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank"
+            <a href="{{ path(prefix ~ '_results_superior_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank"
                class="fes-print-btn">
                 <i class="bi bi-printer"></i> Print
             </a>
@@ -667,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const checks = document.querySelectorAll('.fes-check');
     const checkWraps = document.querySelectorAll('.fes-eval-check');
     const facultyId = {{ faculty.id }};
-    const basePrintUrl = '{{ path('admin_results_superior_print_all', {faculty: faculty.id}) }}';
+    const basePrintUrl = '{{ path(prefix ~ '_results_superior_print_all', {faculty: faculty.id}) }}';
     let selectMode = false;
 
     if (!toggleBtn) return;
@@ -685,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function exitSelectMode() {
         selectMode = false;
         toggleBtn.classList.remove('active');
-        toggleBtn.innerHTML = '<i class="bi bi-check2-square me-1"></i>Select to Print';
+        toggleBtn.innerHTML = '<i class="bi bi-check2-square me-1"></i>Choose the subject to print';
         selectAllWrap.style.display = 'none';
         checkWraps.forEach(w => w.style.display = 'none');
         cards.forEach(c => { c.classList.remove('selectable', 'selected'); });
@@ -702,8 +703,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (count > 0) {
             actionBar.classList.add('show');
             const ids = Array.from(selected).map(cb => cb.value);
-            const params = ids.map(id => 'evals[]=' + id).join('&');
-            printSelBtn.href = basePrintUrl + '&' + params;
+            const params = new URLSearchParams();
+            ids.forEach(id => params.append('evals[]', id));
+            const separator = basePrintUrl.includes('?') ? '&' : '?';
+            printSelBtn.href = basePrintUrl + separator + params.toString();
         } else {
             actionBar.classList.remove('show');
         }
