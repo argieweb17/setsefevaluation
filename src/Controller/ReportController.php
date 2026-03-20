@@ -807,6 +807,63 @@ class ReportController extends AbstractController
         ]);
     }
 
+    #[Route('/results/superior', name: 'staff_results_superior', methods: ['GET'])]
+    public function resultsSuperior(
+        Request $request,
+        EvaluationPeriodRepository $evalRepo,
+        SuperiorEvaluationRepository $superiorEvalRepo,
+        UserRepository $userRepo,
+        DepartmentRepository $deptRepo,
+    ): Response {
+        $evalId = $request->query->get('evaluation');
+
+        $evaluations = $evalRepo->findBy(['evaluationType' => 'SUPERIOR'], ['startDate' => 'DESC']);
+        $departments = $deptRepo->findAllOrdered();
+        $facultyResults = [];
+
+        // Get all users who have been evaluated via superior evaluations
+        $allUsers = $userRepo->findAll();
+        foreach ($allUsers as $user) {
+            if ($evalId) {
+                $avg = $superiorEvalRepo->getOverallAverage($user->getId(), (int) $evalId);
+                $count = $superiorEvalRepo->countEvaluators($user->getId(), (int) $evalId);
+            } else {
+                $avg = $superiorEvalRepo->getOverallAverageAll($user->getId());
+                $count = $superiorEvalRepo->countEvaluatorsAll($user->getId());
+            }
+
+            if ($count > 0) {
+                $facultyResults[] = [
+                    'faculty' => $user,
+                    'average' => $avg,
+                    'evaluators' => $count,
+                    'level' => $this->performanceLevel($avg),
+                ];
+            }
+        }
+
+        usort($facultyResults, fn($a, $b) => $b['average'] <=> $a['average']);
+
+        $collegeNames = [];
+        foreach ($departments as $d) {
+            $cn = $d->getCollegeName();
+            if ($cn && !in_array($cn, $collegeNames, true)) {
+                $collegeNames[] = $cn;
+            }
+        }
+        sort($collegeNames);
+
+        return $this->render('admin/results_superior.html.twig', [
+            'evaluations' => $evaluations,
+            'departments' => $departments,
+            'colleges' => $collegeNames,
+            'facultyResults' => $facultyResults,
+            'selectedEvaluation' => $evalId,
+            'evalEntity' => $evalId ? $evalRepo->find($evalId) : null,
+            'staffMode' => true,
+        ]);
+    }
+
     #[Route('/results/faculty-detail', name: 'staff_results_faculty_detail', methods: ['GET'])]
     public function staffFacultyPrintDetail(
         Request $request,
