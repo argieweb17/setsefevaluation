@@ -398,10 +398,8 @@
                         <th colspan="21" style="text-align:center; font-weight:700;">Baccalaureate Course</th>
                     </tr>
                     <tr>
-                        {% for courseEval in baccEvaluations %}
-                        <th colspan="3" class="course-header">
-                            {% if courseEval.subjectCode %}{{ courseEval.subjectCode }} {{ courseEval.section }}{% else %}Course{% endif %}
-                        </th>
+                        {% for courseNum in 1..7 %}
+                        <th colspan="3" class="course-header">Course {{ courseNum }}</th>
                         {% endfor %}
                     </tr>
                     <tr>
@@ -474,10 +472,8 @@
                         <th colspan="21" style="text-align:center; font-weight:700;">Graduate Course</th>
                     </tr>
                     <tr>
-                        {% for courseEval in gradEvaluations %}
-                        <th colspan="3" class="course-header">
-                            {% if courseEval.subjectCode %}{{ courseEval.subjectCode }} {{ courseEval.section }}{% else %}Course{% endif %}
-                        </th>
+                        {% for courseNum in 1..7 %}
+                        <th colspan="3" class="course-header">Course {{ 7 + courseNum }}</th>
                         {% endfor %}
                     </tr>
                     <tr>
