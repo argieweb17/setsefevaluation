@@ -1952,12 +1952,17 @@ class ReportController extends AbstractController
             ];
         }
 
-        // Build category names from all evaluations
+        // Build category names from ALL questions in the evaluation types, not just answered ones
         $categoryNames = [];
+
         foreach ($allEvaluations as $eval) {
-            foreach ($eval['categorySummary'] as $cat) {
-                if (!in_array($cat['name'], $categoryNames)) {
-                    $categoryNames[] = $cat['name'];
+            if ($eval['evaluation'] !== null) {
+                $questions = $questionRepo->findByType($eval['evaluation']->getEvaluationType());
+                foreach ($questions as $q) {
+                    $cat = $q->getCategory();
+                    if (!in_array($cat, $categoryNames)) {
+                        $categoryNames[] = $cat;
+                    }
                 }
             }
         }
