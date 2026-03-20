@@ -1853,6 +1853,7 @@ class ReportController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EvaluationPeriodRepository $evalRepo,
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
@@ -1883,7 +1884,7 @@ class ReportController extends AbstractController
         $allCoursesSummary = []; // course# => [roman+name => mean, ...]
 
         foreach (array_unique($courseEvals) as $courseNum => $evalId) {
-            $eval = $this->getDoctrine()->getRepository(EvaluationPeriod::class)->find($evalId);
+            $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
 
             // Get questions for this evaluation type
