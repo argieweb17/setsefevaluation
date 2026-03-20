@@ -483,6 +483,7 @@
                 <a href="{{ path(prefix ~ '_results_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fe-btn-print">
                     <i class="bi bi-printer me-1"></i>Print All
                 </a>
+                {% if not staffMode %}
                 <button type="button" id="feToggleSelect" class="btn btn-sm fe-btn-select">
                     <i class="bi bi-check2-square me-1"></i>Choose the subject to print
                 </button>
