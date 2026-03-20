@@ -1745,7 +1745,7 @@ class ReportController extends AbstractController
         }
 
         // Get comments filtered by subject and section if provided
-        if ($subjectId && $section !== null) {
+        if ($subjectId !== null || $section !== null) {
             $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
         } else {
             $comments = $responseRepo->getComments($facultyId, $evalId);

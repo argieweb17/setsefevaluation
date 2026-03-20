@@ -350,54 +350,6 @@
             </div>
             {% endif %}
             <div class="topbar-right">
-                {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
-                {% set pendingEvals = faculty_pending_evaluations() %}
-                {% set unreadCount = pendingEvals|filter(n => not n.read)|length %}
-                <div class="topbar-notif-wrap" id="topbarNotifWrap" style="position:relative;">
-                    <button class="topbar-notif-btn" id="topbarNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-bell{% if unreadCount > 0 %} topbar-bell-ring{% endif %}"></i>
-                        {% if unreadCount > 0 %}
-                            <span class="topbar-notif-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;background:#EF4444;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;">{{ unreadCount }}</span>
-                        {% endif %}
-                    </button>
-                    <div class="topbar-notif-dropdown" id="topbarNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
-                        <div class="topbar-notif-header" style="padding:12px 16px;font-weight:600;font-size:.85rem;color:#1E293B;border-bottom:1px solid #F1F5F9;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;">
-                            <span><i class="bi bi-bell-fill me-1"></i> Notifications</span>
-                            {% if unreadCount > 0 %}
-                            <button type="button" id="markAllReadBtn" style="background:none;border:none;color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;padding:0;">Mark all read</button>
-                            {% endif %}
-                        </div>
-                        {% if pendingEvals|length > 0 %}
-                            <div class="topbar-notif-list" id="topbarNotifList" style="max-height:300px;overflow-y:auto;">
-                                {% for item in pendingEvals %}
-                                <div class="topbar-notif-item" data-eval-id="{{ item.eval.id }}" style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid #F1F5F9;{% if item.read %}opacity:0.5;{% endif %}">
-                                    <div class="topbar-notif-icon" style="width:32px;height:32px;border-radius:8px;background:{% if item.read %}#F1F5F9{% else %}#EFF6FF{% endif %};color:{% if item.read %}#94A3B8{% else %}#2563EB{% endif %};display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;"><i class="bi bi-clipboard-check"></i></div>
-                                    <div class="topbar-notif-content" style="flex:1;min-width:0;">
-                                        <div class="topbar-notif-title" style="font-weight:600;font-size:.8rem;color:#1E293B;">{{ item.eval.evaluationType }} Evaluation{% if item.read %} <span style="font-weight:400;color:#94A3B8;font-size:.7rem;">· read</span>{% endif %}</div>
-                                        <div class="topbar-notif-desc" style="font-size:.75rem;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                            {{ item.eval.subject ?: 'All subjects' }} &middot; {{ item.eval.schoolYear }}
-                                        </div>
-                                        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
-                                            <div class="topbar-notif-time" style="font-size:.7rem;color:#94A3B8;">
-                                                <i class="bi bi-clock me-1"></i>Ends {{ item.eval.endDate|date('M d, Y g:i A') }}
-                                            </div>
-                                            {% if not item.read %}
-                                            <button type="button" class="notif-mark-read-btn" data-eval-id="{{ item.eval.id }}" style="background:none;border:none;color:#2563EB;font-size:.65rem;cursor:pointer;padding:0;font-weight:500;" title="Mark as read"><i class="bi bi-check2"></i></button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="topbar-notif-empty">
-                                <i class="bi bi-check-circle"></i>
-                                <span>No pending evaluations</span>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
                 {# ── Message Notifications Bell ── #}
                 {% if is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
                 {% set messageNotifCount = unread_message_notifications() %}
@@ -497,22 +449,6 @@
                 });
             }
 
-            // Notification bell toggle
-            var notifBtn=document.getElementById('topbarNotifBtn');
-            var notifDrop=document.getElementById('topbarNotifDropdown');
-            if(notifBtn&&notifDrop){
-                notifBtn.addEventListener('click',function(e){
-                    e.stopPropagation();
-                    var isOpen=notifDrop.style.display==='block';
-                    notifDrop.style.display=isOpen?'none':'block';
-                });
-                document.addEventListener('click',function(e){
-                    if(notifDrop&&!notifDrop.contains(e.target)&&!notifBtn.contains(e.target)){
-                        notifDrop.style.display='none';
-                    }
-                });
-            }
-
             // Message notification bell toggle
             var msgNotifBtn=document.getElementById('topbarMessageNotifBtn');
             var msgNotifDrop=document.getElementById('topbarMessageNotifDropdown');
@@ -526,49 +462,6 @@
                     if(msgNotifDrop&&!msgNotifDrop.contains(e.target)&&!msgNotifBtn.contains(e.target)){
                         msgNotifDrop.style.display='none';
                     }
-                });
-            }
-
-            // Mark single notification as read
-            document.querySelectorAll('.notif-mark-read-btn').forEach(function(btn){
-                btn.addEventListener('click',function(e){
-                    e.stopPropagation();
-                    var evalId=btn.getAttribute('data-eval-id');
-                    fetch('/faculty/notification/read/'+evalId,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}})
-                    .then(function(r){return r.json();})
-                    .then(function(d){
-                        if(d.ok){
-                            var item=document.querySelector('.topbar-notif-item[data-eval-id="'+evalId+'"]');
-                            if(item){item.style.opacity='0.5';btn.remove();}
-                            var badge=document.querySelector('.topbar-notif-badge');
-                            if(badge){
-                                var c=parseInt(badge.textContent)-1;
-                                if(c<=0){badge.remove();var bell=document.querySelector('.topbar-bell-ring');if(bell)bell.classList.remove('topbar-bell-ring');}
-                                else badge.textContent=c;
-                            }
-                        }
-                    });
-                });
-            });
-
-            // Mark all notifications as read
-            var markAllBtn=document.getElementById('markAllReadBtn');
-            if(markAllBtn){
-                markAllBtn.addEventListener('click',function(e){
-                    e.stopPropagation();
-                    fetch('/faculty/notification/read-all',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}})
-                    .then(function(r){return r.json();})
-                    .then(function(d){
-                        if(d.ok){
-                            document.querySelectorAll('.topbar-notif-item').forEach(function(el){el.style.opacity='0.5';});
-                            document.querySelectorAll('.notif-mark-read-btn').forEach(function(b){b.remove();});
-                            var badge=document.querySelector('.topbar-notif-badge');
-                            if(badge)badge.remove();
-                            var bell=document.querySelector('.topbar-bell-ring');
-                            if(bell)bell.classList.remove('topbar-bell-ring');
-                            markAllBtn.remove();
-                        }
-                    });
                 });
             }
 

@@ -142,12 +142,16 @@ class EvaluationResponseRepository extends ServiceEntityRepository
             ->setParameter('epid', $evaluationPeriodId)
             ->setParameter('empty', '');
 
-        if ($subjectId) {
+        if ($subjectId !== null) {
             $qb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        } else {
+            $qb->andWhere('r.subject IS NULL');
         }
 
         if ($section !== null) {
             $qb->andWhere('r.section = :section')->setParameter('section', $section);
+        } else {
+            $qb->andWhere('r.section IS NULL');
         }
 
         return $qb->getQuery()->getSingleColumnResult();

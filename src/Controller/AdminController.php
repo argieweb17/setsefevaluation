@@ -2036,6 +2036,8 @@ class AdminController extends AbstractController
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $facultyId = (int) $request->query->get('faculty', 0);
+        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
+        $section = $request->query->get('section');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2092,7 +2094,12 @@ class AdminController extends AbstractController
             $idx++;
         }
 
-        $comments = $responseRepo->getComments($facultyId, $evalId);
+        // Get comments filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+        }
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
         $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
