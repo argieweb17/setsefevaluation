@@ -2107,6 +2107,9 @@ class ReportController extends AbstractController
         }
         $emptySlot = [
             'evaluation' => null,
+            'subjectCode' => null,
+            'subjectName' => null,
+            'section' => null,
             'average' => 0.00,
             'evaluators' => 0,
             'level' => 'N/A',
