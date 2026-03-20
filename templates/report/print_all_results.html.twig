@@ -399,16 +399,8 @@
                     </tr>
                     <tr>
                         {% for courseEval in baccEvaluations %}
-                        {% set subjectString = '' %}
-                        {% if courseEval.subjectComments|length > 0 %}
-                            {% set subjects = [] %}
-                            {% for subjComment in courseEval.subjectComments %}
-                                {% set subjects = subjects|merge([subjComment.subjectCode ~ ' ' ~ subjComment.section]) %}
-                            {% endfor %}
-                            {% set subjectString = subjects|join(', ') %}
-                        {% endif %}
                         <th colspan="3" class="course-header">
-                            {% if subjectString %}{{ subjectString }}{% else %}Course{% endif %}
+                            {% if courseEval.subjectCode %}{{ courseEval.subjectCode }} {{ courseEval.section }}{% else %}Course{% endif %}
                         </th>
                         {% endfor %}
                     </tr>
@@ -483,16 +475,8 @@
                     </tr>
                     <tr>
                         {% for courseEval in gradEvaluations %}
-                        {% set subjectString = '' %}
-                        {% if courseEval.subjectComments|length > 0 %}
-                            {% set subjects = [] %}
-                            {% for subjComment in courseEval.subjectComments %}
-                                {% set subjects = subjects|merge([subjComment.subjectCode ~ ' ' ~ subjComment.section]) %}
-                            {% endfor %}
-                            {% set subjectString = subjects|join(', ') %}
-                        {% endif %}
                         <th colspan="3" class="course-header">
-                            {% if subjectString %}{{ subjectString }}{% else %}Course{% endif %}
+                            {% if courseEval.subjectCode %}{{ courseEval.subjectCode }} {{ courseEval.section }}{% else %}Course{% endif %}
                         </th>
                         {% endfor %}
                     </tr>
