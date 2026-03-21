@@ -864,6 +864,93 @@ document.addEventListener('DOMContentLoaded', initializeEventListeners);
 
 /* Re-initialize after Turbo navigation (for semester filter) */
 document.addEventListener('turbo:load', initializeEventListeners);
+
+/* ─── Real-time QR Evaluation Updates ─── */
+let lastCheckTime = 0;
+let currentActiveEvals = activeEvaluations;
+
+/**
+ * Poll for active evaluations and update QR buttons if new ones appear
+ */
+window.pollActiveEvaluations = function() {
+    // Debounce: don't poll more frequently than every 5 seconds
+    const now = Date.now();
+    if (now - lastCheckTime < 5000) return;
+    lastCheckTime = now;
+
+    fetch('{{ path("api_active_evaluations") }}')
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch evaluations');
+            return response.json();
+        })
+        .then(data => {
+            const newEvals = data.evaluations || [];
+
+            // Check if evaluations have changed
+            const newEvalMap = {};
+            newEvals.forEach(e => {
+                newEvalMap[e.id] = e;
+            });
+
+            const oldKeys = Object.keys(currentActiveEvals || {}).sort();
+            const newKeys = Object.keys(newEvalMap).sort();
+
+            // Only update if evaluation list actually changed
+            if (JSON.stringify(oldKeys) !== JSON.stringify(newKeys)) {
+                currentActiveEvals = newEvalMap;
+                window.firstActiveEvalId = newKeys.length > 0 ? newKeys[0] : null;
+                window.hasActiveEval = newKeys.length > 0;
+
+                // Update QR buttons for all loaded subjects
+                updateQRButtonsForLoadedSubjects();
+            }
+        })
+        .catch(error => {
+            // Silently fail - polling is optional
+            console.error('Evaluation poll error:', error);
+        });
+};
+
+/**
+ * Update QR buttons for all loaded subjects based on current active evaluations
+ */
+window.updateQRButtonsForLoadedSubjects = function() {
+    // Get all rows with a loaded subject
+    const loadedRows = document.querySelectorAll('tbody tr[data-subject-id]');
+
+    loadedRows.forEach(row => {
+        const checkbox = row.querySelector('.subject-check');
+        if (!checkbox || !checkbox.checked) return; // Skip unloaded subjects
+
+        const subjectId = parseInt(row.getAttribute('data-subject-id'));
+        const codeCell = row.querySelector('.sb-code-text');
+        const subjectCode = codeCell ? codeCell.textContent.trim() : '';
+
+        // Find section from the section input field
+        const sectionInput = row.querySelector('.sb-section-input');
+        const section = sectionInput ? sectionInput.value.trim() : '';
+
+        // Update action buttons for this row
+        const actionCell = row.querySelector('.sb-action-btns');
+        if (!actionCell) return;
+
+        let actionsHtml = '';
+
+        // Add QR button if there's an active evaluation
+        if (window.hasActiveEval && window.firstActiveEvalId) {
+            actionsHtml += '<button type="button" class="sb-btn-qr" onclick="showQRModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + section.replace(/'/g,"\\'") + '\', ' + window.firstActiveEvalId + ')" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+        }
+
+        // Add other action buttons
+        actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'Subject\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
+        actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
+
+        actionCell.innerHTML = actionsHtml;
+    });
+};
+
+// Start polling for new evaluations every 30 seconds
+setInterval(pollActiveEvaluations, 30000);
 </script>
 
 {# ── Add Subject Modal ── #}

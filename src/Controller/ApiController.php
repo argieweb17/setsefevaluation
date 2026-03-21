@@ -308,6 +308,34 @@ class ApiController extends AbstractController
     }
 
     // ════════════════════════════════════════════════
+    //  ACTIVE EVALUATIONS (for real-time QR updates)
+    // ════════════════════════════════════════════════
+
+    #[Route('/active-evaluations', name: 'active_evaluations', methods: ['GET'])]
+    public function activeEvaluations(
+        EvaluationPeriodRepository $evalRepo
+    ): JsonResponse {
+        $now = new \DateTime();
+        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET']);
+        $result = [];
+
+        foreach ($activeEvals as $eval) {
+            $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
+            if ($isActive) {
+                $result[] = [
+                    'id' => $eval->getId(),
+                    'name' => $eval->getLabel(),
+                    'isActive' => true,
+                    'startDate' => $eval->getStartDate()->format('Y-m-d'),
+                    'endDate' => $eval->getEndDate()->format('Y-m-d'),
+                ];
+            }
+        }
+
+        return $this->json(['evaluations' => $result]);
+    }
+
+    // ════════════════════════════════════════════════
     //  HELPERS
     // ════════════════════════════════════════════════
 
