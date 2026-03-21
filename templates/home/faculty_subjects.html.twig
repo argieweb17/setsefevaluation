@@ -578,6 +578,7 @@ window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.ke
 console.log('Active Evaluations on page load:', activeEvaluations);
 console.log('hasActiveEval:', window.hasActiveEval);
 console.log('firstActiveEvalId:', window.firstActiveEvalId);
+console.log('Total active evaluations:', Object.keys(activeEvaluations).length);
 
 /* ── Checked count ── */
 function updateCheckedCount() {
@@ -901,6 +902,7 @@ window.pollActiveEvaluations = function(forceImmediate) {
         })
         .then(data => {
             const newEvals = data.evaluations || [];
+            console.log('API response - Active evaluations:', newEvals, 'Count:', newEvals.length);
 
             // Check if evaluations have changed
             const newEvalMap = {};
@@ -929,7 +931,6 @@ window.pollActiveEvaluations = function(forceImmediate) {
             }
         })
         .catch(error => {
-            // Silently fail - polling is optional
             console.error('Evaluation poll error:', error);
         });
 };

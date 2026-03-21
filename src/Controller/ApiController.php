@@ -316,7 +316,7 @@ class ApiController extends AbstractController
         EvaluationPeriodRepository $evalRepo
     ): JsonResponse {
         $now = new \DateTime();
-        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET']);
+        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
         $result = [];
 
         foreach ($activeEvals as $eval) {
