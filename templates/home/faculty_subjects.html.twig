@@ -390,11 +390,16 @@
                         <td style="text-align:center;">
                             {% if activeEvalMap|length > 0 %}
                                 {% set firstEvalId = activeEvalMap|keys|first %}
+                                {% set firstEval = activeEvalMap[firstEvalId] %}
                                 <button type="button" class="sb-btn-qr sb-qr-btn-column"
                                     data-subject-id="{{ subject.id }}"
                                     data-subject-code="{{ subject.subjectCode|e('js') }}"
+                                    data-subject-name="{{ subject.subjectName|e('js') }}"
                                     data-section="{{ firstFsl.section|default('')|e('js') }}"
                                     data-eval-id="{{ firstEvalId }}"
+                                    data-eval-type="SET"
+                                    data-faculty="{{ app.user.firstName|e('js') }} {{ app.user.lastName|e('js') }}"
+                                    data-school-year="{{ firstEval.name|e('js') }}"
                                     title="Evaluation QR Code"
                                     style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
                                     <i class="bi bi-qr-code-scan"></i>
@@ -407,11 +412,16 @@
                             <div class="sb-action-btns">
                                 {% if isLoaded and activeEvalMap|length > 0 %}
                                     {% set firstEvalId = activeEvalMap|keys|first %}
+                                    {% set firstEval = activeEvalMap[firstEvalId] %}
                                     <button type="button" class="sb-btn-qr sb-qr-btn"
                                         data-subject-id="{{ subject.id }}"
                                         data-subject-code="{{ subject.subjectCode|e('js') }}"
+                                        data-subject-name="{{ subject.subjectName|e('js') }}"
                                         data-section="{{ firstFsl.section|default('')|e('js') }}"
                                         data-eval-id="{{ firstEvalId }}"
+                                        data-eval-type="SET"
+                                        data-faculty="{{ app.user.firstName|e('js') }} {{ app.user.lastName|e('js') }}"
+                                        data-school-year="{{ firstEval.name|e('js') }}"
                                         title="Evaluation QR Code"
                                         style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;">
                                         <i class="bi bi-qr-code-scan"></i>
@@ -597,6 +607,14 @@ const activeEvaluations = {{ activeEvalMap|json_encode }};
 window.hasActiveEval = Object.keys(activeEvaluations).length > 0;
 window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
 
+// Faculty and evaluation data for QR modals
+window.facultyName = '{{ app.user.firstName|e("js") }} {{ app.user.lastName|e("js") }}';
+if (window.firstActiveEvalId && activeEvaluations[window.firstActiveEvalId]) {
+    window.firstEvalName = activeEvaluations[window.firstActiveEvalId].name;
+} else {
+    window.firstEvalName = '';
+}
+
 // Debug log
 console.log('Active Evaluations on page load:', activeEvaluations);
 console.log('hasActiveEval:', window.hasActiveEval);
@@ -755,7 +773,7 @@ function updateRowVisual(cb) {
             if (qrCell) {
                 if (window.hasActiveEval && window.firstActiveEvalId) {
                     console.log('Adding QR button for subject:', code);
-                    var qrHtml = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+                    var qrHtml = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-subject-name="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
                     qrCell.innerHTML = qrHtml;
                 } else {
                     qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
@@ -765,7 +783,7 @@ function updateRowVisual(cb) {
             // Add QR button if there's an active evaluation
             if (window.hasActiveEval && window.firstActiveEvalId) {
                 console.log('Adding QR button for subject:', code);
-                actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+                actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + sid + '" data-subject-code="' + code.replace(/"/g, '&quot;') + '" data-subject-name="' + code.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
             } else {
                 console.log('NOT adding QR button - hasActiveEval:', window.hasActiveEval, 'firstActiveEvalId:', window.firstActiveEvalId);
             }
@@ -879,11 +897,27 @@ function initializeEventListeners() {
     });
 
     /* QR Code Modal */
-    window.showQRModal = function(subjectId, subjectCode, section, evalId) {
+    window.showQRModal = function(subjectId, subjectCode, subjectName, section, evalId, evalType, faculty, schoolYear) {
         const qrUrl = '{{ path('evaluation_qr_redirect_with_section', {'id': '__EVAL_ID__', 'subjectId': '__SUBJECT_ID__', 'section': '__SECTION__'}) }}'
             .replace('__EVAL_ID__', evalId)
             .replace('__SUBJECT_ID__', subjectId)
             .replace('__SECTION__', encodeURIComponent(section || ''));
+
+        const fullUrl = window.location.origin + qrUrl;
+        window.currentQrUrl = fullUrl;
+
+        // Populate modal fields
+        const typeBadge = document.getElementById('qrEvalType');
+        typeBadge.textContent = evalType || 'SET';
+
+        document.getElementById('qrEvalFaculty').textContent = faculty || '';
+        document.getElementById('qrEvalSubject').textContent = `${subjectCode}${subjectName ? ' — ' + subjectName : ''}`;
+        document.getElementById('qrEvalDetails').textContent = section || '';
+
+        const detailsRow = document.getElementById('qrEvalDetailsRow');
+        if (detailsRow) detailsRow.style.display = section ? '' : 'none';
+
+        document.getElementById('qrUrl').textContent = fullUrl;
 
         // Generate QR code
         const qrContainer = document.getElementById('qrContainer');
@@ -892,26 +926,42 @@ function initializeEventListeners() {
         // Using QRCode.js library
         if (typeof QRCode !== 'undefined') {
             new QRCode(qrContainer, {
-                text: window.location.origin + qrUrl,
+                text: fullUrl,
                 width: 180,
                 height: 180,
                 colorDark: '#000000',
                 colorLight: '#ffffff'
             });
         } else {
-            qrContainer.innerHTML = '<p class="text-danger">QR Code generator not available</p>';
+            // Fallback to QR server
+            qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(fullUrl) + '" alt="QR Code" style="max-width:180px;height:auto;">';
         }
 
-        document.getElementById('qrInfo').textContent = `${subjectCode}${section ? ' - Section ' + section : ''}`;
         const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
         modal.show();
     };
 
+    window.copyQRLink = function() {
+        navigator.clipboard.writeText(window.currentQrUrl).then(function() {
+            var btn = event.target;
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+            setTimeout(function() { btn.innerHTML = orig; }, 1500);
+        });
+    };
+
     window.downloadQRCode = function() {
         const canvas = document.querySelector('#qrContainer canvas');
+        const img = document.querySelector('#qrContainer img');
+
         if (canvas) {
             const link = document.createElement('a');
             link.href = canvas.toDataURL('image/png');
+            link.download = 'evaluation-qr-' + new Date().getTime() + '.png';
+            link.click();
+        } else if (img) {
+            const link = document.createElement('a');
+            link.href = img.src;
             link.download = 'evaluation-qr-' + new Date().getTime() + '.png';
             link.click();
         }
@@ -1001,7 +1051,7 @@ window.updateQRButtonsForLoadedSubjects = function() {
         const qrCell = row.querySelector('td:nth-child(9)');
         if (qrCell) {
             if (window.hasActiveEval && window.firstActiveEvalId) {
-                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+                qrCell.innerHTML = '<button type="button" class="sb-btn-qr sb-qr-btn-column" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
             } else {
                 qrCell.innerHTML = '<span class="text-muted small">No Evaluation</span>';
             }
@@ -1015,7 +1065,7 @@ window.updateQRButtonsForLoadedSubjects = function() {
 
         // Add QR button if there's an active evaluation
         if (window.hasActiveEval && window.firstActiveEvalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
+            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + subjectCode.replace(/"/g, '&quot;') + '" data-subject-name="' + subjectCode.replace(/"/g, '&quot;') + '" data-section="' + section.replace(/"/g, '&quot;') + '" data-eval-id="' + window.firstActiveEvalId + '" data-eval-type="SET" data-faculty="' + window.facultyName.replace(/"/g, '&quot;') + '" data-school-year="' + (window.firstEvalName || '').replace(/"/g, '&quot;') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
         }
 
         // Add other action buttons
@@ -1032,11 +1082,15 @@ document.addEventListener('click', function(event) {
     if (qrBtn) {
         const subjectId = qrBtn.getAttribute('data-subject-id');
         const subjectCode = qrBtn.getAttribute('data-subject-code');
+        const subjectName = qrBtn.getAttribute('data-subject-name');
         const section = qrBtn.getAttribute('data-section');
         const evalId = qrBtn.getAttribute('data-eval-id');
+        const evalType = qrBtn.getAttribute('data-eval-type');
+        const faculty = qrBtn.getAttribute('data-faculty');
+        const schoolYear = qrBtn.getAttribute('data-school-year');
 
         if (subjectId && subjectCode && evalId) {
-            window.showQRModal(parseInt(subjectId), subjectCode, section || '', parseInt(evalId));
+            window.showQRModal(parseInt(subjectId), subjectCode, subjectName, section || '', parseInt(evalId), evalType, faculty, schoolYear);
         }
     }
 });
@@ -1130,24 +1184,56 @@ setInterval(pollActiveEvaluations, 30000);  // Then every 30 seconds with deboun
 
 {# ── QR Code Modal ── #}
 <div class="modal fade" id="qrCodeModal" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-            <div class="modal-header border-0 bg-light">
-                <h5 class="modal-title fw-bold">Evaluation QR Code</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center p-4">
-                <div id="qrContent" style="padding: 20px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center;">
-                    <div id="qrContainer"></div>
+            <button type="button" class="btn-close position-absolute" data-bs-dismiss="modal" style="z-index:10;top:12px;right:12px;"></button>
+            <div class="modal-body p-0" style="display:flex;min-height:400px;">
+                <div style="flex:1;padding:32px;background:#fff;display:flex;flex-direction:column;">
+                    <h5 style="font-size:1.1rem;font-weight:700;margin-bottom:4px;">Evaluation QR Code</h5>
+                    <p style="font-size:.85rem;color:#94a3b8;margin-bottom:24px;">Scan to open the evaluation form</p>
+
+                    <div style="margin-bottom:24px;">
+                        <div style="display:flex;margin-bottom:12px;gap:8px;">
+                            <span style="font-size:.75rem;font-weight:600;color:#64748b;min-width:70px;text-transform:uppercase;">Type</span>
+                            <span id="qrEvalType" style="font-size:.85rem;padding:4px 8px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;color:#0369a1;font-weight:600;"></span>
+                        </div>
+                        <div style="display:flex;margin-bottom:12px;gap:8px;">
+                            <span style="font-size:.75rem;font-weight:600;color:#64748b;min-width:70px;text-transform:uppercase;">Faculty</span>
+                            <span id="qrEvalFaculty" style="font-size:.85rem;color:#334155;"></span>
+                        </div>
+                        <div style="display:flex;margin-bottom:12px;gap:8px;">
+                            <span style="font-size:.75rem;font-weight:600;color:#64748b;min-width:70px;text-transform:uppercase;">Subject</span>
+                            <span id="qrEvalSubject" style="font-size:.85rem;color:#334155;"></span>
+                        </div>
+                        <div id="qrEvalDetailsRow" style="display:flex;margin-bottom:12px;gap:8px;">
+                            <span style="font-size:.75rem;font-weight:600;color:#64748b;min-width:70px;text-transform:uppercase;">Section</span>
+                            <span id="qrEvalDetails" style="font-size:.85rem;color:#334155;"></span>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <div style="font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:8px;">Evaluation Link</div>
+                        <div id="qrUrl" style="font-size:.8rem;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;word-break:break-all;color:#475569;font-family:monospace;"></div>
+                    </div>
+
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="btn btn-sm" onclick="downloadQRCode()" style="flex:1;padding:8px;background:#0f172a;color:#fff;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;">
+                            <i class="bi bi-download me-1"></i>Download
+                        </button>
+                        <button type="button" class="btn btn-sm" onclick="copyQRLink()" style="flex:1;padding:8px;background:#e2e8f0;color:#334155;border:none;border-radius:6px;font-weight:600;font-size:.85rem;cursor:pointer;">
+                            <i class="bi bi-clipboard me-1"></i>Copy Link
+                        </button>
+                    </div>
                 </div>
-                <p class="text-muted small mb-3" id="qrInfo"></p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-sm btn-primary" onclick="downloadQRCode()">
-                        <i class="bi bi-download me-1"></i>Download
-                    </button>
+                <div style="flex:1;padding:32px;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid #e2e8f0;">
+                    <div style="font-size:.75rem;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:12px;"><i class="bi bi-eye me-1"></i>Live Preview</div>
+                    <div id="qrContainer" style="padding:16px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;"></div>
+                    <p style="font-size:.75rem;color:#94a3b8;margin-top:12px;"><i class="bi bi-phone me-1"></i>Scan with any camera app</p>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
