@@ -882,7 +882,7 @@ function lsPrint() {
     };
 
     /* ─── Real-time QR Polling ─── */
-    const activeEvaluations = {{ activeEvalMap|json_encode }};
+    const activeEvaluations = JSON.parse('{{ activeEvalMap|json_encode|escape('js') }}');
     let lastPolledTime = 0;
     let currentActiveEvals = activeEvaluations;
 
@@ -911,7 +911,11 @@ function lsPrint() {
                     updateQRButtons();
                 }
             })
-            .catch(error => console.error('Poll error:', error));
+            .catch(error => {
+                if (error.name !== 'AbortError') {
+                    console.error('Poll error:', error);
+                }
+            });
     };
 
     function updateQRButtons() {
@@ -944,11 +948,11 @@ function lsPrint() {
     }
 
     window.showLoadedSubjectsQR = function(subjectId, code, section, evalId) {
-        const qrUrl = '{{ path('evaluation_qr_redirect_with_section', {'id': '__EVAL_ID__', 'subjectId': '__SUBJECT_ID__', 'section': '__SECTION__'}) }}'
-            .replace('__EVAL_ID__', evalId)
-            .replace('__SUBJECT_ID__', subjectId)
-            .replace('__SECTION__', encodeURIComponent(section || ''));
+        const params = new URLSearchParams();
+        params.append('subjectId', subjectId);
+        if (section) params.append('section', section);
 
+        const qrUrl = '/evaluation/qr/' + evalId + '?' + params.toString();
         window.currentQrUrl = window.location.origin + qrUrl;
         document.getElementById('lsQrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(window.currentQrUrl);
         new bootstrap.Modal(document.getElementById('lsQrModal')).show();
@@ -969,5 +973,6 @@ function lsPrint() {
     // Start polling
     window.pollActiveEvaluationsLS(true);
     setInterval(() => window.pollActiveEvaluationsLS(), 30000);
+})();
 </script>
 {% endblock %}
