@@ -507,8 +507,11 @@
                 <td class="text-center">
                     {% if activeEvalMap|length > 0 %}
                         {% set firstEvalId = activeEvalMap|keys|first %}
-                        <button type="button" class="btn btn-sm ls-action-qr"
-                            onclick="showLoadedSubjectsQR({{ s.subject.id }}, '{{ s.subject.subjectCode|e('js') }}', '{{ s.section|default('')|e('js') }}', {{ firstEvalId }})"
+                        <button type="button" class="btn btn-sm ls-action-qr ls-qr-btn"
+                            data-subject-id="{{ s.subject.id }}"
+                            data-subject-code="{{ s.subject.subjectCode|e('js') }}"
+                            data-section="{{ s.section|default('')|e('js') }}"
+                            data-eval-id="{{ firstEvalId }}"
                             title="Generate QR Code"
                             style="width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;">
                             <i class="bi bi-qr-code"></i>
@@ -915,7 +918,7 @@ function lsPrint() {
         if (!window.hasActiveEvalLS) return;
 
         document.querySelectorAll('#lsTableBody .ls-row').forEach(row => {
-            const qrButton = row.querySelector('button[onclick*="showLoadedSubjectsQR"]');
+            const qrButton = row.querySelector('.ls-qr-btn');
             if (!qrButton && window.firstActiveEvalIdLS) {
                 // QR button doesn't exist, need to add it
                 const qrCell = row.querySelector('td:nth-child(10)'); // QR column is 10th
@@ -926,8 +929,11 @@ function lsPrint() {
 
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'btn btn-sm ls-action-qr';
-                    btn.setAttribute('onclick', `showLoadedSubjectsQR(${subjectId}, '${code}', '${section}', ${window.firstActiveEvalIdLS})`);
+                    btn.className = 'btn btn-sm ls-action-qr ls-qr-btn';
+                    btn.setAttribute('data-subject-id', subjectId);
+                    btn.setAttribute('data-subject-code', code);
+                    btn.setAttribute('data-section', section);
+                    btn.setAttribute('data-eval-id', window.firstActiveEvalIdLS);
                     btn.setAttribute('title', 'Generate QR Code');
                     btn.setAttribute('style', 'width:32px;height:32px;padding:0;border-radius:6px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;');
                     btn.innerHTML = '<i class="bi bi-qr-code"></i>';
@@ -948,9 +954,20 @@ function lsPrint() {
         new bootstrap.Modal(document.getElementById('lsQrModal')).show();
     };
 
+    // Event delegation for QR button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.ls-qr-btn')) {
+            const btn = e.target.closest('.ls-qr-btn');
+            const subjectId = btn.getAttribute('data-subject-id');
+            const code = btn.getAttribute('data-subject-code');
+            const section = btn.getAttribute('data-section');
+            const evalId = btn.getAttribute('data-eval-id');
+            window.showLoadedSubjectsQR(parseInt(subjectId), code, section, parseInt(evalId));
+        }
+    });
+
     // Start polling
     window.pollActiveEvaluationsLS(true);
     setInterval(() => window.pollActiveEvaluationsLS(), 30000);
-})();
 </script>
 {% endblock %}
