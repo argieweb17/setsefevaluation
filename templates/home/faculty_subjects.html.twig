@@ -614,23 +614,29 @@
    ═══════════════════════════════════════ #}
 <script>
 /* ── Global active evaluations map ── */
-const activeEvaluations = {{ activeEvalMap|json_encode }};
-window.hasActiveEval = Object.keys(activeEvaluations).length > 0;
-window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
+try {
+    const activeEvaluations = {{ activeEvalMap|json_encode|raw }};
+    window.hasActiveEval = Object.keys(activeEvaluations).length > 0;
+    window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
+    console.log('Active Evaluations loaded successfully:', activeEvaluations);
+} catch (e) {
+    console.error('Failed to load active evaluations:', e);
+    window.hasActiveEval = false;
+    window.firstActiveEvalId = null;
+    const activeEvaluations = {};
+}
 
 // Faculty and evaluation data for QR modals
 window.facultyName = '{{ app.user.firstName|e("js") }} {{ app.user.lastName|e("js") }}';
-if (window.firstActiveEvalId && activeEvaluations[window.firstActiveEvalId]) {
+if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.firstActiveEvalId]) {
     window.firstEvalName = activeEvaluations[window.firstActiveEvalId].name;
 } else {
     window.firstEvalName = '';
 }
 
 // Debug log
-console.log('Active Evaluations on page load:', activeEvaluations);
-console.log('hasActiveEval:', window.hasActiveEval);
-console.log('firstActiveEvalId:', window.firstActiveEvalId);
-console.log('Total active evaluations:', Object.keys(activeEvaluations).length);
+console.log('Page loaded - Active evaluations:', window.hasActiveEval);
+console.log('Faculty name:', window.facultyName);
 
 /* ── Checked count ── */
 function updateCheckedCount() {
@@ -1017,7 +1023,7 @@ function initializeEventListeners() {
             });
         } else {
             // Fallback to QR server
-            qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(fullUrl) + '" alt="QR Code" style="max-width:180px;height:auto;">';
+            qrContainer.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;data=' + encodeURIComponent(fullUrl) + '" alt="QR Code" style="max-width:180px;height:auto;">';
         }
 
         const modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
