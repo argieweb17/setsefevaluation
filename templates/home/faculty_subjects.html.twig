@@ -648,106 +648,107 @@ function toggleDept(deptId) {
     if (chevron) chevron.classList.toggle('open');
 }
 
-/* ── Combined filter: search + year level + department ── */
-function applyFilters() {
-    // Get filter values
-    var searchInput = document.getElementById('subjectSearchInput');
-    var deptFilterEl = document.getElementById('departmentFilter');
-    var yearFilterEl = document.getElementById('yearLevelFilter');
+/* ═══════════════════════════════════════════════════════
+   FILTER SYSTEM - DEPARTMENTS, YEAR LEVELS, SEARCH
+   ═══════════════════════════════════════════════════════ */
 
-    if (!searchInput || !deptFilterEl || !yearFilterEl) {
-        console.error('Filter elements not found');
+function applyFilters() {
+    const searchBox = document.getElementById('subjectSearchInput');
+    const deptDropdown = document.getElementById('departmentFilter');
+    const yearDropdown = document.getElementById('yearLevelFilter');
+
+    if (!searchBox || !deptDropdown || !yearDropdown) {
+        console.warn('Filter elements not found');
         return;
     }
 
-    var searchTerm = (searchInput.value || '').toLowerCase().trim();
-    var selectedDept = (deptFilterEl.value || '').trim();
-    var selectedYear = (yearFilterEl.value || '').toLowerCase().trim();
+    const searchText = searchBox.value.toLowerCase().trim();
+    const selectedDeptId = deptDropdown.value.trim(); // Empty string or department ID
+    const selectedYear = yearDropdown.value.toLowerCase().trim(); // Empty string or year level
 
-    console.log('applyFilters:', { search: searchTerm, dept: selectedDept, year: selectedYear });
+    console.log('FILTER APPLIED:', { search: searchText, dept: selectedDeptId, year: selectedYear });
 
-    var hasAnyVisibleRows = false;
+    let totalMatches = 0;
 
-    // Process each department section
+    // Loop through all department sections
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
-        if (!section.id) {
-            console.warn('Section missing ID:', section);
-            return;
-        }
+        const sectionId = section.id; // e.g., "deptSection1"
+        if (!sectionId) return;
 
-        var sectionDeptId = section.id.replace('deptSection', '').trim();
-        var sectionMatches = (selectedDept === '' || selectedDept === sectionDeptId);
+        const sectionDeptId = sectionId.replace('deptSection', '').trim();
 
-        // If department doesn't match, hide entire section
-        if (!sectionMatches) {
+        // Check if this section's department matches the filter
+        const deptFilterMatch = selectedDeptId === '' || sectionDeptId === selectedDeptId;
+
+        if (!deptFilterMatch) {
+            // Hide entire section if department doesn't match
             section.style.display = 'none';
             return;
         }
 
-        // Department matches, process rows
-        var visibleRowCount = 0;
-        var totalRowCount = 0;
+        // Department matches - now filter the rows within this section
+        let visibleRowCount = 0;
+        let totalRowCount = 0;
 
-        var rows = section.querySelectorAll('.sb-row');
+        const rows = section.querySelectorAll('.sb-row');
+
         rows.forEach(function(row) {
             totalRowCount++;
-            var searchText = (row.getAttribute('data-search') || '').toLowerCase();
-            var rowYear = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
 
-            var matchesSearch = (searchTerm === '' || searchText.includes(searchTerm));
-            var matchesYear = (selectedYear === '' || rowYear === selectedYear);
-            var shouldShow = (matchesSearch && matchesYear);
+            const rowSearchText = (row.getAttribute('data-search') || '').toLowerCase();
+            const rowYear = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
 
-            row.style.display = shouldShow ? '' : 'none';
-            if (shouldShow) {
+            // Check if row matches all active filters
+            const matchesSearch = searchText === '' || rowSearchText.includes(searchText);
+            const matchesYear = selectedYear === '' || rowYear === selectedYear;
+
+            const rowShouldShow = matchesSearch && matchesYear;
+
+            if (rowShouldShow) {
+                row.style.display = '';
                 visibleRowCount++;
-                hasAnyVisibleRows = true;
+                totalMatches++;
+            } else {
+                row.style.display = 'none';
             }
         });
 
-        // Show section if any rows are visible OR no filters applied for this dept
-        var hasFilters = (searchTerm !== '' || selectedYear !== '');
+        // Update section display: show if rows match, or if no filters applied
+        const hasActiveFilters = searchText !== '' || selectedYear !== '' || selectedDeptId !== '';
+
         if (visibleRowCount > 0) {
             section.style.display = '';
-        } else if (!hasFilters) {
+        } else if (!hasActiveFilters) {
             section.style.display = '';
         } else {
             section.style.display = 'none';
         }
 
         // Update section meta text
-        var metaEl = section.querySelector('.sb-dept-meta');
-        if (metaEl) {
-            if (hasFilters && totalRowCount > 0) {
+        const metaEl = section.querySelector('.sb-dept-meta');
+        if (metaEl && totalRowCount > 0) {
+            if (hasActiveFilters && (searchText !== '' || selectedYear !== '')) {
                 metaEl.textContent = visibleRowCount + ' of ' + totalRowCount + ' subject' + (totalRowCount !== 1 ? 's' : '') + ' shown';
-            } else if (totalRowCount > 0) {
+            } else {
                 metaEl.textContent = totalRowCount + ' subject' + (totalRowCount !== 1 ? 's' : '') + ' available';
             }
         }
     });
 
-    // Show "no results" message if appropriate
-    var noResultsEl = document.getElementById('sbNoResults');
-    if (noResultsEl) {
-        var hasActiveFilters = (searchTerm !== '' || selectedDept !== '' || selectedYear !== '');
-        noResultsEl.style.display = (!hasAnyVisibleRows && hasActiveFilters) ? '' : 'none';
-    }
-
-    console.log('applyFilters complete, hasAnyVisibleRows:', hasAnyVisibleRows);
+    console.log('Filter complete - total matching rows:', totalMatches);
 }
 
-function searchSubjects(query) {
-    console.log('searchSubjects:', query);
+function searchSubjects(value) {
     applyFilters();
 }
 
-function filterByYearLevel(val) {
-    console.log('filterByYearLevel:', val);
+function filterByDepartment(value) {
+    console.log('Department selected:', value);
     applyFilters();
 }
 
-function filterByDepartment(val) {
-    console.log('filterByDepartment:', val);
+function filterByYearLevel(value) {
+    console.log('Year level selected:', value);
     applyFilters();
 }
 
@@ -928,16 +929,22 @@ function initializeEventListeners() {
         });
     }
 
-    /* Department header toggle */
+    /* Department header toggle - expand/collapse */
     document.querySelectorAll('.sb-dept-header').forEach(function(header) {
         header.addEventListener('click', function(e) {
-            // Don't toggle if clicking on the detail link
-            if (e.target.closest('.sb-dept-link')) return;
-
-            var deptId = this.dataset.dept;
-            if (deptId) {
-                toggleDept(deptId);
+            // Don't toggle if clicking on the external link
+            if (e.target.closest('.sb-dept-link')) {
+                return;
             }
+
+            const deptId = this.getAttribute('data-dept');
+            if (!deptId) {
+                console.warn('Department ID not found on header');
+                return;
+            }
+
+            console.log('Department clicked:', deptId);
+            toggleDept(deptId);
         });
     });
 
