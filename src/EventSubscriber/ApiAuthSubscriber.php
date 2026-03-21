@@ -13,6 +13,7 @@ class ApiAuthSubscriber implements EventSubscriberInterface
     // Routes that don't require authentication
     private const PUBLIC_ROUTES = [
         'api_login',
+        'api_active_evaluations',
     ];
 
     // Role requirements per route name (null = any authenticated user)
