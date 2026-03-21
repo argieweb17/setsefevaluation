@@ -648,26 +648,33 @@ function toggleDept(deptId) {
     if (chevron) chevron.classList.toggle('open');
 }
 
-/* ── Combined filter: search + year level ── */
+/* ── Combined filter: search + year level + department ── */
 function applyFilters() {
     var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
     var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase();
     var deptId = (document.getElementById('departmentFilter').value || '').trim();
     var visibleAny = false;
+
     document.querySelectorAll('.sb-row').forEach(function(row) {
         var text = (row.getAttribute('data-search') || '').toLowerCase();
         var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase();
         var matchSearch = q === '' || text.indexOf(q) !== -1;
         var matchYl = yl === '' || rowYl === yl;
-        var show = matchSearch && matchYl;
+
+        // Get the parent department section ID
+        var deptSection = row.closest('.sb-dept-section');
+        var rowDeptId = deptSection ? deptSection.id.replace('deptSection', '') : '';
+        var matchDept = deptId === '' || rowDeptId === deptId;
+
+        var show = matchSearch && matchYl && matchDept;
         row.style.display = show ? '' : 'none';
         if (show) visibleAny = true;
     });
+
     // Update department metadata and hide empty sections
-    var hasFilter = q || yl;
+    var hasFilter = q || yl || deptId;
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
         var sectionDeptId = section.id.replace('deptSection', '');
-        // Check if this department is visible based on department filter
         var deptVisible = deptId === '' || sectionDeptId === deptId;
 
         var total = section.querySelectorAll('.sb-row').length;
@@ -675,7 +682,7 @@ function applyFilters() {
         section.querySelectorAll('.sb-row').forEach(function(r) {
             if (r.style.display !== 'none') visible++;
         });
-        // Hide entire department section when no matches or department filter excludes it
+        // Hide entire department section when not selected or no matches
         section.style.display = (!deptVisible || (hasFilter && visible === 0)) ? 'none' : '';
         var meta = section.querySelector('.sb-dept-meta');
         if (meta) {
@@ -696,17 +703,12 @@ function filterByYearLevel(val) {
 
 /* ── Department filter ── */
 function filterByDepartment(deptId) {
-    // Show/hide department sections based on selection
+    // Reset department body visibility, then apply all filters
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
-        var sectionDeptId = section.id.replace('deptSection', '');
-        if (deptId === '') {
-            // Show all departments
-            section.style.display = '';
-        } else {
-            // Show only selected department
-            section.style.display = sectionDeptId === deptId ? '' : 'none';
-        }
+        section.style.display = '';
     });
+    // Apply all filters together
+    applyFilters();
 }
 
 /* ── Semester filter ── */
