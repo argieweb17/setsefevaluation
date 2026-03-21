@@ -650,87 +650,104 @@ function toggleDept(deptId) {
 
 /* ── Combined filter: search + year level + department ── */
 function applyFilters() {
-    var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
-    var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase().trim();
-    var deptId = (document.getElementById('departmentFilter').value || '').trim();
+    // Get filter values
+    var searchInput = document.getElementById('subjectSearchInput');
+    var deptFilterEl = document.getElementById('departmentFilter');
+    var yearFilterEl = document.getElementById('yearLevelFilter');
 
-    console.log('applyFilters - search:', q, 'yearLevel:', yl, 'deptId:', deptId);
+    if (!searchInput || !deptFilterEl || !yearFilterEl) {
+        console.error('Filter elements not found');
+        return;
+    }
 
-    var visibleSectionCount = 0;
-    var anyRowVisible = false;
+    var searchTerm = (searchInput.value || '').toLowerCase().trim();
+    var selectedDept = (deptFilterEl.value || '').trim();
+    var selectedYear = (yearFilterEl.value || '').toLowerCase().trim();
+
+    console.log('applyFilters:', { search: searchTerm, dept: selectedDept, year: selectedYear });
+
+    var hasAnyVisibleRows = false;
 
     // Process each department section
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
+        if (!section.id) {
+            console.warn('Section missing ID:', section);
+            return;
+        }
+
         var sectionDeptId = section.id.replace('deptSection', '').trim();
-        var deptMatches = (deptId === '' || sectionDeptId === deptId);
+        var sectionMatches = (selectedDept === '' || selectedDept === sectionDeptId);
 
         // If department doesn't match, hide entire section
-        if (!deptMatches) {
+        if (!sectionMatches) {
             section.style.display = 'none';
             return;
         }
 
-        var total = 0;
-        var visible = 0;
+        // Department matches, process rows
+        var visibleRowCount = 0;
+        var totalRowCount = 0;
 
-        // Process rows in this section
-        section.querySelectorAll('.sb-row').forEach(function(row) {
-            total++;
-            var text = (row.getAttribute('data-search') || '').toLowerCase();
-            var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
-            var matchSearch = (q === '' || text.indexOf(q) !== -1);
-            var matchYl = (yl === '' || rowYl === yl);
+        var rows = section.querySelectorAll('.sb-row');
+        rows.forEach(function(row) {
+            totalRowCount++;
+            var searchText = (row.getAttribute('data-search') || '').toLowerCase();
+            var rowYear = (row.getAttribute('data-yearlevel') || '').toLowerCase().trim();
 
-            var show = (matchSearch && matchYl);
-            row.style.display = show ? '' : 'none';
-            if (show) {
-                visible++;
-                anyRowVisible = true;
+            var matchesSearch = (searchTerm === '' || searchText.includes(searchTerm));
+            var matchesYear = (selectedYear === '' || rowYear === selectedYear);
+            var shouldShow = (matchesSearch && matchesYear);
+
+            row.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) {
+                visibleRowCount++;
+                hasAnyVisibleRows = true;
             }
         });
 
-        // Always show the section if dept matches, hide only if zero visible rows with filters
-        var hasFilters = (q !== '' || yl !== '' || deptId !== '');
-        if (visible > 0 || (visible === 0 && !hasFilters)) {
+        // Show section if any rows are visible OR no filters applied for this dept
+        var hasFilters = (searchTerm !== '' || selectedYear !== '');
+        if (visibleRowCount > 0) {
             section.style.display = '';
-            visibleSectionCount++;
+        } else if (!hasFilters) {
+            section.style.display = '';
         } else {
             section.style.display = 'none';
         }
 
-        // Update meta text
-        var meta = section.querySelector('.sb-dept-meta');
-        if (meta && total > 0) {
-            if (q !== '' || yl !== '') {
-                meta.textContent = visible + ' of ' + total + ' subject' + (total !== 1 ? 's' : '') + ' shown';
-            } else {
-                meta.textContent = total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+        // Update section meta text
+        var metaEl = section.querySelector('.sb-dept-meta');
+        if (metaEl) {
+            if (hasFilters && totalRowCount > 0) {
+                metaEl.textContent = visibleRowCount + ' of ' + totalRowCount + ' subject' + (totalRowCount !== 1 ? 's' : '') + ' shown';
+            } else if (totalRowCount > 0) {
+                metaEl.textContent = totalRowCount + ' subject' + (totalRowCount !== 1 ? 's' : '') + ' available';
             }
         }
     });
 
-    // Show "no results" message if no rows visible and filters are applied
-    var noResults = document.getElementById('sbNoResults');
-    if (noResults) {
-        noResults.style.display = (!anyRowVisible && (q !== '' || yl !== '' || deptId !== '')) ? '' : 'none';
+    // Show "no results" message if appropriate
+    var noResultsEl = document.getElementById('sbNoResults');
+    if (noResultsEl) {
+        var hasActiveFilters = (searchTerm !== '' || selectedDept !== '' || selectedYear !== '');
+        noResultsEl.style.display = (!hasAnyVisibleRows && hasActiveFilters) ? '' : 'none';
     }
 
-    console.log('Filter complete - visible sections:', visibleSectionCount, 'any row visible:', anyRowVisible);
+    console.log('applyFilters complete, hasAnyVisibleRows:', hasAnyVisibleRows);
 }
 
 function searchSubjects(query) {
-    console.log('searchSubjects called with:', query);
+    console.log('searchSubjects:', query);
     applyFilters();
 }
 
 function filterByYearLevel(val) {
-    console.log('filterByYearLevel called with:', val);
+    console.log('filterByYearLevel:', val);
     applyFilters();
 }
 
-/* ── Department filter ── */
-function filterByDepartment(deptId) {
-    console.log('filterByDepartment called with:', deptId);
+function filterByDepartment(val) {
+    console.log('filterByDepartment:', val);
     applyFilters();
 }
 
