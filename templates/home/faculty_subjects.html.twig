@@ -614,17 +614,22 @@
    ═══════════════════════════════════════ #}
 <script>
 /* ── Global active evaluations map ── */
+let activeEvaluations = {};
+
 try {
-    const activeEvaluations = {{ activeEvalMap|json_encode|raw }};
+    activeEvaluations = {{ activeEvalMap|json_encode|raw }};
     window.hasActiveEval = Object.keys(activeEvaluations).length > 0;
     window.firstActiveEvalId = Object.keys(activeEvaluations).length > 0 ? Object.keys(activeEvaluations)[0] : null;
-    console.log('Active Evaluations loaded successfully:', activeEvaluations);
+    console.log('Active Evaluations loaded successfully:', Object.keys(activeEvaluations).length, 'evaluations');
 } catch (e) {
     console.error('Failed to load active evaluations:', e);
     window.hasActiveEval = false;
     window.firstActiveEvalId = null;
-    const activeEvaluations = {};
+    activeEvaluations = {};
 }
+
+// Make it available globally if needed
+window.activeEvaluations = activeEvaluations;
 
 // Faculty and evaluation data for QR modals
 window.facultyName = '{{ app.user.firstName|e("js") }} {{ app.user.lastName|e("js") }}';
@@ -635,8 +640,9 @@ if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.fi
 }
 
 // Debug log
-console.log('Page loaded - Active evaluations:', window.hasActiveEval);
-console.log('Faculty name:', window.facultyName);
+console.log('Faculty subjects page loaded');
+console.log('  - Has active evaluations:', window.hasActiveEval);
+console.log('  - Faculty:', window.facultyName);
 
 /* ── Checked count ── */
 function updateCheckedCount() {
