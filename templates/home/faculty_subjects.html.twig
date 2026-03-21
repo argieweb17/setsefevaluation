@@ -230,6 +230,17 @@
     </div>
     <div class="sb-filter-form">
         <div class="sb-filter-group">
+            <i class="bi bi-building sb-filter-icon"></i>
+            <select class="sb-filter-select" id="departmentFilter" onchange="filterByDepartment(this.value)" style="min-width:150px;">
+                <option value="" selected>All Departments</option>
+                {% for group in deptGroups %}
+                    {% if group.subjects|length > 0 %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+        <div class="sb-filter-group">
             <i class="bi bi-calendar-event sb-filter-icon"></i>
             <select class="sb-filter-select" id="semesterFilter" onchange="filterBySemester(this.value)" style="min-width:150px;">
                 <option value="" {% if not selectedSemester %}selected{% endif %}>All Semesters</option>
@@ -641,6 +652,7 @@ function toggleDept(deptId) {
 function applyFilters() {
     var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
     var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase();
+    var deptId = (document.getElementById('departmentFilter').value || '').trim();
     var visibleAny = false;
     document.querySelectorAll('.sb-row').forEach(function(row) {
         var text = (row.getAttribute('data-search') || '').toLowerCase();
@@ -654,13 +666,17 @@ function applyFilters() {
     // Update department metadata and hide empty sections
     var hasFilter = q || yl;
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
+        var sectionDeptId = section.id.replace('deptSection', '');
+        // Check if this department is visible based on department filter
+        var deptVisible = deptId === '' || sectionDeptId === deptId;
+
         var total = section.querySelectorAll('.sb-row').length;
         var visible = 0;
         section.querySelectorAll('.sb-row').forEach(function(r) {
             if (r.style.display !== 'none') visible++;
         });
-        // Hide entire department section when filter is active and no matches
-        section.style.display = (hasFilter && visible === 0) ? 'none' : '';
+        // Hide entire department section when no matches or department filter excludes it
+        section.style.display = (!deptVisible || (hasFilter && visible === 0)) ? 'none' : '';
         var meta = section.querySelector('.sb-dept-meta');
         if (meta) {
             meta.textContent = hasFilter ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
@@ -676,6 +692,21 @@ function searchSubjects(query) {
 
 function filterByYearLevel(val) {
     applyFilters();
+}
+
+/* ── Department filter ── */
+function filterByDepartment(deptId) {
+    // Show/hide department sections based on selection
+    document.querySelectorAll('.sb-dept-section').forEach(function(section) {
+        var sectionDeptId = section.id.replace('deptSection', '');
+        if (deptId === '') {
+            // Show all departments
+            section.style.display = '';
+        } else {
+            // Show only selected department
+            section.style.display = sectionDeptId === deptId ? '' : 'none';
+        }
+    });
 }
 
 /* ── Semester filter ── */
@@ -827,6 +858,8 @@ function initializeEventListeners() {
             if (!body) return;
             body.querySelectorAll('.subject-check').forEach(function(cb) {
                 cb.checked = allCb.checked;
+                // Trigger change event to update row visuals
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
             });
             updateCheckedCount();
         });
