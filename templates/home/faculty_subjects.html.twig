@@ -653,44 +653,49 @@ function applyFilters() {
     var q = (document.getElementById('subjectSearchInput').value || '').toLowerCase().trim();
     var yl = (document.getElementById('yearLevelFilter').value || '').toLowerCase();
     var deptId = (document.getElementById('departmentFilter').value || '').trim();
+
+    console.log('applyFilters called - search:', q, 'yearLevel:', yl, 'deptId:', deptId);
+
     var visibleAny = false;
 
-    document.querySelectorAll('.sb-row').forEach(function(row) {
-        var text = (row.getAttribute('data-search') || '').toLowerCase();
-        var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase();
-        var matchSearch = q === '' || text.indexOf(q) !== -1;
-        var matchYl = yl === '' || rowYl === yl;
-
-        // Get the parent department section ID
-        var deptSection = row.closest('.sb-dept-section');
-        var rowDeptId = deptSection ? deptSection.id.replace('deptSection', '') : '';
-        var matchDept = deptId === '' || rowDeptId === deptId;
-
-        var show = matchSearch && matchYl && matchDept;
-        row.style.display = show ? '' : 'none';
-        if (show) visibleAny = true;
-    });
-
-    // Update department metadata and hide empty sections
-    var hasFilter = q || yl || deptId;
+    // Process each department section
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
         var sectionDeptId = section.id.replace('deptSection', '');
         var deptVisible = deptId === '' || sectionDeptId === deptId;
+        console.log('Checking section:', sectionDeptId, 'deptVisible:', deptVisible);
 
-        var total = section.querySelectorAll('.sb-row').length;
+        var total = 0;
         var visible = 0;
-        section.querySelectorAll('.sb-row').forEach(function(r) {
-            if (r.style.display !== 'none') visible++;
+
+        // Process rows in this section
+        section.querySelectorAll('.sb-row').forEach(function(row) {
+            total++;
+            var text = (row.getAttribute('data-search') || '').toLowerCase();
+            var rowYl = (row.getAttribute('data-yearlevel') || '').toLowerCase();
+            var matchSearch = q === '' || text.indexOf(q) !== -1;
+            var matchYl = yl === '' || rowYl === yl;
+            var matchDept = deptVisible;
+
+            var show = matchSearch && matchYl && matchDept;
+            row.style.display = show ? '' : 'none';
+            if (show) {
+                visible++;
+                visibleAny = true;
+            }
         });
-        // Hide entire department section when not selected or no matches
-        section.style.display = (!deptVisible || (hasFilter && visible === 0)) ? 'none' : '';
+
+        // Update section visibility
+        section.style.display = (!deptVisible || (visible === 0 && (q || yl))) ? 'none' : '';
         var meta = section.querySelector('.sb-dept-meta');
         if (meta) {
-            meta.textContent = hasFilter ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+            if (deptVisible) {
+                meta.textContent = (q || yl) ? visible + ' of ' + total + ' shown' : total + ' subject' + (total !== 1 ? 's' : '') + ' available';
+            }
         }
     });
+
     var noResults = document.getElementById('sbNoResults');
-    if (noResults) noResults.style.display = (!visibleAny && hasFilter) ? '' : 'none';
+    if (noResults) noResults.style.display = (!visibleAny && (q || yl || deptId)) ? '' : 'none';
 }
 
 function searchSubjects(query) {
@@ -703,11 +708,13 @@ function filterByYearLevel(val) {
 
 /* ── Department filter ── */
 function filterByDepartment(deptId) {
+    console.log('filterByDepartment called with:', deptId);
     // Reset department body visibility, then apply all filters
     document.querySelectorAll('.sb-dept-section').forEach(function(section) {
         section.style.display = '';
     });
     // Apply all filters together
+    console.log('Calling applyFilters from filterByDepartment');
     applyFilters();
 }
 
