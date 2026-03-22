@@ -103,8 +103,8 @@
                     <th class="fw-semibold">Name</th>
                     <th class="fw-semibold">Email</th>
                     <th class="fw-semibold">School ID</th>
-                    <th class="fw-semibold">Course</th>
                     <th class="fw-semibold">Year Level</th>
+                    <th class="fw-semibold">College</th>
                     <th class="fw-semibold">Department</th>
                     <th class="fw-semibold text-center">Status</th>
                     <th class="fw-semibold text-end pe-3">Actions</th>
@@ -128,8 +128,8 @@
                     </td>
                     <td><span class="small text-muted">{{ user.email }}</span></td>
                     <td><span class="small">{{ user.schoolId ?? '—' }}</span></td>
-                    <td><span class="small">{{ user.course ? user.course.courseName : '—' }}</span></td>
                     <td><span class="small">{{ user.yearLevel ?? '—' }}</span></td>
+                    <td><span class="small">{{ user.department ? user.department.collegeName : '—' }}</span></td>
                     <td><span class="small">{{ user.department ? user.department.departmentName : '—' }}</span></td>
                     <td class="text-center">
                         {% if user.accountStatus == 'active' %}

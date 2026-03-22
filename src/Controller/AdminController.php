@@ -325,7 +325,7 @@ class AdminController extends AbstractController
     // ── Role-specific listing pages ──
 
     #[Route('/students', name: 'admin_students', methods: ['GET'])]
-    public function students(UserRepository $repo, DepartmentRepository $deptRepo, CourseRepository $courseRepo): Response
+    public function students(UserRepository $repo, DepartmentRepository $deptRepo): Response
     {
         $all = $repo->findBy([], ['createdAt' => 'DESC']);
         $students = array_filter($all, fn(User $u) => !in_array('ROLE_ADMIN', $u->getRoles()) && !in_array('ROLE_SUPERIOR', $u->getRoles()) && !in_array('ROLE_FACULTY', $u->getRoles()) && !in_array('ROLE_STAFF', $u->getRoles()));
@@ -333,7 +333,6 @@ class AdminController extends AbstractController
         return $this->render('admin/students.html.twig', [
             'users' => array_values($students),
             'departments' => $deptRepo->findAllOrdered(),
-            'courses' => $courseRepo->findAllOrdered(),
         ]);
     }
 

@@ -5,11 +5,6 @@
 {% block stylesheets %}
 <style>
 .eh-page { max-width: 1140px; margin: 0 auto; }
-.eh-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
-.eh-breadcrumb a { color: #64748b; text-decoration: none; }
-.eh-breadcrumb a:hover { color: #2563eb; }
-.eh-breadcrumb .sep { color: #cbd5e1; }
-.eh-breadcrumb .current { color: #1e293b; font-weight: 600; }
 .eh-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
 .eh-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
 .eh-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
@@ -79,12 +74,6 @@
 {% endfor %}
 
 <div class="eh-page">
-
-<div class="eh-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
-    <span class="sep">/</span>
-    <span class="current">Evaluation History</span>
-</div>
 
 <div class="eh-header">
     <div>

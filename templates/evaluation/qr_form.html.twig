@@ -107,19 +107,52 @@
             <i class="bi bi-person-badge-fill" style="font-size:1.2rem;"></i>
             <div>
                 <h6 class="mb-0 fw-bold">Student Verification</h6>
-                <small class="opacity-75">Enter your Student ID and Full Name</small>
+                <small class="opacity-75">Enter your Student ID, Full Name, Email, College, Department, and Year Level</small>
             </div>
         </div>
     </div>
     <div class="card-body p-4">
         <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label fw-semibold" style="font-size:.82rem;">Student ID <span class="text-danger">*</span></label>
-                <input type="text" name="school_id" class="form-control" placeholder="e.g. 2023-1234" required>
+                <input type="text" name="school_id" class="form-control" placeholder="e.g. 2023-1234" value="{{ formValues.school_id|default('') }}" required>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label fw-semibold" style="font-size:.82rem;">Full Name <span class="text-danger">*</span></label>
-                <input type="text" name="full_name" class="form-control" placeholder="First Name Last Name" required>
+                <input type="text" name="full_name" class="form-control" placeholder="First Name Last Name" value="{{ formValues.full_name|default('') }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.82rem;">Email <span class="text-danger">*</span></label>
+                <input type="email" name="email" class="form-control" placeholder="you@example.com" value="{{ formValues.email|default('') }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.82rem;">College <span class="text-danger">*</span></label>
+                <select name="college_name" id="qrCollegeSelect" class="form-select" required>
+                    <option value="">Select College</option>
+                    {% for college in colleges %}
+                        <option value="{{ college }}" {{ formValues.college_name|default('') == college ? 'selected' : '' }}>{{ college }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.82rem;">Department <span class="text-danger">*</span></label>
+                <select name="department_id" id="qrDepartmentSelect" class="form-select" required>
+                    <option value="">Select Department</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" data-college="{{ dept.collegeName ?? '' }}" {{ formValues.department_id|default('') == dept.id ? 'selected' : '' }}>
+                            {{ dept.departmentName }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" style="font-size:.82rem;">Year Level <span class="text-danger">*</span></label>
+                <select name="year_level" class="form-select" required>
+                    <option value="">Select Year Level</option>
+                    {% for yl in yearLevelOptions %}
+                        <option value="{{ yl }}" {{ formValues.year_level|default('') == yl ? 'selected' : '' }}>{{ yl }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
     </div>
@@ -235,6 +268,49 @@
 {% endif %}
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var collegeSelect = document.getElementById('qrCollegeSelect');
+    var deptSelect = document.getElementById('qrDepartmentSelect');
+    if (!collegeSelect || !deptSelect) return;
+
+    var allOptions = Array.from(deptSelect.querySelectorAll('option')).slice(1).map(function (opt) {
+        return {
+            value: opt.value,
+            text: opt.textContent,
+            college: opt.getAttribute('data-college') || '',
+            selected: opt.selected
+        };
+    });
+
+    function repopulateDepartments() {
+        var selectedCollege = collegeSelect.value;
+        var previousValue = deptSelect.value;
+
+        while (deptSelect.options.length > 1) {
+            deptSelect.remove(1);
+        }
+
+        allOptions.forEach(function (opt) {
+            if (!selectedCollege || opt.college === selectedCollege) {
+                var o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.text;
+                o.setAttribute('data-college', opt.college);
+                deptSelect.appendChild(o);
+            }
+        });
+
+        var hasPrevious = Array.from(deptSelect.options).some(function (o) { return o.value === previousValue; });
+        deptSelect.value = hasPrevious ? previousValue : '';
+        deptSelect.disabled = selectedCollege === '';
+    }
+
+    repopulateDepartments();
+    collegeSelect.addEventListener('change', repopulateDepartments);
+});
+</script>
 
 </body>
 </html>

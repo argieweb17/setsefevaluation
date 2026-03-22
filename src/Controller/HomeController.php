@@ -2285,7 +2285,7 @@ class HomeController extends AbstractController
         }
 
         return $this->render('home/student_dashboard.html.twig', [
-            'subjects' => $enrolledSubjects,
+            'subjects' => $enrolledSubjects ?? [],
             'pending' => $pending,
             'completed' => $completed,
         ]);

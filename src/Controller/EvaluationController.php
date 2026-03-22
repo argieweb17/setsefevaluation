@@ -6,6 +6,7 @@ use App\Entity\AuditLog;
 use App\Entity\EvaluationResponse;
 use App\Repository\AcademicYearRepository;
 use App\Repository\CurriculumRepository;
+use App\Repository\DepartmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\FacultySubjectLoadRepository;
@@ -59,6 +60,7 @@ class EvaluationController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
+        DepartmentRepository $deptRepo,
         EntityManagerInterface $em,
         ?int $subjectId = null,
         ?string $section = null,
@@ -148,34 +150,82 @@ class EvaluationController extends AbstractController
         $questions = $questionRepo->findByType('SET');
         $error = null;
         $success = false;
+        $yearLevelOptions = ['First Year', 'Second Year', 'Third Year', 'Fourth Year'];
+        $colleges = $deptRepo->findDistinctCollegeNames();
+        $departments = $deptRepo->findAllOrdered();
 
         if ($request->isMethod('POST')) {
             $schoolId = trim($request->request->get('school_id', ''));
             $fullName = trim($request->request->get('full_name', ''));
+            $email = strtolower(trim($request->request->get('email', '')));
+            $collegeName = trim($request->request->get('college_name', ''));
+            $yearLevel = trim($request->request->get('year_level', ''));
+            $departmentId = (int) $request->request->get('department_id', 0);
+
+            if ($schoolId === '') {
+                $error = 'Please enter your Student ID.';
+            } elseif ($fullName === '') {
+                $error = 'Please enter your Full Name.';
+            } elseif ($email === '') {
+                $error = 'Please enter your Email Address.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Please enter a valid Email Address.';
+            } elseif ($collegeName === '') {
+                $error = 'Please select your College.';
+            } elseif (!in_array($collegeName, $colleges, true)) {
+                $error = 'Please select a valid College.';
+            } elseif ($departmentId <= 0) {
+                $error = 'Please select your Department.';
+            } elseif (!in_array($yearLevel, $yearLevelOptions, true)) {
+                $error = 'Please select a valid Year Level.';
+            }
+
+            $department = null;
+            if (!$error) {
+                $department = $deptRepo->find($departmentId);
+                if (!$department) {
+                    $error = 'Selected department is invalid.';
+                } elseif (($department->getCollegeName() ?? '') !== $collegeName) {
+                    $error = 'Selected department does not belong to the selected college.';
+                }
+            }
 
             // Look up student by school ID
-            $student = $userRepo->findOneBy(['schoolId' => $schoolId]);
+            $student = $schoolId !== '' ? $userRepo->findOneBy(['schoolId' => $schoolId]) : null;
+
+            // Enforce unique email across users
+            if (!$error) {
+                $emailOwner = $userRepo->findOneBy(['email' => $email]);
+                if ($emailOwner && (!$student || $emailOwner->getId() !== $student->getId())) {
+                    $error = 'Email address is already in use.';
+                }
+            }
 
             // Auto-register if not found
-            if (!$student) {
-                if ($fullName === '') {
-                    $error = 'Please enter your Full Name.';
-                } else {
-                    $nameParts = explode(' ', $fullName, 2);
-                    $firstName = $nameParts[0];
-                    $lastName = $nameParts[1] ?? '';
+            if (!$student && !$error) {
+                $nameParts = preg_split('/\s+/', $fullName, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
 
+                if ($firstName === '' || $lastName === '') {
+                    $error = 'Please enter your full name as First Name and Last Name.';
+                } else {
                     $student = new \App\Entity\User();
                     $student->setSchoolId($schoolId);
                     $student->setFirstName($firstName);
                     $student->setLastName($lastName);
-                    $student->setEmail(null);
                     $student->setPassword('');
                     $student->setRoles(['ROLE_STUDENT']);
                     $student->setAccountStatus('active');
-                    $em->persist($student);
-                    $em->flush();
                 }
+            }
+
+            if ($student && !$error) {
+                $student->setEmail($email);
+                $student->setDepartment($department);
+                $student->setYearLevel($yearLevel);
+                $em->persist($student);
+                $em->flush();
             }
 
             if ($student && !$error) {
@@ -228,6 +278,17 @@ class EvaluationController extends AbstractController
             'schedule' => $schedule,
             'questions' => $questions,
             'categoryDescriptions' => $descRepo->findDescriptionsByType('SET'),
+            'colleges' => $colleges,
+            'departments' => $departments,
+            'yearLevelOptions' => $yearLevelOptions,
+            'formValues' => [
+                'school_id' => (string) $request->request->get('school_id', ''),
+                'full_name' => (string) $request->request->get('full_name', ''),
+                'email' => (string) $request->request->get('email', ''),
+                'college_name' => (string) $request->request->get('college_name', ''),
+                'department_id' => (string) $request->request->get('department_id', ''),
+                'year_level' => (string) $request->request->get('year_level', ''),
+            ],
             'error' => $error,
             'success' => $success,
         ]);

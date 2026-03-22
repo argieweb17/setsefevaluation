@@ -182,6 +182,7 @@
 {% set totalEvals = pending|length + completed|length %}
 {% set progress = totalEvals > 0 ? ((completed|length / totalEvals) * 100)|round(0) : 0 %}
 
+{% if subjects|length > 0 or pending|length > 0 or completed|length > 0 %}
 <div class="analytics-grid sd-grid mb-4">
     <div class="analytics-stat-card">
         <div class="analytics-stat-icon" style="background:#EFF6FF;color:#2563EB">
@@ -226,6 +227,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 {# ═══════ PENDING EVALUATIONS ═══════ #}
 {% if pending|length > 0 %}
