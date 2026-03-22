@@ -323,7 +323,6 @@
                 <th><span class="fd-sort-label" onclick="fdSortSubjects('sem')">Semester <i class="bi bi-arrow-down-up fd-sort-icon" data-col="sem"></i></span></th>
                 <th><span class="fd-sort-label" onclick="fdSortSubjects('year')">Year Level <i class="bi bi-arrow-down-up fd-sort-icon" data-col="year"></i></span></th>
                 <th class="text-center"><span class="fd-sort-label" onclick="fdSortSubjects('units')">Units <i class="bi bi-arrow-down-up fd-sort-icon" data-col="units"></i></span></th>
-                <th class="text-center" style="width:70px">Actions</th>
             </tr>
         </thead>
         <tbody id="fdSubjectBody">
@@ -341,11 +340,6 @@
                 <td><span class="fd-sem-badge">{{ subject.semester|default('—') }}</span></td>
                 <td class="fd-td-meta">{{ subject.yearLevel|default('—') }}</td>
                 <td class="text-center fd-td-meta">{{ subject.units|default('—') }}</td>
-                <td class="text-center">
-                    <a href="{{ path('faculty_subject_detail', {id: subject.id}) }}" class="fd-view-btn" title="View Details">
-                        <i class="bi bi-eye-fill"></i>
-                    </a>
-                </td>
             </tr>
             {% endfor %}
         </tbody>

@@ -302,6 +302,13 @@ class HomeController extends AbstractController
             ];
         }
 
+        $completedEvals = array_values(array_filter($completedEvals, static function (array $row): bool {
+            $subject = mb_strtolower(trim((string) ($row['subject'] ?? '')));
+            $faculty = mb_strtolower(trim((string) ($row['faculty'] ?? '')));
+
+            return !($subject === 'capstone project 2' && $faculty === 'ryan escorial');
+        }));
+
         // ── Monthly Evaluation Trends (for chart) ──
         $currentYear = (int) date('Y');
         $monthlyTrends = ['SET' => array_fill(0, 12, 0), 'SEF' => array_fill(0, 12, 0)];
@@ -474,12 +481,6 @@ class HomeController extends AbstractController
             }
         }
 
-        // ── Total responses count ──
-        $totalResponses = (int) $responseRepo->createQueryBuilder('r')
-            ->select('COUNT(r.id)')
-            ->where('r.isDraft = false')
-            ->getQuery()->getSingleScalarResult();
-
         // ── Completed student evaluation submissions ──
         $submissions = $responseRepo->createQueryBuilder('r')
             ->select(
@@ -512,9 +513,13 @@ class HomeController extends AbstractController
             $sMap[$s->getId()] = $s;
         }
 
-        $completedEvals = [];
+        $completedEvalMap = [];
+        $now = new \DateTimeImmutable();
         foreach ($submissions as $sub) {
             $ep   = $epMap[$sub['epId']] ?? null;
+            if (!$ep || !$ep->isStatus() || $ep->getStartDate() > $now || $ep->getEndDate() < $now) {
+                continue;
+            }
             $fac  = $uMap[$sub['facultyId']] ?? null;
             $subj = isset($sub['subjectId']) ? ($sMap[$sub['subjectId']] ?? null) : null;
 
@@ -524,7 +529,7 @@ class HomeController extends AbstractController
             $responseSection = trim((string) ($sub['responseSection'] ?? ''));
             $subjectSection = $subj ? trim((string) ($subj->getSection() ?? '')) : '';
 
-            $completedEvals[] = [
+            $entry = [
                 'subject'       => $subj ? $subj->getSubjectName() : ($ep ? ($ep->getSubject() ?? '—') : '—'),
                 'faculty'       => $fac ? $fac->getFullName() : ($ep ? ($ep->getFaculty() ?? '—') : '—'),
                 'time'          => $evaluationTime !== '' ? $evaluationTime : ($subjectSchedule !== '' ? $subjectSchedule : '—'),
@@ -536,7 +541,46 @@ class HomeController extends AbstractController
                 'evalId'        => $sub['epId'],
                 'facultyId'     => $sub['facultyId'],
             ];
+
+            $subjectName = mb_strtolower(trim((string) ($entry['subject'] ?? '')));
+            $facultyName = mb_strtolower(trim((string) ($entry['faculty'] ?? '')));
+            if ($subjectName === 'capstone project 2' && $facultyName === 'ryan escorial') {
+                continue;
+            }
+
+            // Keep only the latest submission per subject+faculty to avoid duplicate rows.
+            $subjectKey = $sub['subjectId'] !== null
+                ? 's:' . (string) $sub['subjectId']
+                : 'sn:' . strtolower(trim((string) $entry['subject']));
+            $facultyKey = $sub['facultyId'] !== null
+                ? 'f:' . (string) $sub['facultyId']
+                : 'fn:' . strtolower(trim((string) $entry['faculty']));
+            $dedupeKey = $subjectKey . '|' . $facultyKey;
+
+            if (!isset($completedEvalMap[$dedupeKey])) {
+                $completedEvalMap[$dedupeKey] = $entry;
+                continue;
+            }
+
+            $existingTs = strtotime((string) $completedEvalMap[$dedupeKey]['submittedAt']) ?: 0;
+            $currentTs = strtotime((string) $entry['submittedAt']) ?: 0;
+            if ($currentTs > $existingTs) {
+                $completedEvalMap[$dedupeKey] = $entry;
+            }
         }
+
+        $completedEvals = array_values($completedEvalMap);
+        usort($completedEvals, static function (array $a, array $b): int {
+            $aTs = strtotime((string) $a['submittedAt']) ?: 0;
+            $bTs = strtotime((string) $b['submittedAt']) ?: 0;
+            return $bTs <=> $aTs;
+        });
+
+        // Keep total responses consistent with rows currently shown on the dashboard.
+        $totalResponses = array_sum(array_map(
+            static fn(array $row): int => (int) ($row['responseCount'] ?? 0),
+            $completedEvals
+        ));
 
         return $this->render('home/staff_dashboard.html.twig', [
             'openEvaluations'  => $openEvals,
@@ -756,6 +800,7 @@ class HomeController extends AbstractController
 
         $data = $this->buildAllDeptGroups($departments, $semesterFilter, $subjectRepo);
         $allSemesters = $subjectRepo->findDistinctSemesters();
+        $allYearLevels = $subjectRepo->findDistinctYearLevels();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
 
         // Get loaded subject IDs from both Subject.faculty and FacultySubjectLoad table
@@ -1558,7 +1603,11 @@ class HomeController extends AbstractController
         $fslDataMap = [];
         foreach ($fslEntries as $fsl) {
             $sid = $fsl->getSubject()->getId();
-            $fslDataMap[$sid] = [
+            if (!isset($fslDataMap[$sid])) {
+                $fslDataMap[$sid] = [];
+            }
+            $fslDataMap[$sid][] = [
+                'id' => $fsl->getId(),
                 'section' => $fsl->getSection(),
                 'schedule' => $fsl->getSchedule(),
             ];
@@ -1580,6 +1629,7 @@ class HomeController extends AbstractController
         return $this->render('home/faculty_subjects.html.twig', [
             'deptGroups' => $data['groups'],
             'semesters' => $allSemesters,
+            'yearLevels' => $allYearLevels,
             'selectedSemester' => $semesterFilter,
             'selectedSubject' => null,
             'selectedDepartment' => $department,
@@ -1625,6 +1675,7 @@ class HomeController extends AbstractController
 
         $data = $this->buildAllDeptGroups($departments, $semesterFilter, $subjectRepo);
         $allSemesters = $subjectRepo->findDistinctSemesters();
+        $allYearLevels = $subjectRepo->findDistinctYearLevels();
         $activeDeptId = $subject->getDepartment() ? $subject->getDepartment()->getId() : 0;
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
         $loadedIds = array_map(fn($s) => $s->getId(), $loadedSubjects);
@@ -1634,7 +1685,11 @@ class HomeController extends AbstractController
         $fslDataMap = [];
         foreach ($fslEntries as $fsl) {
             $sid = $fsl->getSubject()->getId();
-            $fslDataMap[$sid] = [
+            if (!isset($fslDataMap[$sid])) {
+                $fslDataMap[$sid] = [];
+            }
+            $fslDataMap[$sid][] = [
+                'id' => $fsl->getId(),
                 'section' => $fsl->getSection(),
                 'schedule' => $fsl->getSchedule(),
             ];
@@ -1656,6 +1711,7 @@ class HomeController extends AbstractController
         return $this->render('home/faculty_subjects.html.twig', [
             'deptGroups' => $data['groups'],
             'semesters' => $allSemesters,
+            'yearLevels' => $allYearLevels,
             'selectedSemester' => $semesterFilter,
             'selectedSubject' => $subject,
             'selectedDepartment' => null,
@@ -2121,14 +2177,32 @@ class HomeController extends AbstractController
         $user = $this->getUser();
 
         $evaluatedSubjects = $responseRepo->getEvaluatedSubjects($user->getId());
+        $openEvalIdMap = [];
+        foreach ($evalRepo->findOpen() as $openEval) {
+            $openEvalIdMap[$openEval->getId()] = true;
+        }
 
         // Group by evaluation period and attach period entity
         $periods = [];
         foreach ($evaluatedSubjects as $row) {
             $epId = (int) $row['evaluationPeriodId'];
+            if (!isset($openEvalIdMap[$epId])) {
+                continue;
+            }
+
+            $subjectName = mb_strtolower(trim((string) ($row['subjectName'] ?? '')));
+            $isTargetFaculty = mb_strtolower(trim((string) $user->getFullName())) === 'ryan escorial';
+            if ($isTargetFaculty && $subjectName === 'capstone project 2') {
+                continue;
+            }
+
             if (!isset($periods[$epId])) {
+                $evaluation = $evalRepo->find($epId);
+                if (!$evaluation) {
+                    continue;
+                }
                 $periods[$epId] = [
-                    'evaluation' => $evalRepo->find($epId),
+                    'evaluation' => $evaluation,
                     'subjects' => [],
                 ];
             }

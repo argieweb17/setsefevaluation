@@ -56,7 +56,7 @@
         <span><i class="bi bi-mortarboard-fill me-1"></i>{{ cay.label }}</span>
         {% endif %}
         <span><i class="bi bi-calendar3 me-1"></i>{{ 'now'|date('l, F d, Y') }}</span>
-        <span><i class="bi bi-clipboard-check me-1"></i>{{ openEvaluations|length }} active evaluation(s)</span>
+        <span><i class="bi bi-clipboard-check me-1"></i>{{ openEvaluations|length }} active period(s)</span>
         <span><i class="bi bi-journal-text me-1"></i>{{ totalResponses }} total responses</span>
     </div>
 </div>
@@ -69,7 +69,7 @@
         </div>
         <div class="analytics-stat-body">
             <span class="analytics-stat-value">{{ openEvaluations|length }}</span>
-            <span class="analytics-stat-label">Active Evaluations</span>
+            <span class="analytics-stat-label">Active Periods</span>
         </div>
     </div>
     <div class="analytics-stat-card">
@@ -161,7 +161,7 @@
                 <td class="ev-td-meta">{{ row.college }}</td>
                 <td class="ev-td-meta">{{ row.department }}</td>
                 <td class="ev-td-response"><span class="ev-response-badge">{{ row.responseCount }}</span></td>
-                <td class="text-center"><a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right me-1"></i>View</a></td>
+                <td class="text-center"><a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a></td>
             </tr>
             {% endfor %}
         </tbody>

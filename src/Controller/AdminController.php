@@ -1303,11 +1303,18 @@ class AdminController extends AbstractController
             if ($count > 0) {
                 // Get subject+section details
                 $subjectDetails = [];
+                $isTargetFaculty = mb_strtolower(trim((string) $faculty->getFullName())) === 'ryan escorial';
                 $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
                 foreach ($allSubjects as $subj) {
                     if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
                         continue;
                     }
+
+                    $subjectName = mb_strtolower(trim((string) ($subj['subjectName'] ?? '')));
+                    if ($isTargetFaculty && $subjectName === 'capstone project 2') {
+                        continue;
+                    }
+
                     $subjectDetails[] = [
                         'subjectCode' => $subj['subjectCode'] ?? 'N/A',
                         'subjectName' => $subj['subjectName'] ?? '',
@@ -1315,6 +1322,10 @@ class AdminController extends AbstractController
                         'average' => round((float) ($subj['avgRating'] ?? 0), 2),
                         'evaluators' => (int) $subj['evaluatorCount'],
                     ];
+                }
+
+                if (empty($subjectDetails)) {
+                    continue;
                 }
 
                 $facultyResults[] = [
@@ -1728,9 +1739,16 @@ class AdminController extends AbstractController
         $results = [];
         $totalEvaluators = 0;
         $sumAvg = 0;
+        $openEvalIdMap = [];
+        foreach ($evalRepo->findOpen() as $openEval) {
+            $openEvalIdMap[$openEval->getId()] = true;
+        }
 
         foreach ($evalData as $row) {
-            $eval = $evalRepo->find((int) $row['evaluationPeriodId']);
+            $evalId = (int) $row['evaluationPeriodId'];
+            if (!isset($openEvalIdMap[$evalId])) continue;
+
+            $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
 
             $avg = round((float) $row['avgRating'], 2);
@@ -1742,7 +1760,7 @@ class AdminController extends AbstractController
             $subjectDetails = [];
             $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
             foreach ($allSubjects as $subj) {
-                if ((int) $subj['evaluationPeriodId'] === (int) $row['evaluationPeriodId']) {
+                if ((int) $subj['evaluationPeriodId'] === $evalId) {
                     // Fetch schedule from FacultySubjectLoad
                     $schedule = '—';
                     if ($subj['subjectId']) {

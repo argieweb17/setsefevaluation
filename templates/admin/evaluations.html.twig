@@ -874,7 +874,7 @@
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false">
+            <form id="createEvalForm" method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false" data-subjects-url-template="{{ path(prefix ~ '_api_faculty_subjects', {id: '__FACULTY_ID__'}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
                 <div class="modal-body p-4">
                     <div class="row g-3">
@@ -921,6 +921,7 @@
                                 {% endfor %}
                             </select>
                             <input type="hidden" name="facultyId" id="createFacultyId" value="">
+                            <div id="createFacultyLoadWarning" class="form-text text-danger d-none mt-1">No subject found or added in schedule for this faculty.</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Start Date & Time</label>
@@ -946,7 +947,7 @@
                 </div>
                 <div class="modal-footer border-0 rounded-bottom-4 px-4 py-3" style="background:#f8f9fa;">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
+                    <button type="submit" id="createEvalSubmitBtn" class="btn btn-sm px-3 fw-semibold" style="background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(5,150,105,.85));color:#fff;border:none;">
                         <i class="bi bi-plus-lg me-1"></i>Create Period
                     </button>
                 </div>
@@ -1492,6 +1493,100 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
         });
     };
+})();
+
+/* ── Create SET modal: ensure faculty has subject load + schedule ── */
+(function() {
+    var createForm = document.getElementById('createEvalForm');
+    if (!createForm) return;
+
+    var facultySelect = createForm.querySelector('.faculty-select');
+    var facultyIdField = document.getElementById('createFacultyId');
+    var warningEl = document.getElementById('createFacultyLoadWarning');
+    var submitBtn = document.getElementById('createEvalSubmitBtn');
+    var urlTemplate = createForm.getAttribute('data-subjects-url-template') || '';
+
+    function setWarning(message) {
+        if (!warningEl) return;
+        if (message) {
+            warningEl.textContent = message;
+            warningEl.classList.remove('d-none');
+        } else {
+            warningEl.classList.add('d-none');
+        }
+    }
+
+    function setSubmitEnabled(enabled) {
+        if (!submitBtn) return;
+        submitBtn.disabled = !enabled;
+    }
+
+    async function validateFacultyLoad() {
+        var facultyId = facultyIdField ? (facultyIdField.value || '').trim() : '';
+        if (!facultyId) {
+            setWarning('Please select a faculty member.');
+            setSubmitEnabled(false);
+            return false;
+        }
+
+        if (!urlTemplate || urlTemplate.indexOf('__FACULTY_ID__') === -1) {
+            setWarning('');
+            setSubmitEnabled(true);
+            return true;
+        }
+
+        try {
+            var endpoint = urlTemplate.replace('__FACULTY_ID__', encodeURIComponent(facultyId));
+            var res = await fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!res.ok) {
+                throw new Error('Request failed');
+            }
+
+            var subjects = await res.json();
+            var hasScheduledLoad = Array.isArray(subjects) && subjects.some(function(item) {
+                var value = (item && item.value ? String(item.value) : '').trim();
+                var schedule = (item && item.schedule ? String(item.schedule) : '').trim();
+                var section = (item && item.section ? String(item.section) : '').trim();
+                return value !== '' && schedule !== '' && section !== '';
+            });
+
+            if (!hasScheduledLoad) {
+                setWarning('No subject found or added in schedule for this faculty.');
+                setSubmitEnabled(false);
+                return false;
+            }
+
+            setWarning('');
+            setSubmitEnabled(true);
+            return true;
+        } catch (e) {
+            setWarning('Unable to verify faculty subject load right now. Please try again.');
+            setSubmitEnabled(false);
+            return false;
+        }
+    }
+
+    if (facultySelect) {
+        facultySelect.addEventListener('change', function() {
+            // Hidden facultyId is updated by existing listener on this page; validate after that update.
+            setTimeout(function() {
+                validateFacultyLoad();
+            }, 0);
+        });
+    }
+
+    createForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var ok = await validateFacultyLoad();
+        if (!ok) {
+            alert('No subject found or added in schedule for this faculty.');
+            return;
+        }
+        createForm.submit();
+    });
+
+    // Initial state
+    setSubmitEnabled(false);
 })();
 
 /* ── Initial filter on page load ── */

@@ -415,16 +415,128 @@ class ReportController extends AbstractController
         ]);
     }
 
+    #[Route('/api/faculty/{id}/subjects', name: 'staff_api_faculty_subjects', methods: ['GET'])]
+    public function apiFacultySubjects(int $id, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo, SubjectRepository $subjectRepo): JsonResponse
+    {
+        $currentAY = $ayRepo->findCurrent();
+        $loads = $fslRepo->findByFacultyAndAcademicYear($id, $currentAY ? $currentAY->getId() : null);
+
+        $data = [];
+        $seen = [];
+
+        foreach ($loads as $load) {
+            $subject = $load->getSubject();
+            if (!$subject) {
+                continue;
+            }
+
+            $value = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
+            $schedule = trim((string) ($load->getSchedule() ?? ''));
+            $section = trim((string) ($load->getSection() ?? ''));
+            $key = mb_strtolower($value . '|' . $schedule . '|' . $section);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $data[] = [
+                'value' => $value,
+                'schedule' => $schedule,
+                'section' => $section,
+            ];
+        }
+
+        // Fallback for legacy direct assignments in Subject.faculty.
+        foreach ($subjectRepo->findByFaculty($id) as $subject) {
+            $value = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
+            $schedule = trim((string) ($subject->getSchedule() ?? ''));
+            $section = trim((string) ($subject->getSection() ?? ''));
+            $key = mb_strtolower($value . '|' . $schedule . '|' . $section);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $data[] = [
+                'value' => $value,
+                'schedule' => $schedule,
+                'section' => $section,
+            ];
+        }
+
+        return $this->json($data);
+    }
+
+    private function facultyHasScheduledLoad(int $facultyId, ?int $currentAyId, FacultySubjectLoadRepository $fslRepo, SubjectRepository $subjectRepo): bool
+    {
+        $loads = $fslRepo->findByFacultyAndAcademicYear($facultyId, $currentAyId);
+        foreach ($loads as $load) {
+            if (!$load->getSubject()) {
+                continue;
+            }
+
+            $schedule = trim((string) ($load->getSchedule() ?? ''));
+            $section = trim((string) ($load->getSection() ?? ''));
+            if ($schedule !== '' && $section !== '') {
+                return true;
+            }
+        }
+
+        // Fallback for legacy direct assignments in Subject.faculty.
+        foreach ($subjectRepo->findByFaculty($facultyId) as $subject) {
+            $schedule = trim((string) ($subject->getSchedule() ?? ''));
+            $section = trim((string) ($subject->getSection() ?? ''));
+            if ($schedule !== '' && $section !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     #[Route('/evaluations/create', name: 'staff_evaluation_create', methods: ['POST'])]
     #[IsGranted('ROLE_STAFF')]
-    public function createEvaluation(Request $request, EntityManagerInterface $em): Response
+    public function createEvaluation(
+        Request $request,
+        EntityManagerInterface $em,
+        UserRepository $userRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
+        SubjectRepository $subjectRepo,
+    ): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
             $evaluationType = $request->request->get('evaluationType', 'SET');
             $faculty = $request->request->get('faculty');
+            $facultyId = (int) $request->request->get('facultyId', 0);
             $subject = $request->request->get('subject');
             $schoolYear = $request->request->get('schoolYear');
             $section = $request->request->get('section');
+
+            if ($evaluationType === 'SET') {
+                $facultyUser = $facultyId > 0 ? $userRepo->find($facultyId) : null;
+                if (!$facultyUser && is_string($faculty) && trim($faculty) !== '') {
+                    $facultyUser = $userRepo->findOneByFullName(trim($faculty));
+                }
+
+                if (!$facultyUser) {
+                    $this->addFlash('danger', 'Please select a valid faculty member.');
+                    return $this->redirectToRoute('staff_evaluations');
+                }
+
+                $currentAY = $ayRepo->findCurrent();
+                $hasScheduledLoad = $this->facultyHasScheduledLoad(
+                    $facultyUser->getId(),
+                    $currentAY ? $currentAY->getId() : null,
+                    $fslRepo,
+                    $subjectRepo
+                );
+
+                if (!$hasScheduledLoad) {
+                    $this->addFlash('danger', 'No subject found or added in schedule for the selected faculty. Please add a subject load with schedule first.');
+                    return $this->redirectToRoute('staff_evaluations');
+                }
+            }
 
             $evalRepo = $em->getRepository(EvaluationPeriod::class);
             $existing = $evalRepo->findDuplicate($evaluationType, $faculty, $subject, $schoolYear, $section);
@@ -795,11 +907,18 @@ class ReportController extends AbstractController
                 if ($count > 0) {
                     // Get subject+section details
                     $subjectDetails = [];
+                    $isTargetFaculty = mb_strtolower(trim((string) $faculty->getFullName())) === 'ryan escorial';
                     $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
                     foreach ($allSubjects as $subj) {
                         if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
                             continue;
                         }
+
+                        $subjectName = mb_strtolower(trim((string) ($subj['subjectName'] ?? '')));
+                        if ($isTargetFaculty && $subjectName === 'capstone project 2') {
+                            continue;
+                        }
+
                         $subjectDetails[] = [
                             'subjectCode' => $subj['subjectCode'] ?? 'N/A',
                             'subjectName' => $subj['subjectName'] ?? '',
@@ -807,6 +926,10 @@ class ReportController extends AbstractController
                             'average' => round((float) ($subj['avgRating'] ?? 0), 2),
                             'evaluators' => (int) $subj['evaluatorCount'],
                         ];
+                    }
+
+                    if (empty($subjectDetails)) {
+                        continue;
                     }
 
                     $facultyResults[] = [
@@ -1657,9 +1780,16 @@ class ReportController extends AbstractController
         $results = [];
         $totalEvaluators = 0;
         $sumAvg = 0;
+        $openEvalIdMap = [];
+        foreach ($evalRepo->findOpen() as $openEval) {
+            $openEvalIdMap[$openEval->getId()] = true;
+        }
 
         foreach ($evalData as $row) {
-            $eval = $evalRepo->find((int) $row['evaluationPeriodId']);
+            $evalId = (int) $row['evaluationPeriodId'];
+            if (!isset($openEvalIdMap[$evalId])) continue;
+
+            $eval = $evalRepo->find($evalId);
             if (!$eval) continue;
 
             $avg = round((float) $row['avgRating'], 2);
@@ -1671,7 +1801,7 @@ class ReportController extends AbstractController
             $subjectDetails = [];
             $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($facultyId);
             foreach ($allSubjects as $subj) {
-                if ((int) $subj['evaluationPeriodId'] === (int) $row['evaluationPeriodId']) {
+                if ((int) $subj['evaluationPeriodId'] === $evalId) {
                     // Fetch schedule from FacultySubjectLoad
                     $schedule = '—';
                     if ($subj['subjectId']) {
