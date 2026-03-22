@@ -7,6 +7,58 @@
 
 {% block page_content %}
 <style>
+/* Table Styles */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    font-size: 0.85rem;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem !important;
+}
+
+/* Badge Styles - No truncation */
+.badge {
+    white-space: normal !important;
+    word-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+    display: inline-block;
+    padding: 0.4rem 0.6rem !important;
+}
+
+/* Section badge - ensure full text shows */
+td .badge {
+    min-width: fit-content;
+    max-width: none !important;
+}
+
+/* Room badge styling */
+.badge-room {
+    background-color: #cff0f5 !important;
+    color: #0c5a6e !important;
+}
+
+/* Schedule/Time badge styling */
+.badge-schedule {
+    background-color: #fff3cd !important;
+    color: #664d03 !important;
+}
+
 /* QR Code Modal */
 .qr-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);animation:qrSlideUp .3s ease;position:relative;}
 .qr-modal-close{position:absolute;top:12px;right:12px;background:#F1F5F9;border:none;color:#64748B;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;cursor:pointer;transition:all .15s;z-index:2;}
@@ -19,7 +71,7 @@
 .qr-eval-info{margin-top:.85rem;margin-bottom:auto;display:flex;flex-direction:column;gap:.4rem;padding:.65rem .75rem;background:#F8FAFC;border:1px solid #F1F5F9;border-radius:10px;}
 .qr-info-row{display:flex;align-items:center;gap:.5rem;}
 .qr-info-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;flex-shrink:0;}
-.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;}
+.qr-info-value{font-size:.78rem;font-weight:600;color:#1E293B;line-height:1.3;word-break:break-word;}
 .qr-eval-type-badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;background:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;}
 .qr-url-label{font-size:.62rem;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem;margin-top:.75rem;}
 .qr-url-box{font-size:.6rem;color:#64748B;word-break:break-all;padding:.45rem .65rem;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-bottom:.7rem;font-family:'SF Mono',Monaco,Consolas,monospace;line-height:1.5;}
@@ -39,6 +91,8 @@
     .qr-modal-right{width:100%;border-left:none;border-bottom:1px solid #F1F5F9;padding:1.25rem;}
     .qr-code-frame img{width:140px;height:140px;}
     .qr-modal-left{padding:1.25rem;}
+    .table{font-size:0.75rem;}
+    .table td{padding:0.5rem !important;}
 }
 @keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
