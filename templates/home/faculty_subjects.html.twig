@@ -292,6 +292,7 @@
 
 <div class="sb-table-wrap">
     {% set hasSubjects = false %}
+    {% set activeSemesterNorm = (currentAY is defined and currentAY and currentAY.semester) ? currentAY.semester|lower|trim : '' %}
     {% for dept in deptGroups %}
         {% if dept.subjects|length > 0 %}{% set hasSubjects = true %}{% endif %}
     {% endfor %}
@@ -341,6 +342,8 @@
                     {% set isLoaded = subject.id in loadedSubjectIds %}
                     {% set subjectFslEntries = fslDataMap[subject.id] | default([]) %}
                     {% set firstFsl = subjectFslEntries[0] | default(null) %}
+                    {% set subjectSemesterNorm = subject.semester ? subject.semester|lower|trim : '' %}
+                    {% set semesterLocked = activeSemesterNorm and subjectSemesterNorm and activeSemesterNorm != subjectSemesterNorm %}
                     <tr class="sb-row{% if isLoaded %} is-loaded{% endif %}"
                         data-subject-id="{{ subject.id }}"
                         data-search="{{ subject.subjectCode|lower }} {{ subject.subjectName|lower }}"
@@ -349,6 +352,7 @@
                             <input type="checkbox" name="subject_ids[]" value="{{ subject.id }}"
                                    class="form-check-input subject-check sb-check"
                                    {% if isLoaded %}checked{% endif %}
+                                {% if not isLoaded and semesterLocked %}disabled{% endif %}
                                    id="subj_{{ subject.id }}"
                                    data-dept-id="{{ dept.id }}"
                                    data-subject-id="{{ subject.id }}">
@@ -407,6 +411,8 @@
                         <td class="sb-td-status">
                             {% if isLoaded %}
                                 <span class="sb-status-badge loaded"><i class="bi bi-check-circle-fill"></i> Loaded{% if subjectFslEntries|length > 1 %} ({{ subjectFslEntries|length }}){% endif %}</span>
+                            {% elseif semesterLocked %}
+                                <span class="sb-status-badge" style="background:#fef2f2;color:#b91c1c;"><i class="bi bi-slash-circle"></i> Not available this term</span>
                             {% else %}
                                 <span class="sb-status-badge available"><i class="bi bi-circle"></i> Available</span>
                             {% endif %}
@@ -414,16 +420,22 @@
                         <td style="text-align:center;">
                             <div class="sb-action-btns">
                                 {% if isLoaded %}
-                                    <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section">
+                                    <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section" {% if semesterLocked %}disabled style="opacity:.55;cursor:not-allowed;"{% endif %}>
                                         <i class="bi bi-plus-circle"></i> Pick
                                     </button>
                                     <button type="button" class="sb-btn-unload" onclick="unloadSubject({{ subject.id }}, '{{ subject.subjectCode|e('js') }}')">
                                         <i class="bi bi-x-circle"></i> Unload
                                     </button>
                                 {% else %}
-                                    <button type="button" class="sb-btn-pick" onclick="quickLoadSubject({{ subject.id }})">
-                                        <i class="bi bi-plus-circle"></i> Pick
-                                    </button>
+                                    {% if semesterLocked %}
+                                        <button type="button" class="sb-btn-pick" disabled style="opacity:.55;cursor:not-allowed;" title="Subject semester does not match active academic semester">
+                                            <i class="bi bi-slash-circle"></i> Blocked
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="sb-btn-pick" onclick="quickLoadSubject({{ subject.id }})">
+                                            <i class="bi bi-plus-circle"></i> Pick
+                                        </button>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </td>

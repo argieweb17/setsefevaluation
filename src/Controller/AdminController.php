@@ -1030,9 +1030,101 @@ class AdminController extends AbstractController
     public function createAcademicYear(Request $request, EntityManagerInterface $em, AcademicYearRepository $repo): Response
     {
         if ($this->isCsrfTokenValid('create_ay', $request->request->get('_token'))) {
+            $createSemesterDates = $request->request->getBoolean('createSemesterDates', false);
+
+            if ($createSemesterDates) {
+                $yearLabel = trim((string) $request->request->get('yearLabel', ''));
+                if ($yearLabel === '') {
+                    $this->addFlash('danger', 'Year label is required.');
+                    return $this->redirectToRoute('admin_academic_years');
+                }
+
+                $termInputs = [
+                    ['semester' => '1st Semester', 'start' => $request->request->get('firstStartDate'), 'end' => $request->request->get('firstEndDate')],
+                    ['semester' => '2nd Semester', 'start' => $request->request->get('secondStartDate'), 'end' => $request->request->get('secondEndDate')],
+                    ['semester' => 'Summer', 'start' => $request->request->get('summerStartDate'), 'end' => $request->request->get('summerEndDate')],
+                ];
+
+                $isCurrent = (bool) $request->request->get('isCurrent', false);
+                if ($isCurrent) {
+                    $repo->clearCurrent();
+                }
+
+                $createdLabels = [];
+                $skippedLabels = [];
+
+                foreach ($termInputs as $idx => $term) {
+                    $existing = $repo->findOneBy([
+                        'yearLabel' => $yearLabel,
+                        'semester' => $term['semester'],
+                    ]);
+                    if ($existing) {
+                        $skippedLabels[] = $existing->getLabel();
+                        continue;
+                    }
+
+                    $ay = new AcademicYear();
+                    $ay->setYearLabel($yearLabel);
+                    $ay->setSemester($term['semester']);
+                    $ay->setIsCurrent($isCurrent && $idx === 0);
+
+                    if (!empty($term['start'])) {
+                        $ay->setStartDate(new \DateTime((string) $term['start']));
+                    }
+                    if (!empty($term['end'])) {
+                        $ay->setEndDate(new \DateTime((string) $term['end']));
+                    }
+
+                    $em->persist($ay);
+                    $createdLabels[] = $ay->getLabel();
+                }
+
+                if (!empty($createdLabels)) {
+                    $em->flush();
+                    $this->audit->log('create_academic_year', 'AcademicYear', null,
+                        'Created academic year terms: ' . implode(', ', $createdLabels));
+                    $this->addFlash('success', 'Created ' . count($createdLabels) . ' term(s): ' . implode(', ', $createdLabels) . '.');
+                }
+
+                if (!empty($skippedLabels)) {
+                    $this->addFlash('warning', 'Skipped existing term(s): ' . implode(', ', $skippedLabels) . '.');
+                }
+
+                if (empty($createdLabels) && empty($skippedLabels)) {
+                    $this->addFlash('warning', 'No terms were created.');
+                }
+
+                return $this->redirectToRoute('admin_academic_years');
+            }
+
+            $autoGenerate = $request->request->getBoolean('autoGenerateNext', false);
+            if ($autoGenerate) {
+                $next = $repo->getNextAcademicTerm();
+                $yearLabel = $next['yearLabel'];
+                $semester = $next['semester'];
+            } else {
+                $yearLabel = trim((string) $request->request->get('yearLabel', ''));
+                $semesterRaw = trim((string) $request->request->get('semester', ''));
+                $semester = $semesterRaw !== '' ? $semesterRaw : null;
+            }
+
+            if ($yearLabel === '') {
+                $this->addFlash('danger', 'Year label is required.');
+                return $this->redirectToRoute('admin_academic_years');
+            }
+
+            $existing = $repo->findOneBy([
+                'yearLabel' => $yearLabel,
+                'semester' => $semester,
+            ]);
+            if ($existing) {
+                $this->addFlash('warning', 'Academic year "' . $existing->getLabel() . '" already exists.');
+                return $this->redirectToRoute('admin_academic_years');
+            }
+
             $ay = new AcademicYear();
-            $ay->setYearLabel($request->request->get('yearLabel', ''));
-            $ay->setSemester($request->request->get('semester'));
+            $ay->setYearLabel($yearLabel);
+            $ay->setSemester($semester);
 
             $startDate = $request->request->get('startDate');
             $endDate = $request->request->get('endDate');
@@ -1051,7 +1143,7 @@ class AdminController extends AbstractController
             $this->audit->log('create_academic_year', 'AcademicYear', $ay->getId(),
                 'Created academic year ' . $ay->getLabel());
 
-            $this->addFlash('success', 'Academic year "' . $ay->getLabel() . '" created.');
+            $this->addFlash('success', ($autoGenerate ? 'Auto-generated a new term: ' : 'Academic year "') . $ay->getLabel() . ($autoGenerate ? '.' : '" created.'));
         }
         return $this->redirectToRoute('admin_academic_years');
     }

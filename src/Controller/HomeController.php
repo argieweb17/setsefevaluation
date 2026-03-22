@@ -141,6 +141,34 @@ class HomeController extends AbstractController
         return $scoped ?: [$facultyDept];
     }
 
+    private function normalizeAcademicSemester(?string $semester): ?string
+    {
+        if ($semester === null) {
+            return null;
+        }
+
+        return match (mb_strtolower(trim($semester))) {
+            '1st semester' => '1st Semester',
+            '2nd semester' => '2nd Semester',
+            'summer' => 'Summer',
+            default => null,
+        };
+    }
+
+    private function subjectAllowedForActiveAcademicSemester(Subject $subject, ?string $activeSemester): bool
+    {
+        if ($activeSemester === null) {
+            return true;
+        }
+
+        $subjectSemester = $this->normalizeAcademicSemester($subject->getSemester());
+        if ($subjectSemester === null) {
+            return true;
+        }
+
+        return $subjectSemester === $activeSemester;
+    }
+
     #[Route('/', name: 'app_home')]
     public function index(): Response
     {
@@ -802,6 +830,7 @@ class HomeController extends AbstractController
         $allSemesters = $subjectRepo->findDistinctSemesters();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
+        $allYearLevels = $subjectRepo->findDistinctYearLevels();
 
         // Get loaded subject IDs from both Subject.faculty and FacultySubjectLoad table
         $loadedSubjects = $subjectRepo->findByFaculty($user->getId());
@@ -1315,9 +1344,34 @@ class HomeController extends AbstractController
             $subjectIds = [];
         }
 
+        $subjectIds = array_values(array_unique(array_filter(
+            array_map('intval', $subjectIds),
+            static fn(int $id): bool => $id > 0
+        )));
+
+        $currentAY = $ayRepo->findCurrent();
+        $activeSemester = $this->normalizeAcademicSemester($currentAY?->getSemester());
+        $allowedSubjectIds = [];
+        $blockedSubjectCodes = [];
+
+        foreach ($subjectIds as $sid) {
+            $subject = $subjectRepo->find($sid);
+            if (!$subject) {
+                continue;
+            }
+
+            if (!$this->subjectAllowedForActiveAcademicSemester($subject, $activeSemester)) {
+                $blockedSubjectCodes[] = $subject->getSubjectCode();
+                continue;
+            }
+
+            $allowedSubjectIds[] = $sid;
+        }
+
         // Unload subjects that were previously loaded but are now unchecked
         $currentlyLoaded = $subjectRepo->findByFaculty($user->getId());
-        $selectedIdMap = array_flip($subjectIds);
+        // Use requested IDs so invalid selections are not force-unloaded unexpectedly.
+        $selectedIdMap = array_flip(array_map('strval', $subjectIds));
         $unloaded = 0;
         foreach ($currentlyLoaded as $loaded) {
             if (!isset($selectedIdMap[$loaded->getId()])) {
@@ -1338,7 +1392,7 @@ class HomeController extends AbstractController
         // Assign faculty to selected subjects
         // Allow multiple faculty to load the same subject
         $count = 0;
-        foreach ($subjectIds as $sid) {
+        foreach ($allowedSubjectIds as $sid) {
             $subject = $subjectRepo->find($sid);
             if ($subject) {
                 $prevFaculty = $subject->getFaculty();
@@ -1360,8 +1414,6 @@ class HomeController extends AbstractController
 
         // Persist load data to faculty_subject_load table
         // Each faculty gets their own section/schedule stored independently
-        $currentAY = $ayRepo->findCurrent();
-
         // Get existing FSL entries to preserve additional sections (picked via "Pick Again")
         $existingFslEntries = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
 
@@ -1374,7 +1426,7 @@ class HomeController extends AbstractController
 
         // For each selected subject: update the first (primary) FSL entry, keep additional ones
         // For unselected subjects: remove all FSL entries
-        $selectedIdMap2 = array_flip($subjectIds);
+        $selectedIdMap2 = array_flip(array_map('strval', $subjectIds));
 
         // Remove FSL entries for subjects that are no longer selected
         foreach ($existingBySubject as $sid => $fslList) {
@@ -1388,7 +1440,7 @@ class HomeController extends AbstractController
         }
 
         // Update or create the primary FSL entry for each selected subject
-        foreach ($subjectIds as $sid) {
+        foreach ($allowedSubjectIds as $sid) {
             $subject = $subjectRepo->find($sid);
             if (!$subject) continue;
 
@@ -1420,6 +1472,9 @@ class HomeController extends AbstractController
         }
         if ($unloaded > 0) {
             $messages[] = $unloaded . ' subject' . ($unloaded !== 1 ? 's' : '') . ' unloaded';
+        }
+        if (!empty($blockedSubjectCodes)) {
+            $messages[] = count($blockedSubjectCodes) . ' blocked by active semester (' . implode(', ', array_values(array_unique($blockedSubjectCodes))) . ')';
         }
         $this->addFlash('success', $messages ? implode(', ', $messages) . '.' : 'No changes made.');
         return $this->redirectToRoute('faculty_subjects');
@@ -1457,6 +1512,11 @@ class HomeController extends AbstractController
         }
 
         $currentAY = $ayRepo->findCurrent();
+        $activeSemester = $this->normalizeAcademicSemester($currentAY?->getSemester());
+        if (!$this->subjectAllowedForActiveAcademicSemester($subject, $activeSemester)) {
+            $this->addFlash('danger', 'Cannot pick this subject because active academic year semester is ' . ($activeSemester ?? 'not set') . '.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
 
         $fsl = new FacultySubjectLoad();
         $fsl->setFaculty($user);
@@ -1512,6 +1572,7 @@ class HomeController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         DepartmentRepository $deptRepo,
+        AcademicYearRepository $ayRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -1521,10 +1582,18 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('faculty_subjects');
         }
 
+        $semesterInput = $request->request->get('semester');
+        $activeSemester = $this->normalizeAcademicSemester($ayRepo->findCurrent()?->getSemester());
+        $newSubjectSemester = $this->normalizeAcademicSemester(is_string($semesterInput) ? $semesterInput : null);
+        if ($activeSemester !== null && $newSubjectSemester !== null && $newSubjectSemester !== $activeSemester) {
+            $this->addFlash('danger', 'Cannot create/load subject with semester ' . $newSubjectSemester . ' while active academic year semester is ' . $activeSemester . '.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
         $subject = new Subject();
         $subject->setSubjectCode($request->request->get('subjectCode', ''));
         $subject->setSubjectName($request->request->get('subjectName', ''));
-        $subject->setSemester($request->request->get('semester'));
+        $subject->setSemester($semesterInput);
         $subject->setSchoolYear($request->request->get('schoolYear'));
         $subject->setTerm($request->request->get('term'));
         $subject->setSection($request->request->get('section'));
@@ -1638,6 +1707,7 @@ class HomeController extends AbstractController
             'facultyDept' => $facultyDept,
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
+            'currentAY' => $currentAY,
             'subjectFacultyMap' => $subjectFacultyMap,
             'fslDataMap' => $fslDataMap,
         ]);
@@ -1720,6 +1790,7 @@ class HomeController extends AbstractController
             'facultyDept' => $facultyDept,
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
+            'currentAY' => $currentAY,
             'subjectFacultyMap' => $subjectFacultyMap,
             'fslDataMap' => $fslDataMap,
         ]);
@@ -1987,23 +2058,15 @@ class HomeController extends AbstractController
 
         // Handle message submission
         if ($request->isMethod('POST') && $request->request->get('_action') === 'send_message') {
-            $subject = trim($request->request->get('msg_subject', ''));
             $body = trim($request->request->get('msg_body', ''));
-            $evalId = $request->request->get('msg_evaluation');
+            $subject = 'Faculty Message';
 
-            if ($subject && $body) {
+            if ($body) {
                 $msg = new EvaluationMessage();
                 $msg->setSender($user);
                 $msg->setSubject($subject);
                 $msg->setMessage($body);
                 $msg->setSenderType('faculty');
-
-                if ($evalId) {
-                    $eval = $evalRepo->find($evalId);
-                    if ($eval) {
-                        $msg->setEvaluationPeriod($eval);
-                    }
-                }
 
                 $em->persist($msg);
                 $em->flush();
@@ -2020,7 +2083,7 @@ class HomeController extends AbstractController
 
                 $this->addFlash('success', 'Your message has been sent to the administrator.');
             } else {
-                $this->addFlash('error', 'Please fill in all required fields.');
+                $this->addFlash('error', 'Please enter your message.');
             }
 
             return $this->redirectToRoute('faculty_eval_request');

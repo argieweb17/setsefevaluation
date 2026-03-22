@@ -1033,21 +1033,6 @@
 
                 <div class="fm-modal-body">
                     <div class="fm-form-group">
-                        <label class="fm-form-label">Related Evaluation <span class="optional">(optional)</span></label>
-                        <select name="msg_evaluation" class="fm-form-select">
-                            <option value="">— General Inquiry —</option>
-                            {% for eval in evaluations %}
-                                <option value="{{ eval.id }}">{{ eval.evaluationType }} — {{ eval.semester ?? '' }} {{ eval.schoolYear ?? '' }}{% if eval.subject %} ({{ eval.subject }}){% endif %}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="fm-form-group">
-                        <label class="fm-form-label">Subject <span class="text-danger">*</span></label>
-                        <input type="text" name="msg_subject" class="fm-form-input" placeholder="What's this about?" required maxlength="255">
-                    </div>
-
-                    <div class="fm-form-group">
                         <label class="fm-form-label">Message <span class="text-danger">*</span></label>
                         <textarea name="msg_body" class="fm-form-textarea" placeholder="Type your message..." required></textarea>
                     </div>

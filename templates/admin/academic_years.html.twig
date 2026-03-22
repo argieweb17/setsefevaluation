@@ -415,7 +415,7 @@
 <div class="modal fade" id="addAYModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content ay-modal-content" style="border-radius:16px;overflow:hidden;">
-            <form method="post" action="{{ path(prefix ~ '_academic_year_create') }}">
+            <form id="addAYForm" method="post" action="{{ path(prefix ~ '_academic_year_create') }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('create_ay') }}">
                 <div class="ay-modal-header-gradient">
                     <div class="d-flex align-items-center gap-3">
@@ -429,14 +429,28 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="autoGenerateNext" value="1" class="form-check-input" id="addAutoGenerateNext">
+                                <label class="form-check-label ay-form-label" for="addAutoGenerateNext">Auto-generate next term</label>
+                                <div class="form-text" style="font-size:.72rem;">Cycle: 1st Semester → 2nd Semester → Summer → next academic year 1st Semester</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input type="checkbox" name="createSemesterDates" value="1" class="form-check-input" id="addCreateSemesterDates">
+                                <label class="form-check-label ay-form-label" for="addCreateSemesterDates">Add semester dates (1st, 2nd, Summer)</label>
+                                <div class="form-text" style="font-size:.72rem;">Creates three records for the same year label using the date ranges below.</div>
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label ay-form-label">Year Label <span class="text-danger">*</span></label>
-                            <input type="text" name="yearLabel" class="form-control form-control-sm" placeholder="e.g. 2025-2026" required>
+                            <input id="addYearLabelInput" type="text" name="yearLabel" class="form-control form-control-sm" placeholder="e.g. 2025-2026" required>
                             <div class="form-text" style="font-size:.7rem;">Format: YYYY-YYYY</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label ay-form-label">Semester</label>
-                            <select name="semester" class="form-select form-select-sm">
+                            <select id="addSemesterSelect" name="semester" class="form-select form-select-sm">
                                 <option value="">— No semester (full year) —</option>
                                 <option value="1st Semester">1st Semester</option>
                                 <option value="2nd Semester">2nd Semester</option>
@@ -445,11 +459,47 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label ay-form-label">Start Date</label>
-                            <input type="date" name="startDate" class="form-control form-control-sm">
+                            <input id="addSingleStartDate" type="date" name="startDate" class="form-control form-control-sm">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label ay-form-label">End Date</label>
-                            <input type="date" name="endDate" class="form-control form-control-sm">
+                            <input id="addSingleEndDate" type="date" name="endDate" class="form-control form-control-sm">
+                        </div>
+
+                        <div class="col-12 d-none" id="addSemesterDateGrid">
+                            <div class="border rounded-3 p-3" style="background:#f8fafc;border-color:#e2e8f0!important;">
+                                <div class="fw-semibold mb-2" style="font-size:.8rem;color:#334155;">Semester Date Ranges</div>
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">1st Semester Start</label>
+                                        <input type="date" name="firstStartDate" id="firstStartDate" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">1st Semester End</label>
+                                        <input type="date" name="firstEndDate" id="firstEndDate" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="row g-2 align-items-end mt-1">
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">2nd Semester Start</label>
+                                        <input type="date" name="secondStartDate" id="secondStartDate" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">2nd Semester End</label>
+                                        <input type="date" name="secondEndDate" id="secondEndDate" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div class="row g-2 align-items-end mt-1">
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">Summer Start</label>
+                                        <input type="date" name="summerStartDate" id="summerStartDate" class="form-control form-control-sm">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label ay-form-label">Summer End</label>
+                                        <input type="date" name="summerEndDate" id="summerEndDate" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
@@ -468,6 +518,83 @@
     </div>
 </div>
 {% endif %}
+
+
+<script>
+(function () {
+    var form = document.getElementById('addAYForm');
+    var auto = document.getElementById('addAutoGenerateNext');
+    var semesterDates = document.getElementById('addCreateSemesterDates');
+    var yearInput = document.getElementById('addYearLabelInput');
+    var semSelect = document.getElementById('addSemesterSelect');
+    var singleStart = document.getElementById('addSingleStartDate');
+    var singleEnd = document.getElementById('addSingleEndDate');
+    var dateGrid = document.getElementById('addSemesterDateGrid');
+    var firstStart = document.getElementById('firstStartDate');
+    var firstEnd = document.getElementById('firstEndDate');
+    var secondStart = document.getElementById('secondStartDate');
+    var secondEnd = document.getElementById('secondEndDate');
+    var summerStart = document.getElementById('summerStartDate');
+    var summerEnd = document.getElementById('summerEndDate');
+
+    if (!form || !auto || !semesterDates || !yearInput || !semSelect || !singleStart || !singleEnd || !dateGrid) {
+        return;
+    }
+
+    function syncAutoMode() {
+        var autoEnabled = auto.checked;
+        var multiEnabled = semesterDates.checked;
+
+        if (autoEnabled) {
+            semesterDates.checked = false;
+            semesterDates.disabled = true;
+            multiEnabled = false;
+        } else {
+            semesterDates.disabled = false;
+        }
+
+        if (multiEnabled) {
+            auto.checked = false;
+            auto.disabled = true;
+        } else {
+            auto.disabled = false;
+        }
+
+        yearInput.readOnly = autoEnabled;
+        yearInput.required = !autoEnabled;
+        if (autoEnabled) {
+            yearInput.value = '';
+        }
+
+        semSelect.disabled = autoEnabled || multiEnabled;
+        if (autoEnabled || multiEnabled) {
+            semSelect.value = '';
+        }
+
+        singleStart.disabled = multiEnabled;
+        singleEnd.disabled = multiEnabled;
+        if (multiEnabled) {
+            singleStart.value = '';
+            singleEnd.value = '';
+        }
+
+        dateGrid.classList.toggle('d-none', !multiEnabled);
+
+        [firstStart, firstEnd, secondStart, secondEnd, summerStart, summerEnd].forEach(function (el) {
+            if (!el) return;
+            el.required = multiEnabled;
+            el.disabled = !multiEnabled;
+            if (!multiEnabled) {
+                el.value = '';
+            }
+        });
+    }
+
+    auto.addEventListener('change', syncAutoMode);
+    semesterDates.addEventListener('change', syncAutoMode);
+    syncAutoMode();
+})();
+</script>
 
 
 

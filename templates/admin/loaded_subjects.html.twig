@@ -144,33 +144,13 @@
 .ls-restore-past{background:linear-gradient(135deg,#d97706,#f59e0b)!important;box-shadow:0 2px 8px rgba(217,119,6,.25)!important;}
 .ls-restore-past:hover{background:linear-gradient(135deg,#b45309,#d97706)!important;box-shadow:0 4px 12px rgba(217,119,6,.35)!important;}
 
-/* Previous Evaluations */
-.ls-history-card{background:#fff;border:1px solid #dbeafe;border-radius:12px;margin-top:16px;overflow:hidden;box-shadow:0 1px 4px rgba(37,99,235,.08);}
-.ls-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-bottom:1px solid #dbeafe;}
-.ls-history-title{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:700;color:#1e3a8a;}
-.ls-history-title i{font-size:1rem;color:#2563eb;}
-.ls-history-meta{font-size:.72rem;color:#475569;}
-.ls-history-tools{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
-.ls-history-select{min-width:150px;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.78rem;background:#fff;color:#334155;outline:none;}
-.ls-history-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-.ls-history-search{min-width:180px;flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:.78rem;background:#fff;color:#334155;outline:none;}
-.ls-history-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
-.ls-history-table{width:100%;border-collapse:collapse;font-size:.8rem;}
-.ls-history-table thead{background:#f8fafc;border-bottom:1px solid #e2e8f0;}
-.ls-history-table th{padding:9px 12px;font-size:.68rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;}
-.ls-history-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
-.ls-history-table tbody tr:hover{background:#f8fbff;}
-.ls-history-table tbody tr:last-child td{border-bottom:none;}
-.ls-history-code{display:inline-block;font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 8px;border-radius:6px;font-size:.74rem;}
-.ls-history-name{display:block;font-weight:600;color:#1e293b;margin-top:2px;}
-.ls-history-period-main{font-weight:700;color:#1e293b;display:block;}
-.ls-history-period-sub{font-size:.72rem;color:#64748b;display:block;margin-top:1px;}
-.ls-rating-pill{display:inline-flex;align-items:center;justify-content:center;min-width:56px;padding:3px 10px;border-radius:999px;font-size:.76rem;font-weight:700;}
-.ls-rating-high{background:#dcfce7;color:#166534;}
-.ls-rating-mid{background:#fef3c7;color:#92400e;}
-.ls-rating-low{background:#fee2e2;color:#991b1b;}
-.ls-history-empty{padding:20px;color:#94a3b8;text-align:center;font-size:.82rem;}
-.ls-history-no-results{padding:12px;color:#94a3b8;text-align:center;font-size:.8rem;border-top:1px solid #f1f5f9;display:none;}
+/* Previous load filters */
+.ls-prev-filter-card{background:#fff;border:1px solid #dbeafe;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 4px rgba(37,99,235,.08);}
+.ls-prev-filter-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;background:linear-gradient(135deg,#eff6ff,#dbeafe);}
+.ls-prev-filter-title{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:700;color:#1e3a8a;}
+.ls-prev-filter-select{min-width:220px;border:1px solid #bfdbfe;border-radius:9px;padding:7px 10px;font-size:.8rem;background:#fff;color:#1e293b;outline:none;}
+.ls-prev-filter-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+.ls-prev-empty{background:#fff;border:1px dashed #cbd5e1;color:#64748b;border-radius:12px;padding:12px 14px;font-size:.82rem;text-align:center;}
 
 /* Animations */
 .ls-header,.ls-toolbar,.ls-table-wrap,.ls-prev-load-card{animation:lsFadeIn .25s ease;}
@@ -326,8 +306,34 @@
 {# ═══════════════════════════════════════
    PREVIOUS LOAD — Current AY (unsaved)
    ═══════════════════════════════════════ #}
+{% set hasPreviousLoadHistory = (previousLoads is defined and previousLoads|length > 0) or (pastLoadsByAY is defined and pastLoadsByAY|length > 0) %}
+{% set currentAyFilterValue = (currentAY and currentAY.id) ? currentAY.id : 'current' %}
+
+{% if hasPreviousLoadHistory %}
+<div class="ls-prev-filter-card">
+    <div class="ls-prev-filter-row">
+        <div class="ls-prev-filter-title">
+            <i class="bi bi-clock-history"></i>
+            <span>Previous Subject Load / Schedule</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label for="lsPreviousAyFilter" class="ls-filter-label mb-0"><i class="bi bi-calendar3 me-1"></i>Academic Year:</label>
+            <select id="lsPreviousAyFilter" class="ls-prev-filter-select">
+                <option value="all">All Academic Years</option>
+                {% if previousLoads is defined and previousLoads|length > 0 %}
+                    <option value="{{ currentAyFilterValue }}">{{ currentAY ? currentAY.yearLabel : 'Current Academic Year' }}{% if currentAY and currentAY.semester %} · {{ currentAY.semester }}{% endif %}</option>
+                {% endif %}
+                {% for ayGroup in pastLoadsByAY|default([]) %}
+                    <option value="{{ ayGroup.ayId }}">{{ ayGroup.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if previousLoads is defined and previousLoads|length > 0 %}
-<div class="ls-prev-load-card">
+<div class="ls-prev-load-card ls-prev-load-item" data-ay-id="{{ currentAyFilterValue }}">
     <div class="ls-prev-load-header" onclick="togglePrevLoad('prevCurrentAY')" style="cursor:pointer;">
         <div class="d-flex align-items-center gap-2">
             <div class="ls-prev-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
@@ -376,7 +382,7 @@
    ═══════════════════════════════════════ #}
 {% if pastLoadsByAY is defined and pastLoadsByAY|length > 0 %}
 {% for ayGroup in pastLoadsByAY %}
-<div class="ls-prev-load-card ls-past-ay-card">
+<div class="ls-prev-load-card ls-past-ay-card ls-prev-load-item" data-ay-id="{{ ayGroup.ayId }}">
     <div class="ls-prev-load-header ls-past-ay-header" onclick="togglePrevLoad('prevPast{{ ayGroup.ayId }}')" style="cursor:pointer;">
         <div class="d-flex align-items-center gap-2">
             <div class="ls-prev-icon ls-past-icon"><i class="bi bi-clock-history"></i></div>
@@ -420,6 +426,10 @@
     </div>
 </div>
 {% endfor %}
+{% endif %}
+
+{% if hasPreviousLoadHistory %}
+<div id="lsPrevAyNoResults" class="ls-prev-empty" style="display:none;">No previous load/schedule records found for this academic year.</div>
 {% endif %}
 
 {# ═══════════════════════════════════════
@@ -593,105 +603,6 @@
         <span>No subjects match your search.</span>
     </div>
 </div>
-
-    {# ═══════════════════════════════════════
-       PREVIOUS EVALUATION HISTORY
-       ═══════════════════════════════════════ #}
-    {% set historySubjectSet = [] %}
-    {% set historySchoolYearSet = [] %}
-    {% set historySemesterSet = [] %}
-    {% for h in previousEvaluations|default([]) %}
-        {% if h.subjectCode not in historySubjectSet %}{% set historySubjectSet = historySubjectSet|merge([h.subjectCode]) %}{% endif %}
-        {% if h.schoolYear not in historySchoolYearSet %}{% set historySchoolYearSet = historySchoolYearSet|merge([h.schoolYear]) %}{% endif %}
-        {% if h.semester not in historySemesterSet %}{% set historySemesterSet = historySemesterSet|merge([h.semester]) %}{% endif %}
-    {% endfor %}
-
-    <div class="ls-history-card">
-        <div class="ls-history-head">
-            <div class="ls-history-title">
-                <i class="bi bi-clock-history"></i>
-                <span>Previous Evaluations</span>
-            </div>
-            <div class="ls-history-meta">
-                {{ previousEvaluations|default([])|length }} record{{ previousEvaluations|default([])|length != 1 ? 's' : '' }}
-            </div>
-        </div>
-
-        {% if previousEvaluations|default([])|length > 0 %}
-        <div class="ls-history-tools">
-            <select id="lsHistorySubject" class="ls-history-select">
-                <option value="all">All Subjects</option>
-                {% for code in historySubjectSet|sort %}
-                    <option value="{{ code|lower }}">{{ code }}</option>
-                {% endfor %}
-            </select>
-
-            <select id="lsHistoryYear" class="ls-history-select">
-                <option value="all">All School Years</option>
-                {% for sy in historySchoolYearSet|sort|reverse %}
-                    <option value="{{ sy|lower }}">{{ sy }}</option>
-                {% endfor %}
-            </select>
-
-            <select id="lsHistorySemester" class="ls-history-select">
-                <option value="all">All Semesters</option>
-                {% for sem in historySemesterSet|sort %}
-                    <option value="{{ sem|lower }}">{{ sem }}</option>
-                {% endfor %}
-            </select>
-
-            <input
-                type="text"
-                id="lsHistorySearch"
-                class="ls-history-search"
-                placeholder="Search previous evaluations...">
-        </div>
-
-        <table class="ls-history-table">
-            <thead>
-                <tr>
-                    <th>Period</th>
-                    <th>Subject</th>
-                    <th>Section</th>
-                    <th class="text-center">Respondents</th>
-                    <th class="text-center">Average</th>
-                </tr>
-            </thead>
-            <tbody id="lsHistoryBody">
-                {% for h in previousEvaluations %}
-                    {% set ratingClass = h.avgRating >= 4 ? 'ls-rating-high' : (h.avgRating >= 3 ? 'ls-rating-mid' : 'ls-rating-low') %}
-                    <tr class="ls-history-row"
-                        data-h-subject="{{ h.subjectCode|lower }}"
-                        data-h-year="{{ h.schoolYear|lower }}"
-                        data-h-sem="{{ h.semester|lower }}"
-                        data-h-search="{{ (h.subjectCode ~ ' ' ~ h.subjectName ~ ' ' ~ h.section ~ ' ' ~ h.schoolYear ~ ' ' ~ h.semester)|lower }}">
-                        <td>
-                            <span class="ls-history-period-main">{{ h.schoolYear }}</span>
-                            <span class="ls-history-period-sub">{{ h.semester }}</span>
-                        </td>
-                        <td>
-                            <span class="ls-history-code">{{ h.subjectCode }}</span>
-                            <span class="ls-history-name">{{ h.subjectName }}</span>
-                        </td>
-                        <td>{{ h.section }}</td>
-                        <td class="text-center">{{ h.evaluatorCount }}</td>
-                        <td class="text-center">
-                            <span class="ls-rating-pill {{ ratingClass }}">{{ h.avgRating|number_format(2) }}</span>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div id="lsHistoryNoResults" class="ls-history-no-results">
-            <i class="bi bi-search me-1"></i>No previous evaluations match your filter.
-        </div>
-        {% else %}
-        <div class="ls-history-empty">
-            <i class="bi bi-inboxes me-1"></i>No previous evaluation records found.
-        </div>
-        {% endif %}
-    </div>
 
 {# ═══════════════════════════════════════
    UNLOAD BLOCKED MODAL
@@ -868,34 +779,22 @@ function lsFilter() {
     document.getElementById('lsNoResults').style.display = count === 0 ? '' : 'none';
 }
 
-/* ── Previous evaluations filter ── */
-function lsHistoryFilter() {
-    var body = document.getElementById('lsHistoryBody');
-    if (!body) return;
+function lsFilterPreviousLoads() {
+    var filter = document.getElementById('lsPreviousAyFilter');
+    var selectedAy = filter ? filter.value : 'all';
+    var cards = document.querySelectorAll('.ls-prev-load-item');
+    var visibleCount = 0;
 
-    var subject = (document.getElementById('lsHistorySubject') || {}).value || 'all';
-    var year = (document.getElementById('lsHistoryYear') || {}).value || 'all';
-    var semester = (document.getElementById('lsHistorySemester') || {}).value || 'all';
-    var search = ((document.getElementById('lsHistorySearch') || {}).value || '').toLowerCase();
-
-    var rows = body.querySelectorAll('.ls-history-row');
-    var shown = 0;
-
-    rows.forEach(function(row) {
-        var matchSubject = subject === 'all' || (row.getAttribute('data-h-subject') || '') === subject;
-        var matchYear = year === 'all' || (row.getAttribute('data-h-year') || '') === year;
-        var matchSemester = semester === 'all' || (row.getAttribute('data-h-sem') || '') === semester;
-        var haystack = row.getAttribute('data-h-search') || '';
-        var matchSearch = haystack.indexOf(search) !== -1;
-
-        var visible = matchSubject && matchYear && matchSemester && matchSearch;
-        row.style.display = visible ? '' : 'none';
-        if (visible) shown++;
+    cards.forEach(function(card) {
+        var cardAy = card.getAttribute('data-ay-id') || '';
+        var isVisible = selectedAy === 'all' || cardAy === selectedAy;
+        card.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
     });
 
-    var noResult = document.getElementById('lsHistoryNoResults');
-    if (noResult) {
-        noResult.style.display = shown === 0 ? '' : 'none';
+    var empty = document.getElementById('lsPrevAyNoResults');
+    if (empty) {
+        empty.style.display = visibleCount === 0 ? '' : 'none';
     }
 }
 
@@ -950,18 +849,10 @@ document.addEventListener('DOMContentLoaded', function() {
         r.style.animationDelay = (i * 0.03) + 's';
     });
 
-    var historySubject = document.getElementById('lsHistorySubject');
-    var historyYear = document.getElementById('lsHistoryYear');
-    var historySemester = document.getElementById('lsHistorySemester');
-    var historySearch = document.getElementById('lsHistorySearch');
-
-    if (historySubject) historySubject.addEventListener('change', lsHistoryFilter);
-    if (historyYear) historyYear.addEventListener('change', lsHistoryFilter);
-    if (historySemester) historySemester.addEventListener('change', lsHistoryFilter);
-    if (historySearch) historySearch.addEventListener('input', lsHistoryFilter);
-
-    if (historySubject || historyYear || historySemester || historySearch) {
-        lsHistoryFilter();
+    var previousAyFilter = document.getElementById('lsPreviousAyFilter');
+    if (previousAyFilter) {
+        previousAyFilter.addEventListener('change', lsFilterPreviousLoads);
+        lsFilterPreviousLoads();
     }
 });
 
