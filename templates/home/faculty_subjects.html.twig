@@ -1167,8 +1167,8 @@ window.updateQRButtonsForLoadedSubjects = function() {
 
         // Get evaluation data for this subject
         let evalFaculty = '';
-        if (window.firstActiveEvalId && activeEvaluations && activeEvaluations[window.firstActiveEvalId]) {
-            evalFaculty = activeEvaluations[window.firstActiveEvalId].faculty || '';
+        if (window.firstActiveEvalId && window.activeEvaluations && window.activeEvaluations[window.firstActiveEvalId]) {
+            evalFaculty = window.activeEvaluations[window.firstActiveEvalId].faculty || '';
         }
 
         console.log(`Updating QR buttons for subject ${subjectCode}:`, {subjectCode, subjectName, section, schedule, evalFaculty: evalFaculty, firstEvalName: window.firstEvalName});
