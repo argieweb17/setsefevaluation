@@ -112,6 +112,9 @@
     gap: .75rem;
     margin-bottom: 1.25rem;
 }
+.fe-page-set .fe-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
 .fe-stat-card {
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -154,16 +157,20 @@
     letter-spacing: .04em;
     font-weight: 500;
 }
+.fe-page-set .fe-stat-card {
+    min-width: 0;
+}
 
 /* ΓöÇΓöÇ Toolbar ΓöÇΓöÇ */
 .fe-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem;overflow-x:auto;}
+.fe-toolbar-row{min-width:0;}
 .ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
 .ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .ev-filter-btn:hover{background:rgba(59,130,246,.08);color:#1e40af;}
 .ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
 .ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
 .ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
-.ev-search-box{position:relative;width:220px;}
+.ev-search-box{position:relative;width:280px;max-width:100%;flex:0 0 280px;margin-left:auto;}
 .ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
 .ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
 .ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
@@ -438,7 +445,9 @@
 
 /* ΓöÇΓöÇ Responsive ΓöÇΓöÇ */
 @media (max-width: 768px) {
-    .fe-stats { grid-template-columns: repeat(2, 1fr); }
+    .fe-page-set .fe-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fe-toolbar-row{flex-wrap:wrap;}
+    .ev-search-box{width:100%;flex:1 1 100%;}
     .fe-table-wrap { overflow-x: auto; }
     .fe-action-inner { padding: 8px 14px; gap: 8px; }
 }
@@ -446,6 +455,7 @@
 {% endblock %}
 
 {% block body %}
+<div class="fe-page-set">
 
 {# ΓöÇΓöÇ Header Section ΓöÇΓöÇ #}
 <div class="fe-header">
@@ -531,7 +541,7 @@
 
 {# ΓöÇΓöÇ Filter Toolbar ΓöÇΓöÇ #}
 <div class="fe-toolbar">
-    <div class="d-flex align-items-center flex-nowrap gap-2 w-100">
+    <div class="d-flex align-items-center flex-nowrap gap-2 w-100 fe-toolbar-row {% if staffMode %}justify-content-end{% endif %}">
         {% if not staffMode %}
         <div class="ev-filter-group" id="feTypeFilter">
             <button class="ev-filter-btn active" data-type="all" onclick="feFilterType('all', this)">All <span class="ev-filter-count">{{ evaluations|length }}</span></button>
@@ -543,7 +553,7 @@
             <input type="checkbox" id="feSelectAll" class="form-check-input">
             <span>Select All</span>
         </label>
-        <div class="ev-search-box ms-auto">
+        <div class="ev-search-box">
             <i class="bi bi-search ev-search-icon"></i>
             <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
         </div>
@@ -556,7 +566,6 @@
     <table class="table table-hover align-middle mb-0 fe-table">
         <thead>
             <tr>
-                    —
                 <th style="width:50px">Type</th>
                 <th>Period</th>
                 <th>Subject</th>
@@ -619,7 +628,7 @@
             {% endif %}
             {% if item.subjectDetails %}
                 {% for subj in item.subjectDetails %}
-                <tr class="subject-details-row fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}">
+                <tr class="subject-details-row fe-row" data-eval-id="{{ ev.id }}" data-type="{{ ev.evaluationType }}" data-search="{{ ev.evaluationType }} {{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }} {{ subj.subjectCode ?? '' }} {{ subj.subjectName ?? '' }} {{ subj.section ?? '' }} {{ subj.schedule ?? '' }}">
                     <td class="fe-td-check" style="display:none;"><input type="checkbox" class="form-check-input fe-check" value="{{ ev.id }}"></td>
                     <td><span class="fe-type-badge {{ ev.evaluationType == 'SET' ? 'fe-type-set' : 'fe-type-sef' }}">{{ ev.evaluationType == 'SUPERIOR' ? 'SEF' : ev.evaluationType }}</span></td>
                     <td>
@@ -629,9 +638,9 @@
                         <span><strong>{{ subj.subjectCode }}</strong></span>
                     </td>
                     <td>
-                        <span>—</span>
+                        <span>{{ subj.section ?: '—' }}</span>
                     </td>
-                    <td>{{ subj.schedule }}</td>
+                    <td>{{ subj.schedule ?: '—' }}</td>
                     <td class="text-center">
                         <span class="fe-rating-num">{{ subj.average|number_format(2) }}</span>
                         <span class="fe-rating-of">/ 5</span>
@@ -810,5 +819,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+</div>
 
 {% endblock %}

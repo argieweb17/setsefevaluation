@@ -90,6 +90,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
+
+        // Department heads/chairs who are faculty can access superior workflows.
+        $employmentStatus = mb_strtolower(trim((string) $this->employmentStatus));
+        $isDepartmentHeadLike = $employmentStatus !== ''
+            && (str_contains($employmentStatus, 'head') || str_contains($employmentStatus, 'chair'));
+
+        if (in_array('ROLE_FACULTY', $roles, true) && $isDepartmentHeadLike) {
+            $roles[] = 'ROLE_SUPERIOR';
+        }
+
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
@@ -137,7 +147,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isAdmin(): bool { return in_array('ROLE_ADMIN', $this->roles); }
 
-    public function isSuperior(): bool { return in_array('ROLE_SUPERIOR', $this->roles); }
+    public function isSuperior(): bool { return in_array('ROLE_SUPERIOR', $this->getRoles(), true); }
 
     public function isStaff(): bool { return in_array('ROLE_STAFF', $this->roles); }
 

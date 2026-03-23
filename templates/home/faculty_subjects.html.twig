@@ -423,9 +423,6 @@
                                     <button type="button" class="sb-btn-pick" onclick="openPickAgainModal({{ subject.id }}, '{{ subject.subjectCode|e('js') }}', '{{ subject.subjectName|e('js') }}')" title="Pick again with different section" {% if semesterLocked %}disabled style="opacity:.55;cursor:not-allowed;"{% endif %}>
                                         <i class="bi bi-plus-circle"></i> Pick
                                     </button>
-                                    <button type="button" class="sb-btn-unload" onclick="unloadSubject({{ subject.id }}, '{{ subject.subjectCode|e('js') }}')">
-                                        <i class="bi bi-x-circle"></i> Unload
-                                    </button>
                                 {% else %}
                                     {% if semesterLocked %}
                                         <button type="button" class="sb-btn-pick" disabled style="opacity:.55;cursor:not-allowed;" title="Subject semester does not match active academic semester">
@@ -471,9 +468,7 @@
                             </td>
                             <td style="text-align:center;">
                                 <div class="sb-action-btns">
-                                    <button type="button" class="sb-btn-unload" onclick="removeFslEntry({{ fslEntry.id }}, '{{ csrf_token('unload_fsl_' ~ fslEntry.id) }}')">
-                                        <i class="bi bi-x-circle"></i> Remove
-                                    </button>
+                                    <span class="sb-empty">—</span>
                                 </div>
                             </td>
                         </tr>
@@ -1263,33 +1258,21 @@ window.updateQRButtonsForLoadedSubjects = function() {
         const scheduleSelect = row.querySelector('.sb-inline-select');
         const schedule = scheduleSelect ? scheduleSelect.value.trim() : '';
 
-        const matchedEval = findMatchingEvaluationForSubject(subjectCode, subjectName, section);
-        const evalId = matchedEval ? matchedEval.id : null;
-        const evalData = matchedEval ? (matchedEval.data || {}) : null;
-
-        console.log('Updating QR buttons for subject:', {
+        console.log('Refreshing action buttons for loaded subject:', {
             subjectCode: subjectCode,
             subjectName: subjectName,
             section: section,
-            schedule: schedule,
-            evalId: evalId,
-            evalData: evalData
+            schedule: schedule
         });
 
-        // Update action buttons (with QR button if evaluation exists)
+        // Update action buttons (QR hidden from action column)
         const actionCell = row.querySelector('.sb-action-btns');
         if (!actionCell) return;
 
         let actionsHtml = '';
 
-        // Add QR button if there's an active evaluation
-        if (evalId) {
-            actionsHtml += '<button type="button" class="sb-btn-qr sb-qr-btn" data-subject-id="' + subjectId + '" data-subject-code="' + escapeHtmlAttr(subjectCode) + '" data-subject-name="' + escapeHtmlAttr(subjectName) + '" data-section="' + escapeHtmlAttr(section) + '" data-schedule="' + escapeHtmlAttr(schedule) + '" data-eval-id="' + evalId + '" data-eval-type="SET" data-faculty="' + escapeHtmlAttr(evalData.faculty || '') + '" data-school-year="' + escapeHtmlAttr(evalData.schoolYear || evalData.name || '') + '" title="Evaluation QR Code" style="width: 32px; height: 32px; border-radius: 6px; background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .2s; font-size: .85rem;"><i class="bi bi-qr-code-scan"></i></button>';
-        }
-
         // Add other action buttons
         actionsHtml += '<button type="button" class="sb-btn-pick" onclick="openPickAgainModal(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\', \'' + subjectName.replace(/'/g,"\\'") + '\')" title="Pick again with different section"><i class="bi bi-plus-circle"></i> Pick</button>';
-        actionsHtml += '<button type="button" class="sb-btn-unload" onclick="unloadSubject(' + subjectId + ', \'' + subjectCode.replace(/'/g,"\\'") + '\')"><i class="bi bi-x-circle"></i> Unload</button>';
 
         actionCell.innerHTML = actionsHtml;
     });

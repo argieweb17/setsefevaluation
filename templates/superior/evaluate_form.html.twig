@@ -16,12 +16,12 @@
     </div>
     <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
         <span style="display:inline-block;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:20px;padding:6px 20px;font-size:.85rem;font-weight:600;">
-            Superior Evaluation of {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}
+            Superior Evaluation of {{ evaluateeRoleLabel }}
         </span>
     </div>
     <div style="text-align:center;padding:12px 32px 14px;background:#fff;border-bottom:1px solid #e2e8f0;">
         <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(Performance Evaluation Instrument for Administrative Leaders)</div>
-        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">Please evaluate the performance of the {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }} honestly based on your observations and interactions. All responses are confidential.</p>
+        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">Please evaluate the performance of the {{ evaluateeRoleLabel }} honestly based on your observations and interactions. All responses are confidential.</p>
     </div>
 
     {# Evaluatee Info #}
@@ -33,13 +33,49 @@
             </div>
             <div class="col-md-4">
                 <small class="text-muted fw-semibold">Position</small><br>
-                <span>{{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}</span>
+                <span>{{ evaluateeRoleLabel }}</span>
             </div>
             <div class="col-md-4">
                 <small class="text-muted fw-semibold">Department</small><br>
                 <span>{{ evaluatee.department ? evaluatee.department.departmentName : '—' }}</span>
             </div>
         </div>
+    </div>
+
+    {# Evaluatee Subjects #}
+    <div style="padding:12px 24px;background:#fff;border-bottom:1px solid #e2e8f0;">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <small class="text-muted fw-semibold">Faculty Subjects</small>
+            <small class="text-muted">{{ evaluateeSubjects|length }} subject{{ evaluateeSubjects|length != 1 ? 's' : '' }}</small>
+        </div>
+        {% if evaluateeSubjects|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-sm mb-0" style="font-size:.74rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Subject</th>
+                            <th>Semester</th>
+                            <th>Section</th>
+                            <th>Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in evaluateeSubjects %}
+                        <tr>
+                            <td class="fw-semibold">{{ s.code }}</td>
+                            <td>{{ s.name }}</td>
+                            <td>{{ s.semester ?: '—' }}</td>
+                            <td>{{ s.section ?: '—' }}</td>
+                            <td>{{ s.schedule ?: '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-muted" style="font-size:.74rem;">No loaded subjects found for this faculty.</div>
+        {% endif %}
     </div>
 
     <div class="eval-form-instructions">
@@ -100,7 +136,7 @@
         </div>
         <div class="p-3">
             <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" required
-                      placeholder="Share any additional feedback for this {{ evaluateeRole == 'dean' ? 'Dean' : 'Department Head' }}..."></textarea>
+                      placeholder="Share any additional feedback for this {{ evaluateeRoleLabel }}..."></textarea>
         </div>
     </div>
 </div>

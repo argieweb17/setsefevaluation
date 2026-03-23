@@ -1,5 +1,6 @@
 ﻿{% extends 'base.html.twig' %}
 {% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+{% set isSefView = (resultView|default('set')) == 'sef' %}
 
 {% block title %}Evaluation Results | SET-SEF Evaluation{% endblock %}
 
@@ -92,35 +93,43 @@
 
 /* ── Toolbar ── */
 .rs-toolbar {
-    background: transparent;
-    border: none;
+    background: #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    padding: .75rem 1rem;
+    padding: .85rem 1rem .7rem;
     margin-bottom: 1.25rem;
-    box-shadow: none;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, .04);
 }
 .rs-toolbar-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-wrap: nowrap;
+    gap: 12px;
+    flex-wrap: wrap;
+    min-width: 0;
 }
 .rs-filter-select {
     font-size: .8rem;
-    padding: 7px 12px;
+    height: 38px;
+    padding: 0 12px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-    background: transparent;
+    background: #fff;
     color: #475569;
     cursor: pointer;
-    min-width: 200px;
+    min-width: 220px;
     transition: border-color .2s, box-shadow .2s;
 }
 .rs-filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.rs-filter-form {
+    display: flex;
+    align-items: center;
+    min-width: 220px;
+}
 .rs-search-box {
     position: relative;
-    flex: 1;
-    min-width: 200px;
+    width: clamp(260px, 32vw, 420px);
+    min-width: 220px;
+    margin-left: auto;
 }
 .rs-search-icon {
     position: absolute;
@@ -132,22 +141,24 @@
 }
 .rs-search-input {
     width: 100%;
-    padding: 7px 12px 7px 32px;
+    height: 38px;
+    padding: 0 12px 0 32px;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     font-size: .8rem;
-    background: transparent;
+    background: #fff;
     transition: border-color .2s, box-shadow .2s;
 }
-.rs-search-input:focus { outline: none; border-color: #3b82f6; background: transparent; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+.rs-search-input:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
 .rs-reset-btn {
-    background: transparent;
+    height: 38px;
+    background: #fff;
     color: #64748b;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-weight: 600;
     font-size: .8rem;
-    padding: 7px 16px;
+    padding: 0 16px;
     cursor: pointer;
     white-space: nowrap;
     transition: all .2s;
@@ -157,6 +168,7 @@
     font-size: .75rem;
     color: #64748b;
     font-weight: 500;
+    margin-top: .55rem;
 }
 
 /* ── Table ── */
@@ -391,6 +403,18 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+    .rs-filter-select,
+    .rs-filter-form,
+    .rs-search-box {
+        width: 100%;
+        min-width: 0;
+    }
+    .rs-search-box {
+        margin-left: 0;
+    }
+    .rs-reset-btn {
+        width: 100%;
+    }
 }
 </style>
 {% endblock %}
@@ -427,7 +451,7 @@
                         <span class="rs-meta-tag"><i class="bi bi-calendar-event"></i> {{ evaluations|length }} Periods</span>
                         <span class="rs-meta-tag"><i class="bi bi-buildings"></i> {{ departments|length }} Departments</span>
                         {% if selectedEvaluation %}
-                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} Faculty</span>
+                        <span class="rs-meta-tag"><i class="bi bi-people-fill"></i> {{ totalFaculty }} {{ isSefView ? 'Department Heads' : 'Faculty' }}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -454,7 +478,10 @@
                 <option value="{{ col }}">{{ col }}</option>
             {% endfor %}
         </select>
-        <form method="get" action="{{ path(prefix ~ '_results') }}" class="rs-toolbar-row" style="flex:1;">
+        <form method="get" action="{{ path(prefix ~ '_results') }}" class="rs-filter-form">
+            {% if isSefView %}
+                <input type="hidden" name="view" value="sef">
+            {% endif %}
             {% if selectedEvaluation %}
                 <input type="hidden" name="evaluation" value="{{ selectedEvaluation }}">
             {% endif %}
@@ -467,7 +494,7 @@
         </form>
         <div class="rs-search-box">
             <i class="bi bi-search rs-search-icon"></i>
-            <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
+            <input type="text" class="rs-search-input" id="facultySearch" placeholder="{{ isSefView ? 'Search department head...' : 'Search faculty...' }}" autocomplete="off">
         </div>
         <button type="button" class="rs-reset-btn" id="resetFilters">
             <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
@@ -481,7 +508,7 @@
     <div class="rs-table-bar">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-trophy"></i>
-            <span>Faculty Rankings</span>
+            <span>{{ isSefView ? 'Department Head Rankings' : 'Faculty Rankings' }}</span>
         </div>
         <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
     </div>
@@ -490,11 +517,11 @@
             <thead>
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
-                    <th>Faculty Name</th>
+                    <th>{{ isSefView ? 'Department Head' : 'Faculty Name' }}</th>
                     <th>Department</th>
                     <th class="text-center">Rating</th>
                     <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center">Evaluators</th>
+                    <th class="text-center">{{ isSefView ? 'Personnel Evaluated' : 'Evaluators' }}</th>
                     <th class="text-center">Performance</th>
                     <th class="text-center" style="width:60px">Actions</th>
                 </tr>
@@ -560,7 +587,7 @@
                     </td>
                     <td class="text-center">
                         <div class="d-flex gap-2 justify-content-center">
-                            <a href="{{ path(prefix ~ '_results_faculty_evaluations', {faculty: r.faculty.id}) }}" class="rs-view-btn" title="View Evaluations">
+                            <a href="{{ path(isSefView ? (prefix ~ '_results_superior_faculty_evaluations') : (prefix ~ '_results_faculty_evaluations'), {faculty: r.faculty.id}) }}" class="rs-view-btn" title="View Evaluations">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </div>

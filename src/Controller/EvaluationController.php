@@ -19,13 +19,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/evaluation')]
 class EvaluationController extends AbstractController
 {
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(
+        private AuditLogger $audit,
+        private MailerInterface $mailer,
+    ) {}
 
     // ════════════════════════════════════════════════
     //  SET — Student Evaluation for Teacher
@@ -193,11 +199,17 @@ class EvaluationController extends AbstractController
             // Look up student by school ID
             $student = $schoolId !== '' ? $userRepo->findOneBy(['schoolId' => $schoolId]) : null;
 
-            // Enforce unique email across users
+            // Reuse existing student accounts by email to avoid duplicate-email blocks.
             if (!$error) {
                 $emailOwner = $userRepo->findOneBy(['email' => $email]);
-                if ($emailOwner && (!$student || $emailOwner->getId() !== $student->getId())) {
-                    $error = 'Email address is already in use.';
+                if ($emailOwner) {
+                    if (!$emailOwner->isStudent()) {
+                        if (!$student || $emailOwner->getId() !== $student->getId()) {
+                            $error = 'Email address is already in use.';
+                        }
+                    } elseif (!$student || $emailOwner->getId() !== $student->getId()) {
+                        $student = $emailOwner;
+                    }
                 }
             }
 
@@ -221,6 +233,9 @@ class EvaluationController extends AbstractController
             }
 
             if ($student && !$error) {
+                if (!$student->getSchoolId()) {
+                    $student->setSchoolId($schoolId);
+                }
                 $student->setEmail($email);
                 $student->setDepartment($department);
                 $student->setYearLevel($yearLevel);
@@ -264,6 +279,15 @@ class EvaluationController extends AbstractController
 
                     $this->audit->log(AuditLog::ACTION_SUBMIT_SET, 'EvaluationResponse', null,
                         'QR submission by ' . $student->getFullName() . ' for ' . $faculty->getFullName() . ' / ' . $subject->getSubjectCode());
+
+                    $this->sendSubmissionConfirmationEmail(
+                        $student->getEmail(),
+                        $student->getFullName(),
+                        $faculty->getFullName(),
+                        (string) $subject->getSubjectCode(),
+                        (string) $subject->getSubjectName(),
+                        $finalSection !== '' ? $finalSection : null,
+                    );
 
                     $success = true;
                 }
@@ -467,6 +491,13 @@ class EvaluationController extends AbstractController
             } else {
                 $this->audit->log(AuditLog::ACTION_SUBMIT_SET, 'EvaluationResponse', null,
                     'Submitted SET for ' . $faculty->getFullName() . ' / ' . $subject->getSubjectCode());
+                $this->sendSubmissionConfirmationEmail(
+                    $user->getEmail(),
+                    $user->getFullName(),
+                    $faculty->getFullName(),
+                    (string) $subject->getSubjectCode(),
+                    (string) $subject->getSubjectName(),
+                );
                 $this->addFlash('success', 'Evaluation submitted successfully. Thank you!');
             }
 
@@ -500,5 +531,42 @@ class EvaluationController extends AbstractController
         return $this->render('evaluation/history.html.twig', [
             'history' => $history,
         ]);
+    }
+
+    private function sendSubmissionConfirmationEmail(
+        ?string $toEmail,
+        string $studentName,
+        string $facultyName,
+        string $subjectCode,
+        string $subjectName,
+        ?string $section = null,
+    ): void {
+        $toEmail = strtolower(trim((string) $toEmail));
+        if ($toEmail === '') {
+            return;
+        }
+
+        $sectionLine = $section ? "Section: {$section}\n" : '';
+        $submittedAt = (new \DateTimeImmutable())->format('F d, Y h:i A');
+
+        $message = (new Email())
+            ->from(new Address('no-reply@setsef.local', 'SET-SEF Evaluation'))
+            ->to($toEmail)
+            ->subject('Evaluation Submission Confirmation')
+            ->text(
+                "Hello {$studentName},\n\n"
+                . "Your evaluation has been submitted successfully.\n\n"
+                . "Faculty: {$facultyName}\n"
+                . "Subject: {$subjectCode} - {$subjectName}\n"
+                . $sectionLine
+                . "Submitted: {$submittedAt}\n\n"
+                . "Thank you for participating in the SET-SEF evaluation process."
+            );
+
+        try {
+            $this->mailer->send($message);
+        } catch (\Throwable) {
+            // Do not block evaluation submission if email transport is unavailable.
+        }
     }
 }

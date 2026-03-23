@@ -8,15 +8,15 @@
    CSS VARIABLES - Modern Chat Style
    ═══════════════════════════════════════ */
 :root {
-    --chat-blue: #2563eb;
-    --chat-blue-light: #3b82f6;
+    --chat-blue: #2f4ea4;
+    --chat-blue-light: #0f9d79;
     --chat-bg: #f8f9fa;
     --chat-sidebar-bg: #ffffff;
     --chat-border: #e5e7eb;
     --chat-text-primary: #1f2937;
     --chat-text-secondary: #6b7280;
     --chat-text-muted: #9ca3af;
-    --chat-bubble-out: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --chat-bubble-out: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
     --chat-bubble-in: #ffffff;
     --chat-radius: 20px;
     --chat-radius-sm: 12px;
@@ -112,7 +112,7 @@
     background: var(--chat-bg);
 }
 .fm-conv-item.active {
-    background: #eff6ff;
+    background: #eef3fb;
     border-left-color: var(--chat-blue);
 }
 
@@ -128,7 +128,7 @@
     flex-shrink: 0;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,.1);
-    border: 2px solid #eff6ff;
+    border: 2px solid #dce8f8;
 }
 .fm-avatar img {
     width: 70%;
@@ -194,7 +194,7 @@
 }
 .fm-new-msg-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    box-shadow: 0 4px 12px rgba(47,78,164,.3);
 }
 .fm-new-msg-btn i {
     font-size: 1rem;
@@ -551,7 +551,7 @@
 }
 .fm-send-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    box-shadow: 0 4px 12px rgba(47,78,164,.3);
 }
 
 /* Empty State */
@@ -568,7 +568,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #e5edfb 0%, #d7f2e9 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -605,7 +605,7 @@
 }
 .fm-empty-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    box-shadow: 0 4px 12px rgba(47,78,164,.3);
 }
 
 /* ═══════════════════════════════════════
@@ -673,7 +673,7 @@
 .fm-form-select:focus,
 .fm-form-textarea:focus {
     border-color: var(--chat-blue);
-    box-shadow: 0 0 0 3px rgba(124,58,237,.1);
+    box-shadow: 0 0 0 3px rgba(47,78,164,.12);
 }
 .fm-form-input::placeholder,
 .fm-form-textarea::placeholder {
@@ -718,7 +718,7 @@
 }
 .fm-btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    box-shadow: 0 4px 12px rgba(47,78,164,.3);
 }
 
 /* ═══════════════════════════════════════

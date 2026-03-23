@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
 
 {% block title %}SEF Evaluation Results | SET-SEF Evaluation{% endblock %}
 
@@ -518,7 +519,10 @@
 {# ── Filter Toolbar ── #}
 <div class="rs-toolbar no-print">
     <div class="rs-toolbar-row">
-        <form method="get" action="{{ path('admin_results_superior') }}" class="rs-toolbar-row" style="flex:1;">
+        <form method="get" action="{{ staffMode|default(false) ? path('staff_results') : path('admin_results_superior') }}" class="rs-toolbar-row" style="flex:1;">
+            {% if staffMode|default(false) %}
+                <input type="hidden" name="view" value="sef">
+            {% endif %}
             <select name="evaluation" class="rs-filter-select" onchange="this.form.submit()">
                 <option value="">All SEF Periods</option>
                 {% for eval in evaluations %}
@@ -551,7 +555,7 @@
     <div class="rs-table-bar">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-trophy"></i>
-            <span>SEF Faculty Rankings</span>
+            <span>SEF Department Head Rankings</span>
         </div>
         <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
     </div>
@@ -560,11 +564,11 @@
             <thead>
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
-                    <th>Faculty Name</th>
+                    <th>Department Head</th>
                     <th>Department</th>
                     <th class="text-center">Rating</th>
                     <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center">Evaluators</th>
+                    <th class="text-center">Personnel Evaluated</th>
                     <th class="text-center">Performance</th>
                     <th class="text-center" style="width:80px">Actions</th>
                 </tr>
@@ -629,7 +633,7 @@
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        <a href="{{ path('admin_results_superior_faculty_evaluations', {faculty: r.faculty.id}) }}"
+                        <a href="{{ path(prefix ~ '_results_superior_faculty_evaluations', {faculty: r.faculty.id}) }}"
                            class="rs-action-btn" title="View Evaluations">
                             <i class="bi bi-eye-fill"></i>
                         </a>

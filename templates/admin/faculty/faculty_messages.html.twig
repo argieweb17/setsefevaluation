@@ -9,15 +9,15 @@
    CSS VARIABLES - Modern Chat Style
    ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */
 :root {
-    --chat-blue: #2563eb;
-    --chat-blue-light: #3b82f6;
+    --chat-blue: #2f4ea4;
+    --chat-blue-light: #0f9d79;
     --chat-bg: #f8f9fa;
     --chat-sidebar-bg: #ffffff;
     --chat-border: #e5e7eb;
     --chat-text-primary: #1f2937;
     --chat-text-secondary: #6b7280;
     --chat-text-muted: #9ca3af;
-    --chat-bubble-out: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    --chat-bubble-out: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
     --chat-bubble-in: #ffffff;
     --chat-radius: 20px;
     --chat-radius-sm: 12px;
@@ -168,7 +168,7 @@
     background: var(--chat-bg);
 }
 .fm-conv-item.active {
-    background: #eff6ff;
+    background: #eef3fb;
     border-left-color: var(--chat-blue);
 }
 .fm-conv-item.unread {
@@ -181,7 +181,7 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #6b83cb 0%, #2f4ea4 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -272,7 +272,7 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #6b83cb 0%, #2f4ea4 100%);
     color: #fff;
     display: flex;
     align-items: center;
@@ -326,7 +326,7 @@
     text-transform: uppercase;
 }
 .fm-status-pending { background: #fef3c7; color: #b45309; }
-.fm-status-reviewed { background: #dbeafe; color: #2563eb; }
+.fm-status-reviewed { background: #e5edfb; color: #2f4ea4; }
 .fm-status-resolved { background: #d1fae5; color: #059669; }
 .fm-action-btn {
     width: 36px;
@@ -461,7 +461,7 @@
     justify-content: flex-end;
 }
 .fm-message-time .read-icon {
-    color: #60a5fa;
+    color: #6b83cb;
 }
 
 /* Attachment */
@@ -576,7 +576,7 @@
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #e5edfb 0%, #d7f2e9 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -689,7 +689,7 @@
 }
 .fm-send-btn:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(124,58,237,.3);
+    box-shadow: 0 4px 12px rgba(47,78,164,.3);
 }
 .fm-file-name {
     font-size: .72rem;
@@ -701,7 +701,7 @@
 
 /* Delete Modal */
 .fm-modal-danger-header {
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #06b6d4 100%);
+    background: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
     padding: 18px 20px;
     display: flex;
     align-items: center;
@@ -724,7 +724,7 @@
     padding: 8px 18px;
     font-weight: 600;
     color: #fff;
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #06b6d4 100%);
+    background: linear-gradient(90deg, #2f4ea4 0%, #0f9d79 100%);
 }
 .fm-delete-confirm-btn:hover {
     color: #fff;

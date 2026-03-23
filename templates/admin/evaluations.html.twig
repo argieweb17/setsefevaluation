@@ -161,10 +161,10 @@
 @keyframes qrSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
 /* ──── Hide SET-only columns (Subject, Schedule) ──── */
-.ev-table.hide-set-cols th:nth-child(6),
-.ev-table.hide-set-cols td:nth-child(6),
-.ev-table.hide-set-cols th:nth-child(7),
-.ev-table.hide-set-cols td:nth-child(7) {
+.ev-table.has-set-cols.hide-set-cols th:nth-child(6),
+.ev-table.has-set-cols.hide-set-cols td:nth-child(6),
+.ev-table.has-set-cols.hide-set-cols th:nth-child(7),
+.ev-table.has-set-cols.hide-set-cols td:nth-child(7) {
     display: none;
 }
 
@@ -309,7 +309,7 @@
    ═══════════════════════════════════════ #}
 <div id="activeSection">
     <div class="ev-table-container">
-        <table class="ev-table" id="activeTable">
+        <table class="ev-table{% if not staffMode %} has-set-cols{% endif %}" id="activeTable">
             <thead>
                 <tr>
                     <th class="ev-th-type">Type</th>
@@ -499,7 +499,7 @@
         </select>
     </div>
     <div class="ev-table-container">
-        <table class="ev-table" id="previousTable">
+        <table class="ev-table has-set-cols" id="previousTable">
             <thead>
                 <tr>
                     <th class="ev-th-type">Type</th>
@@ -967,7 +967,7 @@
                     <div class="ev-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
                     <div>
                         <h5 class="mb-0 fw-bold text-white">New SEF Evaluation</h5>
-                        <small class="text-white-50">Superior Evaluation for Faculty</small>
+                        <small class="text-white-50">Department-head evaluation of co-faculty (SEF)</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -997,25 +997,36 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Department</label>
-                            <select name="department" class="form-select ev-form-control sup-dept-select">
-                                <option value="">All Departments</option>
+                            <select name="department" class="form-select ev-form-control sup-dept-select" required>
+                                <option value="">— Select Department —</option>
                                 {% for dept in departments %}
                                     <option value="{{ dept.id }}" data-college="{{ dept.collegeName }}">{{ dept.departmentName }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">Faculty</label>
+                            <label class="form-label ev-form-label">Specific Department Head <span class="text-muted">(optional)</span></label>
                             <select name="faculty" class="form-select ev-form-control sup-faculty-select">
                                 <option value="" data-position="" data-department="">— Select Faculty —</option>
                                 {% for f in facultyUsers %}
-                                    <option value="{{ f.fullName }}" data-position="{{ f.employmentStatus }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
+                                    {% set _pos = (f.employmentStatus ?? '')|lower %}
+                                    {% if 'head' in _pos or 'chair' in _pos %}
+                                        <option value="{{ f.fullName }}" data-position="{{ f.employmentStatus }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
+                            <small class="text-muted" style="font-size:.68rem;">Leave blank to evaluate all faculty in the selected department.</small>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Position</label>
-                            <input type="text" name="position" class="form-control ev-form-control sup-position-input" placeholder="Auto-filled from faculty" readonly>
+                            <select name="position" class="form-select ev-form-control sup-position-input">
+                                <option value="">Select position</option>
+                                <option value="President">President</option>
+                                <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
+                                <option value="Campus Director">Campus Director</option>
+                                <option value="Dean">Dean</option>
+                                <option value="Program Chair">Program Chair</option>
+                            </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label ev-form-label">Start Date & Time</label>
@@ -1387,6 +1398,20 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
     });
 });
 
+function normalizeSuperiorPosition(raw) {
+    var value = (raw || '').toString().trim();
+    if (!value) return '';
+
+    var lower = value.toLowerCase();
+    if (lower.indexOf('vice president') !== -1) return 'Vice President of Academic Affairs';
+    if (lower.indexOf('president') !== -1) return 'President';
+    if (lower.indexOf('campus director') !== -1) return 'Campus Director';
+    if (lower.indexOf('dean') !== -1) return 'Dean';
+    if (lower.indexOf('chair') !== -1 || lower.indexOf('head') !== -1) return 'Program Chair';
+
+    return value;
+}
+
 /* ── Superior modal: Filter departments by college ── */
 (function() {
     var collegeSel = document.querySelector('.sup-college-select');
@@ -1421,7 +1446,11 @@ document.querySelectorAll('.college-select').forEach(function(collegeSel) {
 
     facultySel.addEventListener('change', function() {
         var selected = this.options[this.selectedIndex];
-        positionInput.value = selected ? (selected.getAttribute('data-position') || '') : '';
+        var mapped = normalizeSuperiorPosition(selected ? (selected.getAttribute('data-position') || '') : '');
+        var hasMappedOption = Array.from(positionInput.options).some(function(opt) {
+            return opt.value === mapped;
+        });
+        positionInput.value = hasMappedOption ? mapped : '';
     });
 })();
 

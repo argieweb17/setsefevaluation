@@ -36,7 +36,9 @@
 .sp-item:last-child { border-bottom: none; }
 .sp-item:hover { background: #f8fafc; }
 
-.sp-item-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .82rem; font-weight: 800; color: #fff; flex-shrink: 0; letter-spacing: .3px; }
+.sp-item-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: #e2e8f0; }
+.sp-item-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sp-item-avatar-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: .82rem; font-weight: 800; color: #fff; letter-spacing: .3px; }
 .sp-item-body { flex: 1; min-width: 0; }
 .sp-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .sp-item-name { font-weight: 600; font-size: .88rem; color: #0f172a; }
@@ -83,18 +85,12 @@
 
 <div class="sp-page">
 
-<div class="sp-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i class="bi bi-house-door"></i> Dashboard</a>
-    <span class="sep">/</span>
-    <span class="current">Evaluate Personnel</span>
-</div>
-
 <div class="sp-header">
     <div>
         <h1 class="sp-header-title">Evaluate Personnel</h1>
-        <div class="sp-header-sub">Superior Evaluation &middot; Evaluate Deans and Department Heads</div>
+        <div class="sp-header-sub">SEF Workflow &middot; Department heads evaluate co-faculty in their department</div>
     </div>
-    {% if evaluatees|length > 0 %}
+    {% if totalEvaluatees > 0 %}
     <div class="sp-search-wrap">
         <i class="bi bi-search"></i>
         <input type="search" id="spSearch" placeholder="Search personnel...">
@@ -102,12 +98,13 @@
     {% endif %}
 </div>
 
-{% if openEvals|length > 0 and evaluatees|length > 0 %}
+{% if openEvals|length > 0 and totalEvaluatees > 0 %}
 
 {% set totalSubmitted = 0 %}
 {% set totalPersonnel = 0 %}
 {% for eval in openEvals %}
-    {% for item in evaluatees %}
+    {% set evalEvaluatees = evaluateesByEval[eval.id]|default([]) %}
+    {% for item in evalEvaluatees %}
         {% set key = eval.id ~ '-' ~ item.user.id %}
         {% set totalPersonnel = totalPersonnel + 1 %}
         {% if submissions[key] is defined and submissions[key] %}{% set totalSubmitted = totalSubmitted + 1 %}{% endif %}
@@ -117,7 +114,7 @@
 <div class="sp-chips">
     <div class="sp-chip">
         <span class="sp-chip-icon" style="background:linear-gradient(135deg,#059669,#047857);"><i class="bi bi-people"></i></span>
-        <span><span class="sp-chip-val">{{ evaluatees|length }}</span> Personnel</span>
+        <span><span class="sp-chip-val">{{ totalEvaluatees }}</span> Personnel</span>
     </div>
     <div class="sp-chip">
         <span class="sp-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="bi bi-journal-text"></i></span>
@@ -130,12 +127,13 @@
 </div>
 
 {% for eval in openEvals %}
+    {% set evalEvaluatees = evaluateesByEval[eval.id]|default([]) %}
     {% set evalSubmitted = 0 %}
-    {% for item in evaluatees %}
+    {% for item in evalEvaluatees %}
         {% set key = eval.id ~ '-' ~ item.user.id %}
         {% if submissions[key] is defined and submissions[key] %}{% set evalSubmitted = evalSubmitted + 1 %}{% endif %}
     {% endfor %}
-    {% set progressPct = evaluatees|length > 0 ? ((evalSubmitted / evaluatees|length) * 100)|round : 0 %}
+    {% set progressPct = evalEvaluatees|length > 0 ? ((evalSubmitted / evalEvaluatees|length) * 100)|round : 0 %}
 
     <div class="sp-panel">
         <div class="sp-panel-head">
@@ -148,20 +146,24 @@
                 <span><i class="bi bi-clock me-1"></i>{{ eval.startDate|date('M d') }} – {{ eval.endDate|date('M d, Y') }}</span>
                 <div class="sp-progress">
                     <div class="sp-progress-bar"><div class="sp-progress-fill" style="width:{{ progressPct }}%"></div></div>
-                    <span>{{ evalSubmitted }}/{{ evaluatees|length }}</span>
+                    <span>{{ evalSubmitted }}/{{ evalEvaluatees|length }}</span>
                 </div>
             </div>
         </div>
         <div class="sp-list">
             {% set colors = ['#059669','#2563eb','#7c3aed','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
-            {% for item in evaluatees %}
+            {% for item in evalEvaluatees %}
                 {% set key = eval.id ~ '-' ~ item.user.id %}
                 {% set colorIdx = loop.index0 % colors|length %}
                 {% set nameParts = item.user.fullName|split(' ') %}
                 {% set initials = nameParts[0][:1]|upper ~ (nameParts|length > 1 ? nameParts[nameParts|length - 1][:1]|upper : '') %}
-                <div class="sp-item" data-search="{{ item.user.fullName }} {{ item.label }} {{ item.user.department ? item.user.department.departmentName : '' }}">
-                    <div class="sp-item-avatar" style="background:{{ colors[colorIdx] }};">
-                        {{ initials }}
+                <div class="sp-item" data-search="{{ item.user.fullName }} {{ item.label }} {{ item.user.department ? item.user.department.departmentName : '' }} {{ item.subjectPreview }}">
+                    <div class="sp-item-avatar">
+                        {% if item.user.profilePicture %}
+                            <img src="{{ asset('images/' ~ item.user.profilePictureOrDefault) }}" alt="{{ item.user.fullName }} profile" class="sp-item-avatar-img">
+                        {% else %}
+                            <span class="sp-item-avatar-fallback" style="background:{{ colors[colorIdx] }};">{{ initials }}</span>
+                        {% endif %}
                     </div>
                     <div class="sp-item-body">
                         <div class="sp-item-top">
@@ -177,6 +179,10 @@
                             {% if item.user.department %}
                                 <span><i class="bi bi-building"></i> {{ item.user.department.departmentName }}</span>
                             {% endif %}
+                            <span><i class="bi bi-journal-bookmark"></i> {{ item.subjectCount }} subject{{ item.subjectCount != 1 ? 's' : '' }}</span>
+                            {% if item.subjectPreview %}
+                                <span><i class="bi bi-list-ul"></i> {{ item.subjectPreview }}</span>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="sp-item-actions">
@@ -190,6 +196,11 @@
                     </div>
                 </div>
             {% endfor %}
+            {% if evalEvaluatees|length == 0 %}
+            <div class="sp-item" style="justify-content:center;color:#64748b;">
+                No faculty found in your department for this SEF period.
+            </div>
+            {% endif %}
         </div>
     </div>
 {% endfor %}
@@ -217,7 +228,7 @@
             <i class="bi bi-person-x"></i>
         </div>
         <div class="sp-empty-title">No personnel to evaluate</div>
-        <div class="sp-empty-desc">Users need their employment status set to "Dean", "Department Head", or "Chair" to appear here.</div>
+        <div class="sp-empty-desc">No faculty are currently available in your department for open SEF periods.</div>
     </div>
 </div>
 {% endif %}

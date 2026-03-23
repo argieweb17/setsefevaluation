@@ -2,16 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SEF Report — {{ faculty.fullName }}</title>
+    <title>SEF Report - {{ faculty.fullName }}</title>
     <style>
-        /* ══════════════════════════════════════════════
-           PRINT LAYOUT — Superior Evaluation for Faculty
-           Matches Official NORSU QUAMC format.
-           ══════════════════════════════════════════════ */
-
         @page {
-            size: A4 portrait;
-            margin: 12mm 16mm 12mm 16mm;
+            size: A4 landscape;
+            margin: 8mm 10mm 8mm 10mm;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,217 +14,239 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
-            padding: 20px 36px;
             color: #000;
-            font-size: 11px;
-            line-height: 1.35;
+            font-size: 9px;
+            line-height: 1.3;
+            padding: 12px 20px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background-image:
+                linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 24px 24px;
         }
 
-        /* ── Letterhead ── */
-        .letterhead {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .letterhead img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* ── Title Block ── */
-        .title-block {
-            text-align: center;
-            margin-bottom: 16px;
-        }
-        .title-block h2 {
-            font-size: 12px;
-            font-weight: 700;
-            margin-bottom: 3px;
-        }
-        .title-block h3 {
-            font-size: 12px;
-            font-weight: 700;
-            text-decoration: underline;
-        }
-
-        /* ── Faculty Info Table ── */
-        .info-table {
+        .sheet {
             width: 100%;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .header-left {
+            flex-shrink: 0;
+            margin-left: 0;
+        }
+        .header-left img {
+            max-height: 90px;
+            width: auto;
+        }
+        .header-right {
+            text-align: right;
+            padding-top: 4px;
+            margin-right: 10px;
+        }
+        .header-right .office-title {
+            font-size: 14px;
+            font-weight: 700;
+            font-style: italic;
+            margin-bottom: 4px;
+        }
+        .doc-info-table {
             border-collapse: collapse;
-            margin-bottom: 14px;
-            font-size: 11px;
+            font-size: 9px;
+            margin-left: auto;
         }
-        .info-table td {
-            padding: 2px 4px;
-            border: none;
-            vertical-align: bottom;
+        .doc-info-table td {
+            border: 1px solid #000;
+            padding: 1px 8px;
         }
-        .info-table .lbl {
-            font-weight: 400;
+        .doc-info-table .di-lbl {
+            font-weight: 700;
             white-space: nowrap;
         }
-        .info-table .val {
-            font-weight: 700;
-            border-bottom: 1px solid #000;
-            padding-left: 6px;
+        .doc-info-table .di-val {
+            min-width: 60px;
         }
-        .info-table .val-right {
-            font-weight: 700;
-            border-bottom: 1px solid #000;
-            text-align: left;
-            padding-left: 6px;
+        .doc-info-table .di-page {
+            text-align: center;
+            font-weight: 400;
+            vertical-align: middle;
+            padding: 1px 12px;
+            letter-spacing: 2px;
+            font-size: 10px;
         }
 
-        /* ── Results Table ── */
-        .results-table {
+        .title-block {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .title-block h2 {
+            font-size: 13px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .info-row {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 10px;
+            background: #fff;
+        }
+
+        .info-row td {
+            border: none;
+            padding: 4px 8px 2px;
             font-size: 10px;
         }
-        .results-table th,
-        .results-table td {
+
+        .info-row .lbl {
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+            width: 11%;
+        }
+
+        .info-row .val {
+            border-bottom: 1px solid #000;
+            text-decoration: none;
+            width: 14%;
+        }
+
+        .main-row {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            width: 64%;
+        }
+
+        .items-table {
+            width: calc(100% - 210px);
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .items-table th,
+        .items-table td {
             border: 1px solid #000;
             padding: 4px 6px;
+            font-size: 10px;
+        }
+
+        .items-table thead th {
+            font-weight: 700;
             text-align: center;
         }
-        .results-table th {
-            font-weight: 700;
-            font-size: 10px;
-        }
-        .results-table .area-cell {
+
+        .items-table .item {
             text-align: left;
-            font-weight: 400;
-            padding-left: 10px;
-        }
-        .results-table .total-row td {
-            font-weight: 700;
-        }
-        .results-table .verbal-row td {
-            font-weight: 700;
-            font-size: 11px;
-        }
-        .results-table .subject-row td {
-            border-top: 1px solid #000;
         }
 
-        /* ── Rating Scale ── */
-        .rating-scale {
-            margin: 14px 0 8px;
+        .items-table .num {
+            text-align: center;
+            width: 14%;
+        }
+
+        .summary-box {
+            width: 200px;
+            flex-shrink: 0;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .summary-box th,
+        .summary-box td {
+            border: 1px solid #000;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .summary-box th {
+            background: #cfe2f3;
+            font-size: 18px;
+        }
+
+        .summary-box .value {
+            font-size: 30px;
+            line-height: 1.1;
+        }
+
+        .scale {
+            margin: 6px 0 8px;
+            text-align: center;
+            font-size: 9px;
+            font-style: italic;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .purpose-row {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            background: transparent;
+        }
+
+        .purpose-row td {
+            border: none;
+            padding: 2px 6px;
             font-size: 10px;
-            font-style: italic;
-        }
-        .rating-scale strong {
-            font-style: normal;
         }
 
-        /* ── Purpose ── */
-        .purpose {
-            margin-bottom: 20px;
-            font-size: 11px;
+        .purpose-row .lbl {
+            width: auto;
+            font-weight: 700;
+            text-align: left;
+            padding-left: 0;
+            padding-right: 8px;
+        }
+
+        .signature-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 16px 20px 10px;
+            font-size: 10px;
+        }
+
+        .sig-block {
+            width: 38%;
+            text-align: center;
+        }
+
+        .sig-label {
+            text-align: left;
+            margin-bottom: 26px;
             font-weight: 700;
         }
 
-        /* ── Comments Section ── */
-        .comments-section {
-            margin-bottom: 20px;
-        }
-        .comments-section h3 {
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .comments-section ol {
-            margin: 0;
-            padding-left: 22px;
-            font-size: 11px;
-        }
-        .comments-section ol li {
-            margin-bottom: 6px;
-            padding-left: 4px;
-        }
-        .no-comments {
-            font-style: italic;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        /* ── Signatures ── */
-        .signature-section {
-            margin-top: 40px;
-            font-size: 11px;
-        }
-        .signature-section .sig-block {
-            margin-bottom: 36px;
-        }
-        .sig-line {
-            display: inline-block;
-            min-width: 200px;
+        .sig-name {
             border-bottom: 1px solid #000;
             font-weight: 700;
             padding-bottom: 2px;
+            margin-bottom: 3px;
         }
+
         .sig-title {
-            font-size: 10px;
-            font-style: italic;
-        }
-        .sig-left {
-            text-align: center;
-            float: left;
-            margin-left: 40px;
-        }
-        .sig-right {
-            text-align: center;
-            float: right;
-            margin-right: 40px;
-        }
-
-        /* ── Disclaimer ── */
-        .disclaimer {
-            margin-top: 30px;
-            padding: 12px 0;
-            font-size: 10px;
-            line-height: 1.20;
-        }
-        .disclaimer strong { font-style: normal; }
-
-        /* ── Footer Table ── */
-        .doc-footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 60px;
             font-size: 9px;
         }
-        .doc-footer-table td {
-            border: 1px solid #000;
-            padding: 3px 6px;
-            vertical-align: middle;
-        }
-        .doc-footer-table .ft-lbl {
-            font-weight: 700;
-            white-space: nowrap;
-            width: 22%;
-        }
-        .doc-footer-table .ft-val {
-            width: 20%;
-        }
-        .doc-footer-table .ft-page {
-            text-align: right;
-            border: 1px solid #000;
-            font-size: 10px;
-            padding: 3px 10px;
-            vertical-align: middle;
-            white-space: nowrap;
+
+        .disclaimer {
+            font-size: 8px;
+            font-style: italic;
+            border-top: none;
+            padding-top: 5px;
+            margin-top: 34px;
         }
 
-        /* ── Page Break ── */
-        .page-break {
-            page-break-after: always;
-            page-break-inside: avoid;
-        }
-
-        /* ── Print-specific ── */
         @media print {
             body { padding: 0; }
             .no-print { display: none !important; }
@@ -237,313 +254,144 @@
     </style>
 </head>
 <body>
+{% set letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] %}
+{% set totalAvg = 0 %}
+{% set totalMax = 0 %}
+{% set overallValue = overallAverage|default(compositeTotal|default(0)) %}
+{% set overallPct = (overallValue / 5) * 100 %}
 
-    {# ═══════════════════════════════════════════
-       LETTERHEAD
-       ═══════════════════════════════════════════ #}
-    <div class="letterhead">
-        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+<div class="sheet">
+    <div class="header-row">
+        <div class="header-left">
+            <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        </div>
+        <div class="header-right">
+            <div class="office-title">Office of the University Quality Assurance Management Center</div>
+            <table class="doc-info-table">
+                <tr>
+                    <td class="di-lbl">Document ID</td>
+                    <td class="di-val"></td>
+                    <td class="di-lbl">Issue Status</td>
+                    <td class="di-val"></td>
+                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong></td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Issue Date</td>
+                    <td class="di-val">{{ "now"|date("m-d-Y") }}</td>
+                    <td class="di-lbl">Approved by</td>
+                    <td class="di-val">ODQA</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Reviewed &amp; Authorized by</td>
+                    <td class="di-val">ODQA</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       TITLE BLOCK
-       ═══════════════════════════════════════════ #}
     <div class="title-block">
-        <h1>Office of the Director, Quality Assurance Management Center</h1>
-        <br>
         <h2>RESULT OF SUPERIOR EVALUATION FOR FACULTY</h2>
     </div>
 
-    {# ═══════════════════════════════════════════
-       FACULTY INFO
-       ═══════════════════════════════════════════ #}
-    <table class="info-table">
+    <table class="info-row">
         <tr>
             <td class="lbl">Name of Faculty:</td>
-            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
-            <td class="lbl">Position:</td>
-            <td class="val-right">{{ evaluation.position ?? 'N/A' }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">College/Department:</td>
-            <td class="val">{{ evaluation.college ?? (faculty.department ? faculty.department.collegeName : 'N/A') }}</td>
-            <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
-        </tr>
-        <tr>
+            <td class="val">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
             <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">School Year:</td>
-            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+            <td class="val">{{ faculty.campus ?? 'Main Campus' }}</td>
+            <td class="lbl">Course:</td>
+            <td class="val">{{ faculty.department ? faculty.department.departmentName : 'N/A' }}</td>
+            <td class="lbl">Sem/SY:</td>
+            <td class="val">{{ evaluation.semester ?? '' }} {{ evaluation.schoolYear ?? '' }}</td>
+            <td class="lbl">Employment Status:</td>
+            <td class="val">{{ faculty.employmentStatus ?? 'Regular Faculty' }}</td>
         </tr>
     </table>
 
-    {# ═══════════════════════════════════════════
-       SUMMARY RESULTS TABLE
-       ═══════════════════════════════════════════ #}
-    <table class="results-table">
-        <thead>
+    <div class="main-row">
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width:58%;">ITEMS</th>
+                    <th class="num">Average<br>Score</th>
+                    <th class="num">Max<br>Score</th>
+                    <th class="num">Rating<br>%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categorySummary %}
+                    {% set itemMax = cat.weightPct|default(0) %}
+                    {% set itemAvg = (cat.mean|default(0) / 5) * itemMax %}
+                    {% set itemPct = (cat.mean|default(0) / 5) * 100 %}
+                    {% set totalAvg = totalAvg + itemAvg %}
+                    {% set totalMax = totalMax + itemMax %}
+                    <tr>
+                        <td class="item">{{ letters[loop.index0]|default(loop.index ~ '.') }} {{ cat.name }}</td>
+                        <td class="num">{{ itemAvg|round(0, 'common') }}</td>
+                        <td class="num">{{ itemMax|round(0, 'common') }}</td>
+                        <td class="num">{{ itemPct|round(0, 'common') }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td class="item" style="text-align:right;font-weight:700;">Total Score</td>
+                    <td class="num" style="font-weight:700;">{{ totalAvg|round(0, 'common') }}</td>
+                    <td class="num" style="font-weight:700;">{{ totalMax|round(0, 'common') }}</td>
+                    <td class="num" style="font-weight:700;">{{ overallPct|round(0, 'common') }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="summary-box">
             <tr>
-                <th rowspan="3" style="width:30%">Areas of Evaluation</th>
-                <th colspan="3">SEF</th>
-                <th colspan="2">Composite Results</th>
+                <th>Overall Rating</th>
             </tr>
             <tr>
-                <th colspan="3">Superior Evaluation</th>
-                <th rowspan="2">Weighted<br>Mean</th>
-                <th rowspan="2">Weighted<br>Rating</th>
+                <td class="value">{{ overallPct|number_format(2) }}</td>
             </tr>
             <tr>
-                <th>Weighted<br>Mean</th>
-                <th>Weight<br>(%)</th>
-                <th>Weighted<br>Rating</th>
+                <th>Verbal Rating</th>
             </tr>
-        </thead>
-        <tbody>
-            {% for cat in categorySummary %}
             <tr>
-                <td class="area-cell">{{ cat.name }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightPct }}%</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
+                <td>{{ performanceLevel|default('N/A') }}</td>
             </tr>
-            {% endfor %}
-            <tr class="total-row">
-                <td class="area-cell">Total</td>
-                <td></td>
-                <td>100%</td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
-                <td></td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
-            </tr>
-            <tr class="verbal-row">
-                <td class="area-cell" style="font-weight:400;">Verbal Description</td>
-                <td colspan="3">{{ performanceLevel|upper }}</td>
-                <td colspan="2">{{ performanceLevel|upper }}</td>
-            </tr>
-            <tr class="subject-row">
-                <td class="area-cell">SEF</td>
-                <td>{{ evaluatorCount }}</td>
-            </tr>
-        </tbody>
+        </table>
+    </div>
+
+    <div class="scale">
+        Rating Scale: 91 - 100% - Always Manifested; 61 - 90% - Often Manifested; 31 - 60% - Sometimes Manifested; 11 - 30% - Seldom Manifested; 0 - 10% - Never/Rarely Manifested
+    </div>
+
+    <table class="purpose-row">
+        <tr>
+            <td class="lbl">Purpose:</td>
+            <td>For IPCR Requirement only.</td>
+        </tr>
     </table>
 
-    {# ═══════════════════════════════════════════
-       RATING SCALE
-       ═══════════════════════════════════════════ #}
-    <div class="rating-scale">
-        <strong>RATING SCALE:</strong>
-        5 – <em>Always manifested</em>;
-        4 – <em>Often manifested</em>;
-        3 – <em>Sometimes manifested</em>;
-        2 – <em>Seldom manifested</em>; and
-        1 – <em>Never/Rarely manifested</em>
-    </div>
-
-    {# ═══════════════════════════════════════════
-       PURPOSE
-       ═══════════════════════════════════════════ #}
-    <div class="purpose">
-        Purpose: <span style="font-weight:400;">For IPCR Requirement only.</span>
-    </div>
-
-    {# ═══════════════════════════════════════════
-       SIGNATURE SECTION
-       ═══════════════════════════════════════════ #}
-   <div class="signature-section">
+    <div class="signature-wrap">
         <div class="sig-block">
-            <div>Prepared by:</div>
-            <br><br>
-            <div class="sig-left">
-                <div class="sig-line">Argie Pair Pagbunocan</div>
-                <br>
-                <div class="sig-title">QUAMC Staff</div>
-            </div>
-            <div style="clear:both;"></div>
+            <div class="sig-label">Prepared by:</div>
+            <div class="sig-name">Argie Pair Pagbunocan</div>
+            <div class="sig-title">QUAMC Staff</div>
         </div>
-
         <div class="sig-block">
-            <div>Certified true and correct:</div>
-            <br><br>
-            <div class="sig-right">
-                <div class="sig-line">Argie Pair Pagbunocan</div>
-                <br>
-                <div class="sig-title">Director, Quality Assurance Management Center</div>
-            </div>
-            <div style="clear:both;"></div>
+            <div class="sig-label">Noted by:</div>
+            <div class="sig-name">CESAR P. ESTROPE, Ed.D</div>
+            <div class="sig-title">Director, Quality Assurance Management Center</div>
         </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DISCLAIMER
-       ═══════════════════════════════════════════ #}
     <div class="disclaimer">
-        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
-        addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
-        the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
-        any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the
-        sender. Thank you</em>
+        Disclaimer: The information transmitted by this document is intended only for the person or entity to which it is addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the sender. Thank you.
     </div>
+</div>
 
-    {# ═══════════════════════════════════════════
-       DOCUMENT FOOTER — PAGE 1
-       ═══════════════════════════════════════════ #}
-    <table class="doc-footer-table">
-        <tr>
-            <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val"></td>
-            <td class="ft-lbl"></td>
-            <td class="ft-val"></td>
-            <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>2</strong></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Issue Date</td>
-            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
-            <td class="ft-lbl">Issue Status</td>
-            <td class="ft-val"></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Reviewed &amp; authorized by</td>
-            <td class="ft-val">ODQA</td>
-            <td class="ft-lbl">Approved by</td>
-            <td class="ft-val">ODQA</td>
-        </tr>
-    </table>
-
-    {# ═══════════════════════════════════════════
-       PAGE BREAK — COMMENTS PAGE
-       ═══════════════════════════════════════════ #}
-    <div class="page-break"></div>
-
-    {# ═══════════════════════════════════════════
-       LETTERHEAD (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="letterhead">
-        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
-    </div>
-
-    {# ═══════════════════════════════════════════
-       TITLE BLOCK (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="title-block">
-        <h1>Office of the Director, Quality Assurance Management Center</h1>
-        <br>
-        <h2>SUPERIOR EVALUATION FOR FACULTY — COMMENTS</h2>
-    </div>
-
-    {# ═══════════════════════════════════════════
-       FACULTY INFO (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <table class="info-table">
-        <tr>
-            <td class="lbl">Name of Faculty:</td>
-            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
-            <td class="lbl">Position:</td>
-            <td class="val-right">{{ evaluation.position ?? 'N/A' }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">College/Department:</td>
-            <td class="val">{{ evaluation.college ?? (faculty.department ? faculty.department.collegeName : 'N/A') }}</td>
-            <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">School Year:</td>
-            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
-        </tr>
-    </table>
-
-    {# ═══════════════════════════════════════════
-       COMMENTS (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? 'SEF' }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
-        <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
-            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
-        </div>
-        {% if comments|length > 0 %}
-        <ol>
-            {% for c in comments %}
-                <li>{{ c }}</li>
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="no-comments">No comments were submitted for this evaluation.</p>
-        {% endif %}
-    </div>
-
-    {# ═══════════════════════════════════════════
-       SIGNATURE SECTION (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="signature-section">
-        <div class="sig-block">
-            <div>Prepared by:</div>
-            <br><br>
-            <div class="sig-left">
-                <div class="sig-line">Argie Pair Pagbunocan</div>
-                <br>
-                <div class="sig-title">QUAMC Staff</div>
-            </div>
-            <div style="clear:both;"></div>
-        </div>
-
-        <div class="sig-block">
-            <div>Certified true and correct:</div>
-            <br><br>
-            <div class="sig-right">
-                <div class="sig-line">CESAR P. ESTROPE, Ed.D</div>
-                <br>
-                <div class="sig-title">Director, Quality Assurance Management Center</div>
-            </div>
-            <div style="clear:both;"></div>
-        </div>
-    </div>
-
-    {# ═══════════════════════════════════════════
-       DISCLAIMER (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="disclaimer">
-        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
-        addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
-        the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
-        any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the
-        sender. Thank you</em>
-    </div>
-
-    {# ═══════════════════════════════════════════
-       DOCUMENT FOOTER — PAGE 2
-       ═══════════════════════════════════════════ #}
-    <table class="doc-footer-table">
-        <tr>
-            <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val"></td>
-            <td class="ft-lbl"></td>
-            <td class="ft-val"></td>
-            <td rowspan="3" class="ft-page">Page <strong>2</strong> of <strong>2</strong></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Issue Date</td>
-            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
-            <td class="ft-lbl">Issue Status</td>
-            <td class="ft-val"></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Reviewed &amp; authorized by</td>
-            <td class="ft-val">ODQA</td>
-            <td class="ft-lbl">Approved by</td>
-            <td class="ft-val">ODQA</td>
-        </tr>
-    </table>
-
-    {# Auto-trigger print dialog #}
-    <script>
-        window.addEventListener('load', function() {
-            setTimeout(function() { window.print(); }, 400);
-        });
-    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 350);
+    });
+</script>
 </body>
 </html>

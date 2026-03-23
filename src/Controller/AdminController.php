@@ -1461,20 +1461,37 @@ class AdminController extends AbstractController
         DepartmentRepository $deptRepo,
     ): Response {
         $evalId = $request->query->get('evaluation');
+        $deptId = (int) $request->query->get('department', 0);
 
         $evaluations = $evalRepo->findBy(['evaluationType' => 'SUPERIOR'], ['startDate' => 'DESC']);
         $departments = $deptRepo->findAllOrdered();
         $facultyResults = [];
 
-        // Get all users who have been evaluated via superior evaluations
-        $allUsers = $userRepo->findAll();
-        foreach ($allUsers as $user) {
+        // SEF results table should show department heads/chairs (evaluators), not evaluated faculty rows.
+        $headQb = $userRepo->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->andWhere('u.accountStatus = :status')
+            ->andWhere('(LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :head OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :chair)')
+            ->setParameter('role', '%ROLE_FACULTY%')
+            ->setParameter('status', 'active')
+            ->setParameter('blank', '')
+            ->setParameter('head', '%head%')
+            ->setParameter('chair', '%chair%')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC');
+
+        if ($deptId > 0) {
+            $headQb->andWhere('u.department = :deptId')->setParameter('deptId', $deptId);
+        }
+
+        $headUsers = $headQb->getQuery()->getResult();
+        foreach ($headUsers as $user) {
             if ($evalId) {
-                $avg = $superiorEvalRepo->getOverallAverage($user->getId(), (int) $evalId);
-                $count = $superiorEvalRepo->countEvaluators($user->getId(), (int) $evalId);
+                $avg = $superiorEvalRepo->getEvaluatorAverage($user->getId(), (int) $evalId);
+                $count = $superiorEvalRepo->countEvaluateesByEvaluator($user->getId(), (int) $evalId);
             } else {
-                $avg = $superiorEvalRepo->getOverallAverageAll($user->getId());
-                $count = $superiorEvalRepo->countEvaluatorsAll($user->getId());
+                $avg = $superiorEvalRepo->getEvaluatorAverage($user->getId());
+                $count = $superiorEvalRepo->countEvaluateesByEvaluator($user->getId());
             }
 
             if ($count > 0) {
@@ -1504,6 +1521,7 @@ class AdminController extends AbstractController
             'colleges' => $collegeNames,
             'facultyResults' => $facultyResults,
             'selectedEvaluation' => $evalId,
+            'selectedDepartment' => $deptId > 0 ? $deptId : null,
             'evalEntity' => $evalId ? $evalRepo->find($evalId) : null,
         ]);
     }
@@ -2315,9 +2333,9 @@ class AdminController extends AbstractController
             throw $this->createNotFoundException('Faculty not found.');
         }
 
-        $evalData = $superiorEvalRepo->getEvaluationsByEvaluatee($facultyId);
+        $evalData = $superiorEvalRepo->getEvaluationsByEvaluator($facultyId);
         $results = [];
-        $totalEvaluators = 0;
+        $totalPersonnel = 0;
         $sumAvg = 0;
 
         foreach ($evalData as $row) {
@@ -2325,15 +2343,33 @@ class AdminController extends AbstractController
             if (!$eval) continue;
 
             $avg = round((float) $row['avgRating'], 2);
-            $count = (int) $row['evaluatorCount'];
-            $totalEvaluators += $count;
+            $count = (int) $row['evaluateeCount'];
+            $totalPersonnel += $count;
             $sumAvg += $avg;
+
+            $evaluateeRows = $superiorEvalRepo->getEvaluateesByEvaluator($facultyId, (int) $eval->getId());
+            $evaluatedPersonnel = [];
+            foreach ($evaluateeRows as $evaluateeRow) {
+                $evaluatee = $userRepo->find((int) $evaluateeRow['evaluateeId']);
+                if (!$evaluatee) {
+                    continue;
+                }
+
+                $evaluatedPersonnel[] = [
+                    'id' => $evaluatee->getId(),
+                    'evaluationId' => $eval->getId(),
+                    'name' => $evaluatee->getFullName(),
+                    'department' => $evaluatee->getDepartment() ? $evaluatee->getDepartment()->getDepartmentName() : '—',
+                    'average' => round((float) $evaluateeRow['avgRating'], 2),
+                ];
+            }
 
             $results[] = [
                 'evaluation' => $eval,
                 'average' => $avg,
                 'evaluators' => $count,
                 'level' => $this->getPerformanceLevel($avg),
+                'evaluatedPersonnel' => $evaluatedPersonnel,
             ];
         }
 
@@ -2342,7 +2378,7 @@ class AdminController extends AbstractController
         return $this->render('admin/faculty/faculty_evaluations_superior.html.twig', [
             'faculty' => $faculty,
             'evaluations' => $results,
-            'totalEvaluators' => $totalEvaluators,
+            'totalPersonnel' => $totalPersonnel,
             'overallAvg' => $overallAvg,
         ]);
     }
@@ -2368,7 +2404,7 @@ class AdminController extends AbstractController
 
         $selectedEvals = $request->query->all('evals');
 
-        $evalData = $superiorEvalRepo->getEvaluationsByEvaluatee($facultyId);
+        $evalData = $superiorEvalRepo->getEvaluationsByEvaluator($facultyId);
         $allEvaluations = [];
 
         foreach ($evalData as $row) {
@@ -2381,9 +2417,9 @@ class AdminController extends AbstractController
 
             $evalId = $eval->getId();
             $avg = round((float) $row['avgRating'], 2);
-            $count = (int) $row['evaluatorCount'];
+            $count = (int) $row['evaluateeCount'];
 
-            $questionAverages = $superiorEvalRepo->getAverageRatingsByEvaluatee($facultyId, $evalId);
+            $questionAverages = $superiorEvalRepo->getAverageRatingsByEvaluator($facultyId, $evalId);
             $questions = $questionRepo->findByType('SEF');
             $categoryAverages = [];
             foreach ($questions as $q) {
@@ -2417,7 +2453,7 @@ class AdminController extends AbstractController
                 ];
             }
 
-            $comments = $superiorEvalRepo->getComments($facultyId, $evalId);
+            $comments = $superiorEvalRepo->getCommentsByEvaluator($facultyId, $evalId);
             $filteredComments = array_values(array_filter(
                 array_map(fn($c) => $c['comment'], $comments),
                 fn($c) => trim($c) !== ''

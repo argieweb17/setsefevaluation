@@ -130,6 +130,39 @@ class SuperiorEvaluationRepository extends ServiceEntityRepository
         return $map;
     }
 
+    public function getEvaluatorAverage(int $evaluatorId, ?int $evaluationPeriodId = null): float
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->select('AVG(s.rating)')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId);
+
+        if ($evaluationPeriodId !== null) {
+            $qb->andWhere('s.evaluationPeriod = :epid')
+                ->setParameter('epid', $evaluationPeriodId);
+        }
+
+        $result = $qb->getQuery()->getSingleScalarResult();
+        return round((float) ($result ?? 0), 2);
+    }
+
+    public function countEvaluateesByEvaluator(int $evaluatorId, ?int $evaluationPeriodId = null): int
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->select('COUNT(DISTINCT s.evaluatee)')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId);
+
+        if ($evaluationPeriodId !== null) {
+            $qb->andWhere('s.evaluationPeriod = :epid')
+                ->setParameter('epid', $evaluationPeriodId);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     public function getComments(int $evaluateeId, int $evaluationPeriodId): array
     {
         return $this->createQueryBuilder('s')
@@ -178,6 +211,41 @@ class SuperiorEvaluationRepository extends ServiceEntityRepository
     }
 
     /**
+     * Get all evaluation periods where an evaluator has submitted SEF responses.
+     * @return array<array{evaluationPeriodId: int, avgRating: float, evaluateeCount: int}>
+     */
+    public function getEvaluationsByEvaluator(int $evaluatorId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('IDENTITY(s.evaluationPeriod) as evaluationPeriodId, AVG(s.rating) as avgRating, COUNT(DISTINCT s.evaluatee) as evaluateeCount')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId)
+            ->groupBy('s.evaluationPeriod')
+            ->orderBy('avgRating', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return array<array{evaluateeId: int, avgRating: float, responseCount: int}>
+     */
+    public function getEvaluateesByEvaluator(int $evaluatorId, int $evaluationPeriodId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('IDENTITY(s.evaluatee) as evaluateeId, AVG(s.rating) as avgRating, COUNT(s.id) as responseCount')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.evaluationPeriod = :epid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->groupBy('s.evaluatee')
+            ->orderBy('avgRating', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Get average rating per question for an evaluatee in an evaluation period.
      * @return array<int, array{average: float, count: int}>
      */
@@ -202,5 +270,48 @@ class SuperiorEvaluationRepository extends ServiceEntityRepository
             ];
         }
         return $averages;
+    }
+
+    /**
+     * @return array<int, array{average: float, count: int}>
+     */
+    public function getAverageRatingsByEvaluator(int $evaluatorId, int $evaluationPeriodId): array
+    {
+        $results = $this->createQueryBuilder('s')
+            ->select('IDENTITY(s.question) as questionId, AVG(s.rating) as avgRating, COUNT(s.id) as totalResponses')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.evaluationPeriod = :epid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->groupBy('s.question')
+            ->getQuery()
+            ->getResult();
+
+        $averages = [];
+        foreach ($results as $row) {
+            $averages[$row['questionId']] = [
+                'average' => round((float) $row['avgRating'], 2),
+                'count' => (int) $row['totalResponses'],
+            ];
+        }
+
+        return $averages;
+    }
+
+    public function getCommentsByEvaluator(int $evaluatorId, int $evaluationPeriodId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('s.comment')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.evaluationPeriod = :epid')
+            ->andWhere('s.isDraft = false')
+            ->andWhere('s.comment IS NOT NULL')
+            ->andWhere('s.comment != :empty')
+            ->setParameter('eid', $evaluatorId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->setParameter('empty', '')
+            ->getQuery()
+            ->getResult();
     }
 }

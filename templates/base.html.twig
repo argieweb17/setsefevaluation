@@ -89,6 +89,8 @@
             </a>
 
             {% set sc = sidebar_counts() %}
+            {% set _emp_status = (app.user.employmentStatus ?? '')|lower %}
+            {% set _is_dept_head = _emp_status is not empty and ('head' in _emp_status or 'chair' in _emp_status) %}
             <div class="sidebar-header">Main Menu</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}"
@@ -106,19 +108,15 @@
                 {% endif %}
 
                 {# ── Superior: Evaluation ── #}
-                {% if is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                {% if is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') and not is_granted('ROLE_FACULTY') %}
                     <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('superior_evaluate_index') }}">
                         <i class="bi bi-pencil-square sidebar-icon"></i> Evaluate Personnel
                     </a>
-                    <a class="nav-link {% if 'superior_results' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                       href="{{ path('superior_results') }}">
-                        <i class="bi bi-bar-chart-line sidebar-icon"></i> Results
-                    </a>
                 {% endif %}
 
                 {# ── Faculty: Management ── #}
-                {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_ADMIN') %}
                     <div class="sidebar-header">Subject Management</div>
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
@@ -139,7 +137,7 @@
             </nav>
 
             {# ── Faculty: Evaluation ── #}
-            {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+            {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_ADMIN') %}
             <div class="sidebar-header">Evaluation</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
@@ -151,6 +149,12 @@
                    href="{{ path('faculty_eval_results') }}">
                     <i class="bi bi-clipboard-data sidebar-icon"></i> Result
                 </a>
+                {% if _is_dept_head and is_granted('ROLE_SUPERIOR') %}
+                <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('superior_evaluate_index') }}">
+                    <i class="bi bi-diagram-3-fill sidebar-icon"></i> Superior Access
+                </a>
+                {% endif %}
             </nav>
 
             <div class="sidebar-header">SYSTEM LOGS</div>
@@ -388,6 +392,7 @@
                         <span class="topbar-profile-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
                         <span class="topbar-profile-role">
                             {% if is_granted('ROLE_ADMIN') %}Administrator
+                            {% elseif is_granted('ROLE_SUPERIOR') %}Superior
                             {% elseif is_granted('ROLE_STAFF') %}Staff
                             {% elseif is_granted('ROLE_FACULTY') %}Faculty
                             {% else %}Student{% endif %}
@@ -534,6 +539,12 @@
         {# ── Welcome Modal (shows once per session) ── #}
         {% if app.user %}
         {% set _roles = app.user.roles %}
+        {% set _route = app.request.attributes.get('_route')|default('') %}
+        {% set _showWelcomeModal = true %}
+        {% if 'ROLE_SUPERIOR' in _roles %}
+            {% set _showWelcomeModal = _route == 'superior_evaluate_index' %}
+        {% endif %}
+        {% if _showWelcomeModal %}
         {% if 'ROLE_ADMIN' in _roles %}
             {% set _welcomeRole = 'Administrator' %}
             {% set _welcomeIcon = 'bi-shield-lock-fill' %}
@@ -628,6 +639,7 @@
             document.addEventListener('turbo:load', showWelcome);
         })();
         </script>
+        {% endif %}
         {% endif %}
 
         {# ── Global Success Modal ── #}

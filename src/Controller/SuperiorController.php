@@ -3,10 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\AuditLog;
+use App\Entity\EvaluationPeriod;
 use App\Entity\SuperiorEvaluation;
 use App\Entity\User;
+use App\Repository\AcademicYearRepository;
+use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\QuestionRepository;
+use App\Repository\SubjectRepository;
 use App\Repository\SuperiorEvaluationRepository;
 use App\Repository\UserRepository;
 use App\Repository\DepartmentRepository;
@@ -30,38 +34,40 @@ class SuperiorController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         UserRepository $userRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
         DepartmentRepository $deptRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
-        $latestEval = $evalRepo->findLatestOpen('SUPERIOR');
-        $openEvals = $latestEval ? [$latestEval] : [];
+        $openEvals = [];
+        $evaluateesByEval = [];
+        $uniqueEvaluatees = [];
+        $isDeanEvaluator = $this->isDean($user);
 
-        // Get evaluatees: only the faculty assigned to each evaluation
-        $evaluatees = [];
-        foreach ($openEvals as $eval) {
-            $facultyName = $eval->getFaculty();
-            if (!$facultyName) continue;
-            foreach ($userRepo->findAll() as $u) {
-                if (!$u->isActive() || $u->getId() === $user->getId()) continue;
-                if ($u->getFullName() === $facultyName) {
-                    $empStatus = strtolower($u->getEmploymentStatus() ?? '');
-                    if (str_contains($empStatus, 'dean')) {
-                        $evaluatees[] = ['user' => $u, 'type' => SuperiorEvaluation::TYPE_DEAN, 'label' => 'Dean'];
-                    } elseif (str_contains($empStatus, 'head') || str_contains($empStatus, 'chair')) {
-                        $evaluatees[] = ['user' => $u, 'type' => SuperiorEvaluation::TYPE_DEPARTMENT_HEAD, 'label' => 'Department Head'];
-                    } else {
-                        $evaluatees[] = ['user' => $u, 'type' => SuperiorEvaluation::TYPE_DEPARTMENT_HEAD, 'label' => $u->getEmploymentStatus() ?? 'Faculty'];
-                    }
-                    break;
-                }
+        foreach ($evalRepo->findOpen('SUPERIOR') as $eval) {
+            if (!$isDeanEvaluator && $user->getDepartment() && $eval->getDepartment() && $eval->getDepartment()->getId() !== $user->getDepartment()->getId()) {
+                continue;
+            }
+
+            if (!$this->evaluatorMatchesAssignedFaculty($user, $eval)) {
+                continue;
+            }
+
+            $evaluatees = $this->buildEvaluateeRowsForEvaluation($eval, $user, $userRepo, $subjectRepo, $fslRepo, $ayRepo);
+            $openEvals[] = $eval;
+            $evaluateesByEval[$eval->getId()] = $evaluatees;
+
+            foreach ($evaluatees as $item) {
+                $uniqueEvaluatees[$item['user']->getId()] = true;
             }
         }
 
         // Check submission status for each open eval + evaluatee combination
         $submissions = [];
         foreach ($openEvals as $eval) {
-            foreach ($evaluatees as $e) {
+            foreach (($evaluateesByEval[$eval->getId()] ?? []) as $e) {
                 $key = $eval->getId() . '-' . $e['user']->getId();
                 $submissions[$key] = $superiorEvalRepo->hasSubmitted($user->getId(), $eval->getId(), $e['user']->getId());
             }
@@ -69,7 +75,8 @@ class SuperiorController extends AbstractController
 
         return $this->render('superior/evaluate_index.html.twig', [
             'openEvals' => $openEvals,
-            'evaluatees' => $evaluatees,
+            'evaluateesByEval' => $evaluateesByEval,
+            'totalEvaluatees' => count($uniqueEvaluatees),
             'submissions' => $submissions,
             'departments' => $deptRepo->findAllOrdered(),
         ]);
@@ -82,6 +89,9 @@ class SuperiorController extends AbstractController
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
         QuestionRepository $questionRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         EntityManagerInterface $em,
@@ -95,6 +105,25 @@ class SuperiorController extends AbstractController
             $this->addFlash('danger', 'Invalid evaluation or it is closed.');
             return $this->redirectToRoute('superior_evaluate_index');
         }
+
+        if (!$this->evaluatorMatchesAssignedFaculty($user, $eval)) {
+            $this->addFlash('danger', 'You are not assigned to this SEF evaluation period.');
+            return $this->redirectToRoute('superior_evaluate_index');
+        }
+
+        $evaluatees = $this->buildEvaluateeRowsForEvaluation($eval, $user, $userRepo, $subjectRepo, $fslRepo, $ayRepo);
+        $evaluateeMap = [];
+        foreach ($evaluatees as $item) {
+            $evaluateeMap[$item['user']->getId()] = $item;
+        }
+
+        if (!isset($evaluateeMap[$evaluatee->getId()])) {
+            $this->addFlash('danger', 'You are not authorized to evaluate this faculty for the selected period.');
+            return $this->redirectToRoute('superior_evaluate_index');
+        }
+
+        $evaluateeRoleLabel = (string) ($evaluateeMap[$evaluatee->getId()]['label'] ?? 'Faculty Member');
+        $evaluateeSubjects = $evaluateeMap[$evaluatee->getId()]['subjects'] ?? [];
 
         // Determine evaluatee role
         $empStatus = strtolower($evaluatee->getEmploymentStatus() ?? '');
@@ -190,6 +219,8 @@ class SuperiorController extends AbstractController
             'eval' => $eval,
             'evaluatee' => $evaluatee,
             'evaluateeRole' => $evaluateeRole,
+            'evaluateeRoleLabel' => $evaluateeRoleLabel,
+            'evaluateeSubjects' => $evaluateeSubjects,
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
         ]);
@@ -264,5 +295,231 @@ class SuperiorController extends AbstractController
             'categories' => $catAvgs,
             'comments' => array_column($comments, 'comment'),
         ]);
+    }
+
+    /**
+     * Build evaluatees for one open SEF period.
+     *
+     * Staff may create a department-wide SEF period. A superior then evaluates
+     * co-faculty in that department (or in their own department for global periods).
+     *
+     * @return array<int, array{user: User, type: string, label: string, subjects: array<int, array{code: string, name: string, semester: string, section: string, schedule: string}>, subjectCount: int, subjectPreview: string}>
+     */
+    private function buildEvaluateeRowsForEvaluation(
+        EvaluationPeriod $eval,
+        User $evaluator,
+        UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
+    ): array {
+        $isDeanEvaluator = $this->isDean($evaluator);
+
+        if ($isDeanEvaluator) {
+            // Dean scope: evaluate department heads/chairs across departments.
+            $facultyUsers = $userRepo->createQueryBuilder('u')
+                ->where('u.roles LIKE :role')
+                ->andWhere('u.accountStatus = :status')
+                ->andWhere('(LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :head OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :chair)')
+                ->setParameter('role', '%ROLE_FACULTY%')
+                ->setParameter('status', 'active')
+                ->setParameter('blank', '')
+                ->setParameter('head', '%head%')
+                ->setParameter('chair', '%chair%')
+                ->orderBy('u.lastName', 'ASC')
+                ->addOrderBy('u.firstName', 'ASC')
+                ->getQuery()
+                ->getResult();
+
+            $rows = [];
+            foreach ($facultyUsers as $faculty) {
+                if (!$faculty instanceof User) {
+                    continue;
+                }
+
+                if ($faculty->getId() === $evaluator->getId()) {
+                    continue;
+                }
+
+                $subjects = $this->resolveFacultySubjects($faculty, $subjectRepo, $fslRepo, $ayRepo);
+                $previewItems = array_map(static fn(array $s): string => $s['code'] . ($s['section'] !== '' ? ' (' . $s['section'] . ')' : ''), array_slice($subjects, 0, 3));
+
+                $rows[] = [
+                    'user' => $faculty,
+                    'type' => SuperiorEvaluation::TYPE_DEPARTMENT_HEAD,
+                    'label' => 'Department Head',
+                    'subjects' => $subjects,
+                    'subjectCount' => count($subjects),
+                    'subjectPreview' => !empty($previewItems)
+                        ? implode(', ', $previewItems) . (count($subjects) > 3 ? ' +' . (count($subjects) - 3) . ' more' : '')
+                        : '',
+                ];
+            }
+
+            return $rows;
+        }
+
+        $targetDept = $eval->getDepartment() ?? $evaluator->getDepartment();
+        if (!$targetDept) {
+            return [];
+        }
+
+        $facultyUsers = $userRepo->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->andWhere('u.accountStatus = :status')
+            ->andWhere('u.department = :dept')
+            ->setParameter('role', '%ROLE_FACULTY%')
+            ->setParameter('status', 'active')
+            ->setParameter('dept', $targetDept)
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $rows = [];
+
+        foreach ($facultyUsers as $faculty) {
+            if (!$faculty instanceof User) {
+                continue;
+            }
+
+            if ($faculty->getId() === $evaluator->getId()) {
+                continue;
+            }
+
+            $subjects = $this->resolveFacultySubjects($faculty, $subjectRepo, $fslRepo, $ayRepo);
+            $previewItems = array_map(static fn(array $s): string => $s['code'] . ($s['section'] !== '' ? ' (' . $s['section'] . ')' : ''), array_slice($subjects, 0, 3));
+
+            $rows[] = [
+                'user' => $faculty,
+                'type' => $this->resolveEvaluateeType($faculty),
+                'label' => $this->resolveEvaluateeLabel($faculty),
+                'subjects' => $subjects,
+                'subjectCount' => count($subjects),
+                'subjectPreview' => !empty($previewItems)
+                    ? implode(', ', $previewItems) . (count($subjects) > 3 ? ' +' . (count($subjects) - 3) . ' more' : '')
+                    : '',
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function evaluatorMatchesAssignedFaculty(User $evaluator, EvaluationPeriod $eval): bool
+    {
+        if ($this->isDean($evaluator)) {
+            // Dean scope should not be blocked by per-faculty assignment.
+            return true;
+        }
+
+        $assignedEvaluator = trim((string) ($eval->getFaculty() ?? ''));
+        if ($assignedEvaluator === '') {
+            // Blank assignment means any department head/chair in scope may evaluate.
+            return true;
+        }
+
+        return $this->facultyMatchesName($evaluator, $assignedEvaluator);
+    }
+
+    private function facultyMatchesName(User $faculty, string $needle): bool
+    {
+        $normalizedNeedle = mb_strtolower(trim($needle));
+        $full = mb_strtolower(trim($faculty->getFullName()));
+        $lastFirst = mb_strtolower(trim($faculty->getLastName() . ', ' . $faculty->getFirstName()));
+
+        return $normalizedNeedle === $full || $normalizedNeedle === $lastFirst;
+    }
+
+    private function resolveEvaluateeType(User $evaluatee): string
+    {
+        $status = mb_strtolower(trim((string) $evaluatee->getEmploymentStatus()));
+        return str_contains($status, 'dean') ? SuperiorEvaluation::TYPE_DEAN : SuperiorEvaluation::TYPE_DEPARTMENT_HEAD;
+    }
+
+    private function isDean(User $user): bool
+    {
+        $status = mb_strtolower(trim((string) $user->getEmploymentStatus()));
+        return str_contains($status, 'dean');
+    }
+
+    private function resolveEvaluateeLabel(User $evaluatee): string
+    {
+        $status = trim((string) $evaluatee->getEmploymentStatus());
+        if ($status === '') {
+            return 'Faculty Member';
+        }
+
+        $normalized = mb_strtolower($status);
+        if (str_contains($normalized, 'dean')) {
+            return 'Dean';
+        }
+        if (str_contains($normalized, 'head') || str_contains($normalized, 'chair')) {
+            return 'Department Head';
+        }
+
+        return $status;
+    }
+
+    /**
+     * @return array<int, array{code: string, name: string, semester: string, section: string, schedule: string}>
+     */
+    private function resolveFacultySubjects(
+        User $faculty,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
+    ): array {
+        $currentAY = $ayRepo->findCurrent();
+        $loads = $fslRepo->findByFacultyAndAcademicYear($faculty->getId(), $currentAY ? $currentAY->getId() : null);
+
+        $rows = [];
+        $seen = [];
+
+        foreach ($loads as $load) {
+            $subject = $load->getSubject();
+            if (!$subject) {
+                continue;
+            }
+
+            $section = strtoupper(trim((string) ($load->getSection() ?? '')));
+            $schedule = trim((string) ($load->getSchedule() ?? ''));
+            $key = mb_strtolower((string) $subject->getSubjectCode() . '|' . $section . '|' . $schedule);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $rows[] = [
+                'code' => (string) $subject->getSubjectCode(),
+                'name' => (string) $subject->getSubjectName(),
+                'semester' => (string) ($subject->getSemester() ?? ''),
+                'section' => $section,
+                'schedule' => $schedule,
+            ];
+        }
+
+        if (!empty($rows)) {
+            return $rows;
+        }
+
+        foreach ($subjectRepo->findByFaculty($faculty->getId()) as $subject) {
+            $section = strtoupper(trim((string) ($subject->getSection() ?? '')));
+            $schedule = trim((string) ($subject->getSchedule() ?? ''));
+            $key = mb_strtolower((string) $subject->getSubjectCode() . '|' . $section . '|' . $schedule);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $rows[] = [
+                'code' => (string) $subject->getSubjectCode(),
+                'name' => (string) $subject->getSubjectName(),
+                'semester' => (string) ($subject->getSemester() ?? ''),
+                'section' => $section,
+                'schedule' => $schedule,
+            ];
+        }
+
+        return $rows;
     }
 }
