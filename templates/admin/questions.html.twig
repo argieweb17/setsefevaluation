@@ -74,6 +74,7 @@
 .qq-table thead th small{display:block;font-weight:500;font-size:.58rem;color:#94a3b8;text-transform:capitalize;letter-spacing:0;margin-top:1px;}
 .qq-th-num{width:42px;text-align:center;}
 .qq-th-question{text-align:left;padding-left:20px!important;}
+.qq-th-evidence{text-align:left;min-width:220px;}
 .qq-th-rating{width:58px;text-align:center;}
 .qq-th-actions{width:100px;text-align:center;}
 
@@ -84,8 +85,13 @@
 .qq-table tbody td{padding:12px 12px;vertical-align:middle;}
 .qq-td-num{text-align:center;font-weight:600;color:#94a3b8;font-size:.8rem;}
 .qq-td-question{padding-left:20px!important;}
+.qq-td-evidence{min-width:220px;}
 .qq-question-text{color:#1e293b;font-weight:500;line-height:1.5;}
 .qq-question-meta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.qq-evidence-list{display:flex;flex-direction:column;gap:4px;}
+.qq-evidence-item{display:flex;align-items:flex-start;gap:7px;font-size:.72rem;color:#475569;line-height:1.35;}
+.qq-evidence-item input{margin-top:2px;pointer-events:none;}
+.qq-evidence-empty{font-size:.72rem;color:#94a3b8;font-style:italic;}
 .qq-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:.62rem;font-weight:600;letter-spacing:.2px;}
 .qq-badge-active{background:#ecfdf5;color:#059669;}
 .qq-badge-inactive{background:#f1f5f9;color:#64748b;}
@@ -129,6 +135,7 @@
     .qq-table{font-size:.75rem;}
     .qq-table thead th{padding:8px 8px;font-size:.6rem;}
     .qq-table tbody td{padding:8px 8px;}
+    .qq-th-evidence,.qq-td-evidence{min-width:170px;}
     .qq-th-rating{width:40px;}
     .qq-paper-header{flex-direction:column;text-align:center;gap:8px;}
 }
@@ -289,6 +296,9 @@
                 <tr>
                     <th class="qq-th-num">#</th>
                     <th class="qq-th-question">Question</th>
+                    {% if selectedType == 'SEF' %}
+                    <th class="qq-th-evidence">Means of Verification</th>
+                    {% endif %}
                     <th class="qq-th-rating">1<br><small>Never</small></th>
                     <th class="qq-th-rating">2<br><small>Seldom</small></th>
                     <th class="qq-th-rating">3<br><small>Sometimes</small></th>
@@ -300,7 +310,11 @@
             <tbody>
                 {% set counter = 1 %}
                 {% for q in questions|filter(q => q.category == category) %}
-                <tr class="qq-row" data-question="{{ q.questionText|lower }}" data-status="{{ q.isActive ? 'active' : 'inactive' }}">
+                {% set rowSearchText = q.questionText %}
+                {% if selectedType == 'SEF' %}
+                    {% set rowSearchText = rowSearchText ~ ' ' ~ ((q.evidenceItems ?? [])|join(' ')) %}
+                {% endif %}
+                <tr class="qq-row" data-question="{{ rowSearchText|lower }}" data-status="{{ q.isActive ? 'active' : 'inactive' }}">
                     <td class="qq-td-num">{{ counter }}.</td>
                     <td class="qq-td-question">
                         {% if not q.isRequired %}
@@ -328,6 +342,23 @@
                             {% endif %}
                         </div>
                     </td>
+                    {% if selectedType == 'SEF' %}
+                    <td class="qq-td-evidence">
+                        {% set evidenceItems = q.evidenceItems ?? [] %}
+                        {% if evidenceItems|length > 0 %}
+                        <div class="qq-evidence-list">
+                            {% for evidence in evidenceItems %}
+                            <label class="qq-evidence-item">
+                                <input type="checkbox" disabled>
+                                <span>{{ evidence }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="qq-evidence-empty">No checklist items</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
                     <td class="qq-td-rating"><span class="qq-radio"></span></td>
                     <td class="qq-td-rating"><span class="qq-radio"></span></td>
                     <td class="qq-td-rating"><span class="qq-radio"></span></td>
@@ -410,6 +441,13 @@
                         <label class="qq-form-label">Question Text <span class="text-danger">*</span></label>
                         <textarea name="questionText" class="form-control" rows="3" required>{{ q.questionText }}</textarea>
                     </div>
+                    {% if selectedType == 'SEF' %}
+                    <div class="mb-3">
+                        <label class="qq-form-label">Means of Verification (optional)</label>
+                        <textarea name="evidenceItemsText" class="form-control" rows="4" placeholder="One item per line">{{ (q.evidenceItems ?? [])|join("\n") }}</textarea>
+                        <div class="form-text">Enter one checklist item per line. These will appear as checkboxes in the middle column.</div>
+                    </div>
+                    {% endif %}
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="qq-form-label">Category</label>

@@ -38,6 +38,9 @@ class Question
     #[ORM\Column]
     private bool $isActive = true;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $evidenceItems = [];
+
     #[ORM\OneToMany(mappedBy: 'question', targetEntity: EvaluationResponse::class, cascade: ['persist', 'remove'])]
     private Collection $responses;
 
@@ -68,6 +71,29 @@ class Question
 
     public function isActive(): bool { return $this->isActive; }
     public function setIsActive(bool $v): static { $this->isActive = $v; return $this; }
+
+    /** @return string[] */
+    public function getEvidenceItems(): array
+    {
+        return array_values(array_filter($this->evidenceItems ?? [], static fn ($item): bool => is_string($item) && trim($item) !== ''));
+    }
+
+    /** @param string[] $v */
+    public function setEvidenceItems(array $v): static
+    {
+        $items = [];
+        foreach ($v as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $clean = trim($item);
+            if ($clean !== '') {
+                $items[] = $clean;
+            }
+        }
+        $this->evidenceItems = array_values(array_unique($items));
+        return $this;
+    }
 
     /** @return Collection<int, EvaluationResponse> */
     public function getResponses(): Collection { return $this->responses; }

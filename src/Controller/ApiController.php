@@ -187,6 +187,7 @@ class ApiController extends AbstractController
             $grouped[$cat]['questions'][] = [
                 'id' => $q->getId(),
                 'text' => $q->getQuestionText(),
+                'evidenceItems' => $eval->getEvaluationType() === 'SEF' ? $q->getEvidenceItems() : [],
                 'weight' => $q->getWeight(),
                 'isRequired' => $q->isRequired(),
             ];

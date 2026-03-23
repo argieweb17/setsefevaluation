@@ -55,9 +55,20 @@
 .sp-action-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .15s; border: none; cursor: pointer; white-space: nowrap; }
 .sp-action-evaluate { background: #059669; color: #fff; }
 .sp-action-evaluate:hover { background: #047857; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
+.sp-action-view { background: #2563eb; color: #fff; }
+.sp-action-view:hover { background: #1d4ed8; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
 .sp-action-done { background: #f0fdf4; color: #16a34a; cursor: default; }
 
 .sp-item-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+
+.sp-history-filter {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .38rem .7rem;
+    font-size: .78rem;
+    background: #fff;
+    color: #334155;
+}
 
 /* Progress bar */
 .sp-progress { display: flex; align-items: center; gap: .5rem; font-size: .75rem; color: #64748b; }
@@ -187,7 +198,9 @@
                     </div>
                     <div class="sp-item-actions">
                         {% if submissions[key] is defined and submissions[key] %}
-                            <span class="sp-action-btn sp-action-done"><i class="bi bi-check2-all"></i> Done</span>
+                            <a href="{{ path('superior_evaluate_view', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-btn sp-action-view">
+                                <i class="bi bi-eye"></i> View
+                            </a>
                         {% else %}
                             <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-btn sp-action-evaluate">
                                 <i class="bi bi-pencil-square"></i> Evaluate
@@ -230,6 +243,69 @@
         <div class="sp-empty-title">No personnel to evaluate</div>
         <div class="sp-empty-desc">No faculty are currently available in your department for open SEF periods.</div>
     </div>
+</div>
+{% endif %}
+
+{% if historyYears|length > 0 or historyItems|length > 0 %}
+<div class="sp-panel">
+    <div class="sp-panel-head">
+        <div class="sp-panel-title">
+            <i class="bi bi-clock-history"></i>
+            Previous Submitted Evaluations
+        </div>
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label for="spHistoryYear" class="small text-muted mb-0">Academic Year</label>
+            <select id="spHistoryYear" name="schoolYear" class="sp-history-filter" onchange="this.form.submit()">
+                <option value="">All years</option>
+                {% for sy in historyYears %}
+                <option value="{{ sy }}" {{ selectedHistoryYear == sy ? 'selected' : '' }}>{{ sy }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    {% if historyItems|length > 0 %}
+    <div class="sp-list">
+        {% for item in historyItems %}
+        <div class="sp-item">
+            <div class="sp-item-avatar">
+                {% if item.evaluatee.profilePicture %}
+                    <img src="{{ asset('images/' ~ item.evaluatee.profilePictureOrDefault) }}" alt="{{ item.evaluatee.fullName }} profile" class="sp-item-avatar-img">
+                {% else %}
+                    {% set p = item.evaluatee.fullName|split(' ') %}
+                    {% set initials = p[0][:1]|upper ~ (p|length > 1 ? p[p|length - 1][:1]|upper : '') %}
+                    <span class="sp-item-avatar-fallback" style="background:#64748b;">{{ initials }}</span>
+                {% endif %}
+            </div>
+            <div class="sp-item-body">
+                <div class="sp-item-top">
+                    <span class="sp-item-name">{{ item.evaluatee.fullName }}</span>
+                    <span class="sp-item-role {{ item.evaluateeLabel == 'Dean' ? 'sp-item-role-dean' : 'sp-item-role-head' }}">{{ item.evaluateeLabel }}</span>
+                    <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                </div>
+                <div class="sp-item-meta">
+                    {% if item.evaluatee.department %}
+                        <span><i class="bi bi-building"></i> {{ item.evaluatee.department.departmentName }}</span>
+                    {% endif %}
+                    <span><i class="bi bi-mortarboard"></i> {{ item.evaluation.schoolYear ?: '—' }}</span>
+                    <span><i class="bi bi-calendar3"></i> {{ item.evaluation.semester ?: '—' }}</span>
+                    <span><i class="bi bi-star-fill"></i> {{ item.averageRating|number_format(2) }}/5</span>
+                    <span><i class="bi bi-clock"></i> {{ item.submittedAt|date('M d, Y h:i A') }}</span>
+                </div>
+            </div>
+            <div class="sp-item-actions">
+                <a href="{{ path('superior_evaluate_view', {evalId: item.evaluation.id, evaluateeId: item.evaluatee.id}) }}" class="sp-action-btn sp-action-view">
+                    <i class="bi bi-eye"></i> View
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="sp-empty" style="padding:2.2rem 1.2rem;">
+        <div class="sp-empty-title" style="font-size:.95rem;">No previous evaluations found</div>
+        <div class="sp-empty-desc">Try a different academic year filter.</div>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

@@ -1278,12 +1278,16 @@ class AdminController extends AbstractController
     {
         if ($this->isCsrfTokenValid('create_question', $request->request->get('_token'))) {
             $q = new Question();
+            $type = (string) $request->request->get('evaluationType', 'SET');
             $q->setQuestionText($request->request->get('questionText', ''));
             $q->setCategory($request->request->get('category'));
-            $q->setEvaluationType($request->request->get('evaluationType', 'SET'));
+            $q->setEvaluationType($type);
             $q->setWeight((float) ($request->request->get('weight', 1.0)));
             $q->setSortOrder((int) ($request->request->get('sortOrder', 0)));
             $q->setIsRequired($request->request->getBoolean('isRequired', true));
+            $q->setEvidenceItems($type === 'SEF'
+                ? $this->parseEvidenceItemsText((string) $request->request->get('evidenceItemsText', ''))
+                : []);
 
             $em->persist($q);
             $em->flush();
@@ -1306,6 +1310,9 @@ class AdminController extends AbstractController
             $question->setSortOrder((int) ($request->request->get('sortOrder', 0)));
             $question->setIsRequired($request->request->getBoolean('isRequired', true));
             $question->setIsActive($request->request->getBoolean('isActive', true));
+            $question->setEvidenceItems($question->getEvaluationType() === 'SEF'
+                ? $this->parseEvidenceItemsText((string) $request->request->get('evidenceItemsText', ''))
+                : []);
             $em->flush();
 
             $this->audit->log(AuditLog::ACTION_EDIT_QUESTION, 'Question', $question->getId(),
@@ -1351,6 +1358,26 @@ class AdminController extends AbstractController
             $this->addFlash('success', 'Section description updated.');
         }
         return $this->redirectToRoute('admin_questions', ['type' => $type]);
+    }
+
+    /**
+     * Parse textarea input into normalized evidence items (one item per line).
+     *
+     * @return string[]
+     */
+    private function parseEvidenceItemsText(string $raw): array
+    {
+        $lines = preg_split('/\R+/', $raw) ?: [];
+        $items = [];
+
+        foreach ($lines as $line) {
+            $clean = trim((string) preg_replace('/^\s*[-*0-9.()]+\s*/', '', trim($line)));
+            if ($clean !== '') {
+                $items[] = $clean;
+            }
+        }
+
+        return array_values(array_unique($items));
     }
 
     // ════════════════════════════════════════════════

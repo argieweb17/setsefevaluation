@@ -178,6 +178,68 @@ class SuperiorEvaluationRepository extends ServiceEntityRepository
             ->getQuery()->getResult();
     }
 
+    /**
+     * @return SuperiorEvaluation[]
+     */
+    public function findSubmittedByEvaluator(int $evaluatorId, ?string $schoolYear = null): array
+    {
+        $qb = $this->createQueryBuilder('s')
+            ->join('s.evaluationPeriod', 'ep')
+            ->addSelect('ep')
+            ->join('s.evaluatee', 'ev')
+            ->addSelect('ev')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId)
+            ->orderBy('s.submittedAt', 'DESC');
+
+        if ($schoolYear !== null && trim($schoolYear) !== '') {
+            $qb->andWhere('ep.schoolYear = :sy')->setParameter('sy', trim($schoolYear));
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function findSubmittedSchoolYearsByEvaluator(int $evaluatorId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->select('DISTINCT ep.schoolYear')
+            ->join('s.evaluationPeriod', 'ep')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.isDraft = false')
+            ->andWhere('ep.schoolYear IS NOT NULL')
+            ->andWhere('ep.schoolYear != :empty')
+            ->setParameter('eid', $evaluatorId)
+            ->setParameter('empty', '')
+            ->orderBy('ep.schoolYear', 'DESC')
+            ->getQuery()
+            ->getSingleColumnResult();
+    }
+
+    /**
+     * @return SuperiorEvaluation[]
+     */
+    public function findSubmittedForEvaluatorAndPair(int $evaluatorId, int $evaluationPeriodId, int $evaluateeId): array
+    {
+        return $this->createQueryBuilder('s')
+            ->join('s.question', 'q')
+            ->addSelect('q')
+            ->where('s.evaluator = :eid')
+            ->andWhere('s.evaluationPeriod = :epid')
+            ->andWhere('s.evaluatee = :evid')
+            ->andWhere('s.isDraft = false')
+            ->setParameter('eid', $evaluatorId)
+            ->setParameter('epid', $evaluationPeriodId)
+            ->setParameter('evid', $evaluateeId)
+            ->orderBy('q.category', 'ASC')
+            ->addOrderBy('q.sortOrder', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getCategoryAverages(int $evaluateeId, int $evaluationPeriodId): array
     {
         return $this->createQueryBuilder('s')

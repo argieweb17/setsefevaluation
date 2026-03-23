@@ -33,6 +33,10 @@
 .qc-preview-rating{display:flex;flex-direction:column;align-items:center;gap:4px;}
 .qc-preview-radio{width:22px;height:22px;border-radius:50%;border:2px solid #cbd5e1;background:#fff;}
 .qc-preview-rating-num{font-size:.68rem;color:#94a3b8;font-weight:600;}
+.qc-preview-evidence-title{font-size:.72rem;font-weight:700;color:#64748b;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.3px;}
+.qc-preview-evidence-list{display:flex;flex-direction:column;gap:6px;}
+.qc-preview-evidence-item{display:flex;align-items:flex-start;gap:8px;color:#334155;font-size:.8rem;line-height:1.35;}
+.qc-preview-evidence-item input{margin-top:2px;pointer-events:none;}
 
 /* ─── Responsive ─── */
 @media(max-width:768px){
@@ -98,6 +102,17 @@
                                   placeholder="Enter the evaluation question here..." required></textarea>
                         <div class="qc-hint">Write a clear, specific question for the evaluation form.</div>
                     </div>
+
+                    {% if selectedType == 'SEF' %}
+                    <div class="mb-4">
+                        <label for="evidenceItemsText" class="qc-label">
+                            <i class="bi bi-ui-checks-grid me-1 text-muted"></i>Means of Verification (optional)
+                        </label>
+                        <textarea name="evidenceItemsText" id="evidenceItemsText" class="form-control qc-input" rows="4"
+                                  placeholder="Daily time record&#10;Faculty schedule and timetable&#10;Informal interview with students"></textarea>
+                        <div class="qc-hint">Enter one evidence item per line. These will appear as checkboxes in the middle column.</div>
+                    </div>
+                    {% endif %}
 
                     <div class="qc-divider"></div>
 
@@ -177,6 +192,12 @@
                             </div>
                             <div class="qc-preview-body">
                                 <p class="mb-2 text-muted fst-italic" id="previewText">Your question will appear here...</p>
+                                {% if selectedType == 'SEF' %}
+                                <div id="previewEvidenceWrap" class="d-none">
+                                    <div class="qc-preview-evidence-title">Means of Verification</div>
+                                    <div id="previewEvidenceList" class="qc-preview-evidence-list"></div>
+                                </div>
+                                {% endif %}
                                 <div class="d-flex gap-3 mt-2">
                                     {% for i in 1..5 %}
                                     <div class="qc-preview-rating">
@@ -215,10 +236,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const catInput = document.getElementById('category');
     const typeInput = document.getElementById('evaluationType');
     const reqInput = document.getElementById('isRequired');
+    const evidenceInput = document.getElementById('evidenceItemsText');
     const previewText = document.getElementById('previewText');
     const previewCategory = document.getElementById('previewCategory');
     const previewType = document.getElementById('previewType');
     const previewRequired = document.getElementById('previewRequired');
+    const previewEvidenceWrap = document.getElementById('previewEvidenceWrap');
+    const previewEvidenceList = document.getElementById('previewEvidenceList');
+    const hasEvidencePreview = !!evidenceInput && !!previewEvidenceWrap && !!previewEvidenceList;
 
     function updatePreview() {
         previewText.textContent = textInput.value || 'Your question will appear here...';
@@ -231,12 +256,38 @@ document.addEventListener('DOMContentLoaded', function() {
         previewRequired.className = reqInput.checked
             ? 'qc-preview-badge qc-preview-req'
             : 'qc-preview-badge qc-preview-cat';
+
+        if (hasEvidencePreview) {
+            const lines = (evidenceInput.value || '')
+                .split(/\r?\n/)
+                .map((line) => line.replace(/^\s*[-*0-9.()]+\s*/, '').trim())
+                .filter((line) => line.length > 0);
+
+            previewEvidenceList.innerHTML = '';
+            if (lines.length === 0) {
+                previewEvidenceWrap.classList.add('d-none');
+            } else {
+                previewEvidenceWrap.classList.remove('d-none');
+                lines.forEach((line) => {
+                    const item = document.createElement('div');
+                    item.className = 'qc-preview-evidence-item';
+                    item.innerHTML = '<input type="checkbox" disabled> <span></span>';
+                    item.querySelector('span').textContent = line;
+                    previewEvidenceList.appendChild(item);
+                });
+            }
+        }
     }
 
     textInput.addEventListener('input', updatePreview);
+    if (evidenceInput) {
+        evidenceInput.addEventListener('input', updatePreview);
+    }
     catInput.addEventListener('input', updatePreview);
     typeInput.addEventListener('change', updatePreview);
     reqInput.addEventListener('change', updatePreview);
+
+    updatePreview();
 });
 </script>
 {% endblock %}

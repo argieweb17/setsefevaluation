@@ -3352,6 +3352,10 @@ html { scroll-behavior: smooth; }
     text-align: left;
     padding-left: 1rem;
 }
+.eval-form-table thead th.eval-form-evidence {
+    text-align: left;
+    width: 260px;
+}
 .eval-form-table thead th.eval-form-rating {
     width: 60px;
 }
@@ -3386,6 +3390,9 @@ html { scroll-behavior: smooth; }
     color: #1E293B;
     line-height: 1.45;
 }
+.eval-form-table tbody td.eval-form-evidence {
+    color: #475569;
+}
 .eval-form-table tbody td.eval-form-rating {
     text-align: center;
 }
@@ -3408,6 +3415,41 @@ html { scroll-behavior: smooth; }
 .eval-form-table tbody tr:hover .eval-radio-circle {
     border-color: var(--norsu-blue);
     box-shadow: 0 0 0 2px rgba(30,64,175,0.06);
+}
+
+.eval-evidence-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    width: 100%;
+}
+.eval-evidence-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    width: 100%;
+    margin: 0;
+    cursor: pointer;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    color: #334155;
+}
+.eval-evidence-item span {
+    flex: 1;
+}
+.eval-evidence-item input[type="checkbox"] {
+    margin-top: 2px;
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    cursor: pointer;
+    accent-color: var(--norsu-blue);
+}
+.eval-evidence-empty {
+    font-size: 0.76rem;
+    color: #94A3B8;
+    font-style: italic;
 }
 
 /* Interactive radio label for forms */
@@ -3495,6 +3537,10 @@ html { scroll-behavior: smooth; }
     }
     .eval-form-table thead th small {
         display: none;
+    }
+    .eval-form-table thead th.eval-form-evidence,
+    .eval-form-table tbody td.eval-form-evidence {
+        min-width: 170px;
     }
     .eval-radio-circle {
         width: 16px;

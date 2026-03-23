@@ -1,4 +1,10 @@
 {
     "git.ignoreLimitWarning": true,
-    "workbench.browser.enableChatTools": true
+    "workbench.browser.enableChatTools": true,
+    "chat.tools.terminal.autoApprove": {
+        "/^Set-Location \"C:\\\\Users\\\\user\\\\QUAMC EVALUATION\"; php bin/console doctrine:migrations:status --show-versions$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
 }

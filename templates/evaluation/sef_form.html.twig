@@ -55,6 +55,7 @@
                     <tr>
                         <th class="eval-form-num">#</th>
                         <th class="eval-form-question">Question</th>
+                        <th class="eval-form-evidence">Means of Verification</th>
                         <th class="eval-form-rating">1<br><small>Never</small></th>
                         <th class="eval-form-rating">2<br><small>Seldom</small></th>
                         <th class="eval-form-rating">3<br><small>Sometimes</small></th>
@@ -71,6 +72,21 @@
             <td class="eval-form-question">
                 {{ q.questionText }}
                 {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+            </td>
+            <td class="eval-form-evidence">
+                {% set evidenceItems = q.evidenceItems ?? [] %}
+                {% if evidenceItems|length > 0 %}
+                <div class="eval-evidence-list">
+                    {% for evidence in evidenceItems %}
+                    <label class="eval-evidence-item">
+                        <input type="checkbox" disabled>
+                        <span>{{ evidence }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <span class="eval-evidence-empty">No checklist items</span>
+                {% endif %}
             </td>
             {% for r in 1..5 %}
             <td class="eval-form-rating">

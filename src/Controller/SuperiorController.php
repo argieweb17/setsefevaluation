@@ -31,6 +31,7 @@ class SuperiorController extends AbstractController
 
     #[Route('/evaluate', name: 'superior_evaluate_index', methods: ['GET'])]
     public function evaluateIndex(
+        Request $request,
         EvaluationPeriodRepository $evalRepo,
         UserRepository $userRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
@@ -73,11 +74,63 @@ class SuperiorController extends AbstractController
             }
         }
 
+        // Submitted evaluations history (filterable by academic year)
+        $selectedHistoryYear = trim((string) $request->query->get('schoolYear', ''));
+        $historyResponses = $superiorEvalRepo->findSubmittedByEvaluator(
+            $user->getId(),
+            $selectedHistoryYear !== '' ? $selectedHistoryYear : null
+        );
+
+        $historyMap = [];
+        foreach ($historyResponses as $response) {
+            $period = $response->getEvaluationPeriod();
+            $evaluatee = $response->getEvaluatee();
+            $key = $period->getId() . '-' . $evaluatee->getId();
+
+            if (!isset($historyMap[$key])) {
+                $historyMap[$key] = [
+                    'evaluation' => $period,
+                    'evaluatee' => $evaluatee,
+                    'evaluateeLabel' => $this->resolveEvaluateeLabel($evaluatee),
+                    'submittedAt' => $response->getSubmittedAt(),
+                    'ratingSum' => 0,
+                    'ratingCount' => 0,
+                ];
+            }
+
+            $historyMap[$key]['ratingSum'] += $response->getRating();
+            $historyMap[$key]['ratingCount']++;
+
+            if ($response->getSubmittedAt() > $historyMap[$key]['submittedAt']) {
+                $historyMap[$key]['submittedAt'] = $response->getSubmittedAt();
+            }
+        }
+
+        $historyItems = [];
+        foreach ($historyMap as $row) {
+            $historyItems[] = [
+                'evaluation' => $row['evaluation'],
+                'evaluatee' => $row['evaluatee'],
+                'evaluateeLabel' => $row['evaluateeLabel'],
+                'submittedAt' => $row['submittedAt'],
+                'averageRating' => $row['ratingCount'] > 0 ? round($row['ratingSum'] / $row['ratingCount'], 2) : 0.0,
+            ];
+        }
+
+        usort($historyItems, static function (array $a, array $b): int {
+            return $b['submittedAt'] <=> $a['submittedAt'];
+        });
+
+        $historyYears = $superiorEvalRepo->findSubmittedSchoolYearsByEvaluator($user->getId());
+
         return $this->render('superior/evaluate_index.html.twig', [
             'openEvals' => $openEvals,
             'evaluateesByEval' => $evaluateesByEval,
             'totalEvaluatees' => count($uniqueEvaluatees),
             'submissions' => $submissions,
+            'historyItems' => $historyItems,
+            'historyYears' => $historyYears,
+            'selectedHistoryYear' => $selectedHistoryYear,
             'departments' => $deptRepo->findAllOrdered(),
         ]);
     }
@@ -135,7 +188,10 @@ class SuperiorController extends AbstractController
         // Already submitted?
         if ($superiorEvalRepo->hasSubmitted($user->getId(), $evalId, $evaluateeId)) {
             $this->addFlash('info', 'You have already submitted this evaluation.');
-            return $this->redirectToRoute('superior_evaluate_index');
+            return $this->redirectToRoute('superior_evaluate_view', [
+                'evalId' => $evalId,
+                'evaluateeId' => $evaluateeId,
+            ]);
         }
 
         // Get questions (use SEF type for superior evaluations)
@@ -199,13 +255,16 @@ class SuperiorController extends AbstractController
                 $this->audit->log(AuditLog::ACTION_SAVE_DRAFT, 'SuperiorEvaluation', $evalId,
                     'Draft saved for ' . $evaluatee->getFullName());
                 $this->addFlash('info', 'Draft saved successfully.');
+                return $this->redirectToRoute('superior_evaluate_index');
             } else {
                 $this->audit->log(AuditLog::ACTION_SUBMIT_SET, 'SuperiorEvaluation', $evalId,
                     'Superior evaluation submitted for ' . $evaluatee->getFullName());
                 $this->addFlash('success', 'Evaluation submitted successfully.');
+                return $this->redirectToRoute('superior_evaluate_view', [
+                    'evalId' => $evalId,
+                    'evaluateeId' => $evaluateeId,
+                ]);
             }
-
-            return $this->redirectToRoute('superior_evaluate_index');
         }
 
         // Group questions by category
@@ -223,6 +282,78 @@ class SuperiorController extends AbstractController
             'evaluateeSubjects' => $evaluateeSubjects,
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
+            'generalComment' => '',
+            'readOnly' => false,
+        ]);
+    }
+
+    #[Route('/evaluate/{evalId}/{evaluateeId}/view', name: 'superior_evaluate_view', methods: ['GET'])]
+    public function evaluateView(
+        int $evalId,
+        int $evaluateeId,
+        EvaluationPeriodRepository $evalRepo,
+        UserRepository $userRepo,
+        SubjectRepository $subjectRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        AcademicYearRepository $ayRepo,
+        SuperiorEvaluationRepository $superiorEvalRepo,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $eval = $evalRepo->find($evalId);
+        $evaluatee = $userRepo->find($evaluateeId);
+
+        if (!$eval || !$evaluatee) {
+            $this->addFlash('danger', 'Invalid evaluation request.');
+            return $this->redirectToRoute('superior_evaluate_index');
+        }
+
+        $responses = $superiorEvalRepo->findSubmittedForEvaluatorAndPair($user->getId(), $evalId, $evaluateeId);
+        if (empty($responses)) {
+            $this->addFlash('warning', 'No submitted evaluation found for this record.');
+            return $this->redirectToRoute('superior_evaluate_index');
+        }
+
+        $evaluateeSubjects = $this->resolveFacultySubjects($evaluatee, $subjectRepo, $fslRepo, $ayRepo);
+
+        $grouped = [];
+        $draftMap = [];
+        $generalComment = '';
+        $submittedAt = $responses[0]->getSubmittedAt();
+
+        foreach ($responses as $response) {
+            $question = $response->getQuestion();
+            $questionId = $question->getId();
+            if ($questionId === null || isset($draftMap[$questionId])) {
+                continue;
+            }
+            $category = $question->getCategory() ?? 'General';
+            $grouped[$category][] = $question;
+            $draftMap[$questionId] = [
+                'rating' => $response->getRating(),
+                'comment' => $response->getComment(),
+            ];
+
+            if ($generalComment === '' && trim((string) $response->getComment()) !== '') {
+                $generalComment = (string) $response->getComment();
+            }
+
+            if ($response->getSubmittedAt() > $submittedAt) {
+                $submittedAt = $response->getSubmittedAt();
+            }
+        }
+
+        return $this->render('superior/evaluate_form.html.twig', [
+            'eval' => $eval,
+            'evaluatee' => $evaluatee,
+            'evaluateeRole' => $this->resolveEvaluateeType($evaluatee),
+            'evaluateeRoleLabel' => $this->resolveEvaluateeLabel($evaluatee),
+            'evaluateeSubjects' => $evaluateeSubjects,
+            'groupedQuestions' => $grouped,
+            'draftMap' => $draftMap,
+            'generalComment' => $generalComment,
+            'readOnly' => true,
+            'submittedAt' => $submittedAt,
         ]);
     }
 

@@ -2,6 +2,43 @@
 
 {% block title %}Evaluate {{ evaluatee.fullName }} | Superior Evaluation{% endblock %}
 
+{% block stylesheets %}
+{{ parent() }}
+<style>
+.sup-evidence-list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .42rem;
+    width: 100%;
+}
+.sup-evidence-item {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    column-gap: .55rem;
+    align-items: start;
+    width: 100%;
+}
+.sup-evidence-check {
+    width: 16px;
+    height: 16px;
+    margin: .12rem 0 0;
+    cursor: pointer;
+    accent-color: #1e40af;
+    pointer-events: auto !important;
+}
+.sup-evidence-text {
+    margin: 0;
+    font-size: .76rem;
+    line-height: 1.35;
+    color: #334155;
+    cursor: pointer;
+    white-space: normal;
+    word-break: break-word;
+}
+</style>
+{% endblock %}
+
 {% block body %}
 <div class="mb-3">
     <a href="{{ path('superior_evaluate_index') }}" class="text-decoration-none small">
@@ -9,7 +46,19 @@
     </a>
 </div>
 
+{% set isReadOnly = readOnly|default(false) %}
+{% if isReadOnly %}
+<div class="alert alert-success border-0 shadow-sm mb-3" style="background:#ecfdf3;color:#14532d;">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <span><i class="bi bi-check-circle-fill me-2"></i>This evaluation has been submitted and is now in view-only mode.</span>
+        {% if submittedAt is defined and submittedAt %}
+            <small class="fw-semibold">Submitted: {{ submittedAt|date('M d, Y h:i A') }}</small>
+        {% endif %}
+    </div>
+</div>
+{% else %}
 <form method="post" id="evalForm">
+{% endif %}
 <div class="eval-form-paper">
     <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
         <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
@@ -95,6 +144,7 @@
                 <tr>
                     <th class="eval-form-num"></th>
                     <th class="eval-form-question">Question</th>
+                    <th class="eval-form-evidence">Means of Verification</th>
                     <th class="eval-form-rating">1<br><small>Never</small></th>
                     <th class="eval-form-rating">2<br><small>Seldom</small></th>
                     <th class="eval-form-rating">3<br><small>Sometimes</small></th>
@@ -111,12 +161,29 @@
                         {{ q.questionText }}
                         {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
                     </td>
+                    <td class="eval-form-evidence">
+                        {% set evidenceItems = q.evidenceItems ?? [] %}
+                        {% if evidenceItems|length > 0 %}
+                        <div class="sup-evidence-list" role="group" aria-label="Means of verification">
+                            {% for evidence in evidenceItems %}
+                            {% set evidenceInputId = 'sup-evidence-' ~ q.id ~ '-' ~ loop.index %}
+                            <div class="sup-evidence-item">
+                                <input id="{{ evidenceInputId }}" class="sup-evidence-check" type="checkbox" name="verification[{{ q.id }}][]" value="{{ evidence }}" {{ isReadOnly ? 'disabled' }}>
+                                <label for="{{ evidenceInputId }}" class="sup-evidence-text">{{ evidence }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="eval-evidence-empty">No checklist items</span>
+                        {% endif %}
+                    </td>
                     {% for r in 1..5 %}
                     <td class="eval-form-rating">
                         <label class="eval-radio-label">
                             <input type="radio" name="ratings[{{ q.id }}]" value="{{ r }}"
                                    {{ draftRating == r ? 'checked' }}
-                                   {{ q.isRequired ? 'required' }}>
+                                   {{ (not isReadOnly and q.isRequired) ? 'required' }}
+                                   {{ isReadOnly ? 'disabled' }}>
                             <span class="eval-radio-circle {{ draftRating == r ? 'selected' }}"></span>
                         </label>
                     </td>
@@ -135,14 +202,19 @@
             <span class="eval-form-category-label">Additional Comments <span class="text-danger">*</span></span>
         </div>
         <div class="p-3">
-            <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" required
-                      placeholder="Share any additional feedback for this {{ evaluateeRoleLabel }}..."></textarea>
+            <textarea name="comments[0]" class="form-control eval-form-textarea" rows="3" {{ not isReadOnly ? 'required' }} {{ isReadOnly ? 'readonly' }}
+                      placeholder="Share any additional feedback for this {{ evaluateeRoleLabel }}...">{{ generalComment|default('') }}</textarea>
         </div>
     </div>
 </div>
 
 {# Buttons outside paper #}
 <div class="eval-form-actions-bar">
+    {% if isReadOnly %}
+    <a href="{{ path('superior_evaluate_index') }}" class="btn btn-norsu">
+        <i class="bi bi-arrow-left me-1"></i>Back to Personnel List
+    </a>
+    {% else %}
     <button type="submit" name="_action" value="submit" class="btn btn-norsu"
             onclick="return confirm('Once submitted, you cannot edit this evaluation. Continue?')">
         <i class="bi bi-send me-1"></i>Submit Evaluation
@@ -151,6 +223,9 @@
         <i class="bi bi-save me-1"></i>Save as Draft
     </button>
     <a href="{{ path('superior_evaluate_index') }}" class="btn btn-light">Cancel</a>
+    {% endif %}
 </div>
+{% if not isReadOnly %}
 </form>
+{% endif %}
 {% endblock %}
