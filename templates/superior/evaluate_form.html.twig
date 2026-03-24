@@ -40,9 +40,13 @@
 {% endblock %}
 
 {% block body %}
+{% set backRouteName = backRouteName|default('superior_evaluate_index') %}
+{% set backRouteParams = backRouteParams|default({}) %}
+{% set backLinkLabel = backLinkLabel|default('Back to Evaluations') %}
+{% set backButtonLabel = backButtonLabel|default('Back to Personnel List') %}
 <div class="mb-3">
-    <a href="{{ path('superior_evaluate_index') }}" class="text-decoration-none small">
-        <i class="bi bi-arrow-left me-1"></i>Back to Evaluations
+    <a href="{{ path(backRouteName, backRouteParams) }}" class="text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>{{ backLinkLabel }}
     </a>
 </div>
 
@@ -163,12 +167,13 @@
                     </td>
                     <td class="eval-form-evidence">
                         {% set evidenceItems = q.evidenceItems ?? [] %}
+                        {% set selectedVerificationItems = draftMap[q.id] is defined and draftMap[q.id].verification is defined ? draftMap[q.id].verification : [] %}
                         {% if evidenceItems|length > 0 %}
                         <div class="sup-evidence-list" role="group" aria-label="Means of verification">
                             {% for evidence in evidenceItems %}
                             {% set evidenceInputId = 'sup-evidence-' ~ q.id ~ '-' ~ loop.index %}
                             <div class="sup-evidence-item">
-                                <input id="{{ evidenceInputId }}" class="sup-evidence-check" type="checkbox" name="verification[{{ q.id }}][]" value="{{ evidence }}" {{ isReadOnly ? 'disabled' }}>
+                                <input id="{{ evidenceInputId }}" class="sup-evidence-check" type="checkbox" name="verification[{{ q.id }}][]" value="{{ evidence }}" {{ evidence in selectedVerificationItems ? 'checked' }} {{ isReadOnly ? 'disabled' }}>
                                 <label for="{{ evidenceInputId }}" class="sup-evidence-text">{{ evidence }}</label>
                             </div>
                             {% endfor %}
@@ -211,8 +216,8 @@
 {# Buttons outside paper #}
 <div class="eval-form-actions-bar">
     {% if isReadOnly %}
-    <a href="{{ path('superior_evaluate_index') }}" class="btn btn-norsu">
-        <i class="bi bi-arrow-left me-1"></i>Back to Personnel List
+    <a href="{{ path(backRouteName, backRouteParams) }}" class="btn btn-norsu">
+        <i class="bi bi-arrow-left me-1"></i>{{ backButtonLabel }}
     </a>
     {% else %}
     <button type="submit" name="_action" value="submit" class="btn btn-norsu"

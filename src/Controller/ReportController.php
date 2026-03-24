@@ -2078,6 +2078,79 @@ class ReportController extends AbstractController
         ]);
     }
 
+    #[Route('/results/superior/view-form', name: 'staff_results_superior_view_form', methods: ['GET'])]
+    public function resultsSuperiorViewForm(
+        Request $request,
+        EvaluationPeriodRepository $evalRepo,
+        SuperiorEvaluationRepository $superiorEvalRepo,
+        UserRepository $userRepo,
+    ): Response {
+        $evalId = (int) $request->query->get('evaluation', 0);
+        $evaluateeId = (int) $request->query->get('faculty', 0);
+        $evaluatorId = (int) $request->query->get('evaluator', 0);
+
+        $evaluation = $evalRepo->find($evalId);
+        $evaluatee = $userRepo->find($evaluateeId);
+        $evaluator = $userRepo->find($evaluatorId);
+
+        if (!$evaluation || !$evaluatee || !$evaluator) {
+            throw $this->createNotFoundException('Evaluation record not found.');
+        }
+
+        $responses = $superiorEvalRepo->findSubmittedForEvaluatorAndPair($evaluatorId, $evalId, $evaluateeId);
+        if (empty($responses)) {
+            $this->addFlash('warning', 'No submitted SEF form found for this record.');
+            return $this->redirectToRoute('staff_results_superior_faculty_evaluations', ['faculty' => $evaluatorId]);
+        }
+
+        $grouped = [];
+        $draftMap = [];
+        $generalComment = '';
+        $submittedAt = $responses[0]->getSubmittedAt();
+
+        foreach ($responses as $response) {
+            $question = $response->getQuestion();
+            $questionId = $question?->getId();
+            if ($questionId === null || isset($draftMap[$questionId])) {
+                continue;
+            }
+
+            $category = trim((string) $question->getCategory()) !== '' ? (string) $question->getCategory() : 'General';
+            $grouped[$category][] = $question;
+            $draftMap[$questionId] = [
+                'rating' => $response->getRating(),
+                'comment' => $response->getComment(),
+                'verification' => $response->getVerificationSelections(),
+            ];
+
+            if ($generalComment === '' && trim((string) $response->getComment()) !== '') {
+                $generalComment = (string) $response->getComment();
+            }
+
+            $responseSubmittedAt = $response->getSubmittedAt();
+            if ($submittedAt === null || ($responseSubmittedAt !== null && $responseSubmittedAt > $submittedAt)) {
+                $submittedAt = $responseSubmittedAt;
+            }
+        }
+
+        return $this->render('superior/evaluate_form.html.twig', [
+            'eval' => $evaluation,
+            'evaluatee' => $evaluatee,
+            'evaluateeRole' => 'faculty',
+            'evaluateeRoleLabel' => 'Faculty',
+            'evaluateeSubjects' => [],
+            'groupedQuestions' => $grouped,
+            'draftMap' => $draftMap,
+            'generalComment' => $generalComment,
+            'readOnly' => true,
+            'submittedAt' => $submittedAt,
+            'backRouteName' => 'staff_results_superior_faculty_evaluations',
+            'backRouteParams' => ['faculty' => $evaluatorId],
+            'backLinkLabel' => 'Back to Faculty Results',
+            'backButtonLabel' => 'Back to Faculty Results',
+        ]);
+    }
+
     // ════════════════════════════════════════════════
     //  RESULTS: PRINT (Staff)
     // ════════════════════════════════════════════════

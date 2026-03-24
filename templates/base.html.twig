@@ -25,7 +25,8 @@
                 </button>
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
                 <div class="d-flex align-items-center ms-auto gap-2">
-                    {% if is_granted('ROLE_FACULTY') %}
+                    {% set showNotifBell = (not is_granted('ROLE_ADMIN')) and (is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF')) %}
+                    {% if showNotifBell and is_granted('ROLE_FACULTY') %}
                     <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
                         <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
@@ -33,7 +34,7 @@
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
-                    {% elseif is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+                    {% elseif showNotifBell and is_granted('ROLE_STAFF') %}
                     <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
                         <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
@@ -355,7 +356,8 @@
             {% endif %}
             <div class="topbar-right">
                 {# ── Message Notifications Bell ── #}
-                {% if is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+                {% set showTopbarNotifBell = (not is_granted('ROLE_ADMIN')) and (is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF')) %}
+                {% if showTopbarNotifBell %}
                 {% set messageNotifCount = unread_message_notifications() %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
                     <button class="topbar-notif-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">

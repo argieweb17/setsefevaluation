@@ -51,6 +51,9 @@ class SuperiorEvaluation
     #[ORM\Column]
     private bool $isDraft = false;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $verificationSelections = [];
+
     public function __construct()
     {
         $this->submittedAt = new \DateTime();
@@ -84,4 +87,28 @@ class SuperiorEvaluation
 
     public function isDraft(): bool { return $this->isDraft; }
     public function setIsDraft(bool $v): static { $this->isDraft = $v; return $this; }
+
+    /** @return string[] */
+    public function getVerificationSelections(): array
+    {
+        return array_values(array_filter($this->verificationSelections ?? [], static fn ($item): bool => is_string($item) && trim($item) !== ''));
+    }
+
+    /** @param string[] $v */
+    public function setVerificationSelections(array $v): static
+    {
+        $items = [];
+        foreach ($v as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+            $clean = trim($item);
+            if ($clean !== '') {
+                $items[] = $clean;
+            }
+        }
+
+        $this->verificationSelections = array_values(array_unique($items));
+        return $this;
+    }
 }

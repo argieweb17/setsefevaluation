@@ -203,6 +203,21 @@
     color: #1d4ed8;
     border-color: #93c5fd;
 }
+.fe-action-btn-view {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+.fe-action-btn-view:hover {
+    color: #065f46;
+    background: #d1fae5;
+    border-color: #6ee7b7;
+}
+.fe-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
 
 .fe-empty {
     text-align: center;
@@ -317,15 +332,25 @@
                         </td>
                         <td class="text-center">
                             {% if row.evaluationId and row.facultyId %}
-                                <a
-                                    href="{{ path(staffMode|default(false) ? 'staff_results_superior_print' : 'admin_results_superior_print', {evaluation: row.evaluationId, faculty: row.facultyId}) }}"
-                                    target="_blank"
-                                    class="fe-action-btn fe-action-btn-icon"
-                                    title="Print Result"
-                                    aria-label="Print Result"
-                                >
-                                    <i class="bi bi-printer"></i>
-                                </a>
+                                <div class="fe-action-group">
+                                    <a
+                                        href="{{ path(staffMode|default(false) ? 'staff_results_superior_view_form' : 'admin_results_superior_view_form', {evaluation: row.evaluationId, faculty: row.facultyId, evaluator: faculty.id}) }}"
+                                        class="fe-action-btn fe-action-btn-icon fe-action-btn-view"
+                                        title="View SEF Result Form"
+                                        aria-label="View SEF Result Form"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a
+                                        href="{{ path(staffMode|default(false) ? 'staff_results_superior_print' : 'admin_results_superior_print', {evaluation: row.evaluationId, faculty: row.facultyId}) }}"
+                                        target="_blank"
+                                        class="fe-action-btn fe-action-btn-icon"
+                                        title="Print Result"
+                                        aria-label="Print Result"
+                                    >
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </div>
                             {% else %}
                                 <span class="text-muted">—</span>
                             {% endif %}

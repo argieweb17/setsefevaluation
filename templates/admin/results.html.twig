@@ -150,20 +150,6 @@
     transition: border-color .2s, box-shadow .2s;
 }
 .rs-search-input:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
-.rs-reset-btn {
-    height: 38px;
-    background: #fff;
-    color: #64748b;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: .8rem;
-    padding: 0 16px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all .2s;
-}
-.rs-reset-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #334155; }
 .rs-result-count {
     font-size: .75rem;
     color: #64748b;
@@ -412,9 +398,6 @@
     .rs-search-box {
         margin-left: 0;
     }
-    .rs-reset-btn {
-        width: 100%;
-    }
 }
 </style>
 {% endblock %}
@@ -496,9 +479,6 @@
             <i class="bi bi-search rs-search-icon"></i>
             <input type="text" class="rs-search-input" id="facultySearch" placeholder="{{ isSefView ? 'Search department head...' : 'Search faculty...' }}" autocomplete="off">
         </div>
-        <button type="button" class="rs-reset-btn" id="resetFilters">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-        </button>
     </div>
     <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
 </div>
@@ -627,7 +607,6 @@ function filterDeptsByCollege() {
 (function() {
     var searchInput = document.getElementById('facultySearch');
     var collegeSelect = document.getElementById('rsFilterCollege');
-    var resetBtn    = document.getElementById('resetFilters');
     var countEl     = document.getElementById('resultCount');
     var tbody       = document.querySelector('.result-row')?.parentElement;
 
@@ -665,12 +644,6 @@ function filterDeptsByCollege() {
 
     searchInput.addEventListener('input', applyFilters);
     collegeSelect.addEventListener('change', applyFilters);
-    resetBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        collegeSelect.value = '';
-        filterDeptsByCollege();
-        applyFilters();
-    });
     applyFilters();
 })();
 </script>

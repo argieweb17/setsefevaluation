@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\AuditLog;
 use App\Entity\EvaluationPeriod;
+use App\Entity\Question;
 use App\Entity\SuperiorEvaluation;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
@@ -207,12 +208,14 @@ class SuperiorController extends AbstractController
             $draftMap[$d->getQuestion()->getId()] = [
                 'rating' => $d->getRating(),
                 'comment' => $d->getComment(),
+                'verification' => $d->getVerificationSelections(),
             ];
         }
 
         if ($request->isMethod('POST')) {
             $action = $request->request->get('_action', 'submit');
             $ratings = $request->request->all('ratings');
+            $verifications = $request->request->all('verification');
             $comments = $request->request->all('comments');
             $generalComment = trim($comments[0] ?? '');
             $commentSaved = false;
@@ -238,6 +241,9 @@ class SuperiorController extends AbstractController
                 $response->setEvaluateeRole($evaluateeRole);
                 $response->setQuestion($q);
                 $response->setRating($rating);
+                $response->setVerificationSelections(
+                    $this->sanitizeVerificationSelections($q, $verifications[$q->getId()] ?? [])
+                );
                 // Attach the general comment to the first response
                 if (!$commentSaved && $generalComment !== '') {
                     $response->setComment($generalComment);
@@ -332,6 +338,7 @@ class SuperiorController extends AbstractController
             $draftMap[$questionId] = [
                 'rating' => $response->getRating(),
                 'comment' => $response->getComment(),
+                'verification' => $response->getVerificationSelections(),
             ];
 
             if ($generalComment === '' && trim((string) $response->getComment()) !== '') {
@@ -565,6 +572,34 @@ class SuperiorController extends AbstractController
     {
         $status = mb_strtolower(trim((string) $evaluatee->getEmploymentStatus()));
         return str_contains($status, 'dean') ? SuperiorEvaluation::TYPE_DEAN : SuperiorEvaluation::TYPE_DEPARTMENT_HEAD;
+    }
+
+    /**
+     * Keep only valid verification selections that belong to the question's evidence items.
+     *
+     * @param mixed $rawSelections
+     * @return string[]
+     */
+    private function sanitizeVerificationSelections(Question $question, mixed $rawSelections): array
+    {
+        $available = $question->getEvidenceItems();
+        if (empty($available) || !is_array($rawSelections)) {
+            return [];
+        }
+
+        $selected = [];
+        foreach ($rawSelections as $item) {
+            if (!is_string($item)) {
+                continue;
+            }
+
+            $clean = trim($item);
+            if ($clean !== '' && in_array($clean, $available, true)) {
+                $selected[] = $clean;
+            }
+        }
+
+        return array_values(array_unique($selected));
     }
 
     private function isDean(User $user): bool
