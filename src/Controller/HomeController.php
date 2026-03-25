@@ -199,6 +199,10 @@ class HomeController extends AbstractController
             return $this->adminDashboard($userRepo, $evalRepo, $responseRepo, $deptRepo, $subjectRepo, $questionRepo, $auditRepo, $curriculumRepo);
         }
 
+        if ($user->hasAssignedRole('ROLE_SUPERIOR')) {
+            return $this->superiorDashboard($user, $evalRepo, $responseRepo, $userRepo, $deptRepo, $superiorEvalRepo);
+        }
+
         if ($this->isGranted('ROLE_FACULTY')) {
             return $this->facultyDashboard($user, $subjectRepo, $evalRepo, $responseRepo, $ayRepo, $fslRepo);
         }

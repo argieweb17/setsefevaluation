@@ -83,14 +83,15 @@ class AppExtension extends AbstractExtension
 
         foreach ($allUsers as $u) {
             $roles = $u->getRoles();
+            $isSuperiorBucket = $u->hasAssignedRole('ROLE_SUPERIOR') || $u->isDepartmentHeadFaculty();
             if ($u->getAccountStatus() === 'pending') {
                 $pendingApprovals++;
             }
             if (in_array('ROLE_ADMIN', $roles)) {
                 $admins++;
-            } elseif (in_array('ROLE_SUPERIOR', $roles)) {
+            } elseif ($isSuperiorBucket) {
                 $superiors++;
-            } elseif (in_array('ROLE_FACULTY', $roles)) {
+            } elseif (in_array('ROLE_FACULTY', $roles, true)) {
                 $faculty++;
             } elseif (in_array('ROLE_STAFF', $roles)) {
                 $staff++;

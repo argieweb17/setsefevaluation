@@ -967,7 +967,7 @@
                     <div class="ev-modal-icon"><i class="bi bi-plus-circle-fill"></i></div>
                     <div>
                         <h5 class="mb-0 fw-bold text-white">New SEF Evaluation</h5>
-                        <small class="text-white-50">Department-head evaluation of co-faculty (SEF)</small>
+                        <small class="text-white-50">Hierarchy-based superior evaluation workflow (SEF)</small>
                     </div>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -996,36 +996,36 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">Department</label>
-                            <select name="department" class="form-select ev-form-control sup-dept-select" required>
-                                <option value="">— Select Department —</option>
+                            <label class="form-label ev-form-label">Department <span class="text-muted">(optional)</span></label>
+                            <select name="department" class="form-select ev-form-control sup-dept-select">
+                                <option value="">All Departments</option>
                                 {% for dept in departments %}
                                     <option value="{{ dept.id }}" data-college="{{ dept.collegeName }}">{{ dept.departmentName }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">Specific Department Head <span class="text-muted">(optional)</span></label>
+                            <label class="form-label ev-form-label">Specific Evaluator <span class="text-muted">(optional)</span></label>
                             <select name="faculty" class="form-select ev-form-control sup-faculty-select">
                                 <option value="" data-position="" data-department="">— Select Faculty —</option>
-                                {% for f in facultyUsers %}
-                                    {% set _pos = (f.employmentStatus ?? '')|lower %}
-                                    {% if 'head' in _pos or 'chair' in _pos %}
-                                        <option value="{{ f.fullName }}" data-position="{{ f.employmentStatus }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
+                                {% for f in sefEvaluatorUsers|default(facultyUsers) %}
+                                    {% set _roleRaw = ((f.position ?? '') ~ ' ' ~ (f.employmentStatus ?? ''))|lower %}
+                                    {% if 'vice president' in _roleRaw or 'president' in _roleRaw or 'campus director' in _roleRaw or 'dean' in _roleRaw or 'head' in _roleRaw or 'chair' in _roleRaw %}
+                                        <option value="{{ f.fullName }}" data-position="{{ f.position is not empty ? f.position : (f.employmentStatus ?? '') }}" data-department="{{ f.department ? f.department.id : '' }}">{{ f.lastName }}, {{ f.firstName }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
-                            <small class="text-muted" style="font-size:.68rem;">Leave blank to evaluate all faculty in the selected department.</small>
+                            <small class="text-muted" style="font-size:.68rem;">Leave blank to allow all eligible hierarchy evaluators assigned to this SEF period.</small>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">Position</label>
+                            <label class="form-label ev-form-label">Evaluator Position</label>
                             <select name="position" class="form-select ev-form-control sup-position-input">
                                 <option value="">Select position</option>
                                 <option value="President">President</option>
-                                <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
+                                <option value="Vice President">Vice President</option>
                                 <option value="Campus Director">Campus Director</option>
                                 <option value="Dean">Dean</option>
-                                <option value="Program Chair">Program Chair</option>
+                                <option value="Department Head">Department Head</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -1403,11 +1403,11 @@ function normalizeSuperiorPosition(raw) {
     if (!value) return '';
 
     var lower = value.toLowerCase();
-    if (lower.indexOf('vice president') !== -1) return 'Vice President of Academic Affairs';
+    if (lower.indexOf('vice president') !== -1) return 'Vice President';
     if (lower.indexOf('president') !== -1) return 'President';
     if (lower.indexOf('campus director') !== -1) return 'Campus Director';
     if (lower.indexOf('dean') !== -1) return 'Dean';
-    if (lower.indexOf('chair') !== -1 || lower.indexOf('head') !== -1) return 'Program Chair';
+    if (lower.indexOf('chair') !== -1 || lower.indexOf('head') !== -1) return 'Department Head';
 
     return value;
 }

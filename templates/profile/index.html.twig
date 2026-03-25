@@ -24,6 +24,8 @@
                 <p class="text-muted mb-2">{{ user.email }}</p>
                 {% if 'ROLE_ADMIN' in user.roles %}
                     <span class="badge bg-danger"><i class="bi bi-shield-check me-1"></i>Administrator</span>
+                {% elseif user.hasAssignedRole('ROLE_SUPERIOR') %}
+                    <span class="badge bg-primary"><i class="bi bi-star me-1"></i>Superior</span>
                 {% elseif 'ROLE_FACULTY' in user.roles %}
                     <span class="badge bg-warning text-dark"><i class="bi bi-mortarboard me-1"></i>Faculty</span>
                 {% elseif 'ROLE_STAFF' in user.roles %}
@@ -50,6 +52,7 @@
             <div class="card-body">
                 <table class="table table-borderless mb-0">
                     <tbody>
+                        {% set _is_assigned_superior = user.hasAssignedRole('ROLE_SUPERIOR') %}
                         <tr>
                             <td class="text-muted" style="width:200px"><i class="bi bi-person me-2"></i>First Name</td>
                             <td class="fw-semibold">{{ user.firstName }}</td>
@@ -62,7 +65,7 @@
                             <td class="text-muted"><i class="bi bi-envelope me-2"></i>Email Address</td>
                             <td class="fw-semibold">{{ user.email }}</td>
                         </tr>
-                        {% if 'ROLE_STAFF' not in user.roles %}
+                        {% if 'ROLE_STAFF' not in user.roles and not _is_assigned_superior %}
                         <tr>
                             <td class="text-muted"><i class="bi bi-building me-2"></i>Department</td>
                             <td class="fw-semibold">{{ user.department ? user.department.departmentName : '—' }}</td>
@@ -71,9 +74,21 @@
                             <td class="text-muted"><i class="bi bi-bank me-2"></i>College</td>
                             <td class="fw-semibold">{{ user.department and user.department.collegeName ? user.department.collegeName : '—' }}</td>
                         </tr>
+                        {% endif %}
+                        {% if 'ROLE_STAFF' not in user.roles %}
                         <tr>
                             <td class="text-muted"><i class="bi bi-geo-alt me-2"></i>Campus</td>
                             <td class="fw-semibold">{{ user.campus ?? '—' }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if _is_assigned_superior %}
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-briefcase me-2"></i>Position / Designation</td>
+                            <td class="fw-semibold">{{ user.position ?? '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><i class="bi bi-award me-2"></i>Academic Rank</td>
+                            <td class="fw-semibold">{{ user.academicRank ?? '—' }}</td>
                         </tr>
                         {% endif %}
                         {% if user.isStudent %}
@@ -91,6 +106,9 @@
                             <td>
                                 {% if 'ROLE_ADMIN' in user.roles %}
                                     <span class="badge bg-danger me-1">Admin</span>
+                                {% endif %}
+                                {% if user.hasAssignedRole('ROLE_SUPERIOR') %}
+                                    <span class="badge bg-primary me-1">Superior</span>
                                 {% endif %}
                                 {% if 'ROLE_FACULTY' in user.roles %}
                                     <span class="badge bg-warning text-dark me-1">Faculty</span>

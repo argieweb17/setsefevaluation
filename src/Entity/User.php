@@ -46,6 +46,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $employmentStatus = null;
 
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $position = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $academicRank = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $campus = null;
 
@@ -89,14 +95,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /** @return list<string> */
     public function getRoles(): array
     {
-        $roles = $this->roles;
+        // Superior is a derived capability reserved for department-head/chair faculty.
+        $hasLegacySuperiorRole = in_array('ROLE_SUPERIOR', $this->roles, true);
+        $roles = array_values(array_filter($this->roles, static fn ($role): bool => $role !== 'ROLE_SUPERIOR'));
 
-        // Department heads/chairs who are faculty can access superior workflows.
-        $employmentStatus = mb_strtolower(trim((string) $this->employmentStatus));
-        $isDepartmentHeadLike = $employmentStatus !== ''
-            && (str_contains($employmentStatus, 'head') || str_contains($employmentStatus, 'chair'));
+        // Backward compatibility: old registrations may have stored ROLE_SUPERIOR only.
+        if ($hasLegacySuperiorRole && !in_array('ROLE_FACULTY', $roles, true)) {
+            $roles[] = 'ROLE_FACULTY';
+        }
 
-        if (in_array('ROLE_FACULTY', $roles, true) && $isDepartmentHeadLike) {
+        if ($this->isDepartmentHeadFaculty()) {
+            $roles[] = 'ROLE_SUPERIOR';
+        } elseif ($hasLegacySuperiorRole) {
+            // Preserve explicitly assigned Superior accounts.
             $roles[] = 'ROLE_SUPERIOR';
         }
 
@@ -120,6 +131,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getEmploymentStatus(): ?string { return $this->employmentStatus; }
     public function setEmploymentStatus(?string $v): static { $this->employmentStatus = $v; return $this; }
+
+    public function getPosition(): ?string { return $this->position; }
+    public function setPosition(?string $v): static { $this->position = $v; return $this; }
+
+    public function getAcademicRank(): ?string { return $this->academicRank; }
+    public function setAcademicRank(?string $v): static { $this->academicRank = $v; return $this; }
 
     public function getProfilePicture(): ?string { return $this->profilePicture; }
     public function setProfilePicture(?string $v): static { $this->profilePicture = $v; return $this; }
@@ -148,6 +165,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function isAdmin(): bool { return in_array('ROLE_ADMIN', $this->roles); }
 
     public function isSuperior(): bool { return in_array('ROLE_SUPERIOR', $this->getRoles(), true); }
+
+    public function hasAssignedRole(string $role): bool
+    {
+        return in_array($role, $this->roles, true);
+    }
+
+    public function isDepartmentHeadFaculty(): bool
+    {
+        if (!in_array('ROLE_FACULTY', $this->roles, true)) {
+            return false;
+        }
+
+        $employmentStatus = mb_strtolower(trim((string) $this->employmentStatus));
+        if ($employmentStatus === '') {
+            return false;
+        }
+
+        return str_contains($employmentStatus, 'head') || str_contains($employmentStatus, 'chair');
+    }
 
     public function isStaff(): bool { return in_array('ROLE_STAFF', $this->roles); }
 

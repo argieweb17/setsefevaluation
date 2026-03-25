@@ -30,6 +30,12 @@ class SuperiorController extends AbstractController
 {
     public function __construct(private AuditLogger $audit) {}
 
+    private const RANK_PRESIDENT = 'president';
+    private const RANK_VICE_PRESIDENT = 'vice_president';
+    private const RANK_CAMPUS_DIRECTOR = 'campus_director';
+    private const RANK_DEAN = 'dean';
+    private const RANK_DEPARTMENT_HEAD = 'department_head';
+
     #[Route('/evaluate', name: 'superior_evaluate_index', methods: ['GET'])]
     public function evaluateIndex(
         Request $request,
@@ -43,16 +49,12 @@ class SuperiorController extends AbstractController
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
+        $this->assertDepartmentHeadSuperior($user);
         $openEvals = [];
         $evaluateesByEval = [];
         $uniqueEvaluatees = [];
-        $isDeanEvaluator = $this->isDean($user);
 
         foreach ($evalRepo->findOpen('SUPERIOR') as $eval) {
-            if (!$isDeanEvaluator && $user->getDepartment() && $eval->getDepartment() && $eval->getDepartment()->getId() !== $user->getDepartment()->getId()) {
-                continue;
-            }
-
             if (!$this->evaluatorMatchesAssignedFaculty($user, $eval)) {
                 continue;
             }
@@ -152,6 +154,7 @@ class SuperiorController extends AbstractController
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
+        $this->assertDepartmentHeadSuperior($user);
         $eval = $evalRepo->find($evalId);
         $evaluatee = $userRepo->find($evaluateeId);
 
@@ -179,12 +182,7 @@ class SuperiorController extends AbstractController
         $evaluateeRoleLabel = (string) ($evaluateeMap[$evaluatee->getId()]['label'] ?? 'Faculty Member');
         $evaluateeSubjects = $evaluateeMap[$evaluatee->getId()]['subjects'] ?? [];
 
-        // Determine evaluatee role
-        $empStatus = strtolower($evaluatee->getEmploymentStatus() ?? '');
-        $evaluateeRole = SuperiorEvaluation::TYPE_DEPARTMENT_HEAD;
-        if (str_contains($empStatus, 'dean')) {
-            $evaluateeRole = SuperiorEvaluation::TYPE_DEAN;
-        }
+        $evaluateeRole = (string) ($evaluateeMap[$evaluatee->getId()]['type'] ?? SuperiorEvaluation::TYPE_DEPARTMENT_HEAD);
 
         // Already submitted?
         if ($superiorEvalRepo->hasSubmitted($user->getId(), $evalId, $evaluateeId)) {
@@ -306,6 +304,7 @@ class SuperiorController extends AbstractController
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
+        $this->assertDepartmentHeadSuperior($user);
         $eval = $evalRepo->find($evalId);
         $evaluatee = $userRepo->find($evaluateeId);
 
@@ -371,6 +370,10 @@ class SuperiorController extends AbstractController
         UserRepository $userRepo,
         DepartmentRepository $deptRepo,
     ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->assertDepartmentHeadSuperior($user);
+
         $allEvals = $evalRepo->findAllOrdered();
         $selectedEvalId = null;
         $rankings = [];
@@ -414,6 +417,10 @@ class SuperiorController extends AbstractController
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
     ): JsonResponse {
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->assertDepartmentHeadSuperior($user);
+
         $evalId = (int) $request->query->get('evalId');
         $evaluateeId = (int) $request->query->get('evaluateeId');
 
@@ -451,64 +458,16 @@ class SuperiorController extends AbstractController
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
     ): array {
-        $isDeanEvaluator = $this->isDean($evaluator);
-
-        if ($isDeanEvaluator) {
-            // Dean scope: evaluate department heads/chairs across departments.
-            $facultyUsers = $userRepo->createQueryBuilder('u')
-                ->where('u.roles LIKE :role')
-                ->andWhere('u.accountStatus = :status')
-                ->andWhere('(LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :head OR LOWER(COALESCE(u.employmentStatus, :blank)) LIKE :chair)')
-                ->setParameter('role', '%ROLE_FACULTY%')
-                ->setParameter('status', 'active')
-                ->setParameter('blank', '')
-                ->setParameter('head', '%head%')
-                ->setParameter('chair', '%chair%')
-                ->orderBy('u.lastName', 'ASC')
-                ->addOrderBy('u.firstName', 'ASC')
-                ->getQuery()
-                ->getResult();
-
-            $rows = [];
-            foreach ($facultyUsers as $faculty) {
-                if (!$faculty instanceof User) {
-                    continue;
-                }
-
-                if ($faculty->getId() === $evaluator->getId()) {
-                    continue;
-                }
-
-                $subjects = $this->resolveFacultySubjects($faculty, $subjectRepo, $fslRepo, $ayRepo);
-                $previewItems = array_map(static fn(array $s): string => $s['code'] . ($s['section'] !== '' ? ' (' . $s['section'] . ')' : ''), array_slice($subjects, 0, 3));
-
-                $rows[] = [
-                    'user' => $faculty,
-                    'type' => SuperiorEvaluation::TYPE_DEPARTMENT_HEAD,
-                    'label' => 'Department Head',
-                    'subjects' => $subjects,
-                    'subjectCount' => count($subjects),
-                    'subjectPreview' => !empty($previewItems)
-                        ? implode(', ', $previewItems) . (count($subjects) > 3 ? ' +' . (count($subjects) - 3) . ' more' : '')
-                        : '',
-                ];
-            }
-
-            return $rows;
-        }
-
-        $targetDept = $eval->getDepartment() ?? $evaluator->getDepartment();
-        if (!$targetDept) {
+        $targetRank = $this->resolveTargetSuperiorRank($evaluator);
+        if ($targetRank === null) {
             return [];
         }
 
-        $facultyUsers = $userRepo->createQueryBuilder('u')
-            ->where('u.roles LIKE :role')
+        $targetDept = $eval->getDepartment();
+
+        $users = $userRepo->createQueryBuilder('u')
             ->andWhere('u.accountStatus = :status')
-            ->andWhere('u.department = :dept')
-            ->setParameter('role', '%ROLE_FACULTY%')
             ->setParameter('status', 'active')
-            ->setParameter('dept', $targetDept)
             ->orderBy('u.lastName', 'ASC')
             ->addOrderBy('u.firstName', 'ASC')
             ->getQuery()
@@ -516,22 +475,33 @@ class SuperiorController extends AbstractController
 
         $rows = [];
 
-        foreach ($facultyUsers as $faculty) {
-            if (!$faculty instanceof User) {
+        foreach ($users as $candidate) {
+            if (!$candidate instanceof User) {
                 continue;
             }
 
-            if ($faculty->getId() === $evaluator->getId()) {
+            if ($candidate->getId() === $evaluator->getId()) {
                 continue;
             }
 
-            $subjects = $this->resolveFacultySubjects($faculty, $subjectRepo, $fslRepo, $ayRepo);
+            if ($this->resolveSuperiorRank($candidate) !== $targetRank) {
+                continue;
+            }
+
+            if ($targetDept && $this->requiresDepartmentMatchForRank($targetRank)) {
+                $candidateDept = $candidate->getDepartment();
+                if (!$candidateDept || $candidateDept->getId() !== $targetDept->getId()) {
+                    continue;
+                }
+            }
+
+            $subjects = $this->resolveFacultySubjects($candidate, $subjectRepo, $fslRepo, $ayRepo);
             $previewItems = array_map(static fn(array $s): string => $s['code'] . ($s['section'] !== '' ? ' (' . $s['section'] . ')' : ''), array_slice($subjects, 0, 3));
 
             $rows[] = [
-                'user' => $faculty,
-                'type' => $this->resolveEvaluateeType($faculty),
-                'label' => $this->resolveEvaluateeLabel($faculty),
+                'user' => $candidate,
+                'type' => $this->resolveEvaluateeTypeByRank($targetRank),
+                'label' => $this->resolveEvaluateeLabelByRank($targetRank),
                 'subjects' => $subjects,
                 'subjectCount' => count($subjects),
                 'subjectPreview' => !empty($previewItems)
@@ -543,16 +513,26 @@ class SuperiorController extends AbstractController
         return $rows;
     }
 
-    private function evaluatorMatchesAssignedFaculty(User $evaluator, EvaluationPeriod $eval): bool
+    private function assertDepartmentHeadSuperior(?User $user): void
     {
-        if ($this->isDean($evaluator)) {
-            // Dean scope should not be blocked by per-faculty assignment.
-            return true;
+        if (!$user instanceof User || $user->isAdmin() || $user->isStaff()) {
+            throw $this->createAccessDeniedException('Superior access is restricted to authorized superior accounts.');
         }
 
+        if ($user->hasAssignedRole('ROLE_SUPERIOR')) {
+            return;
+        }
+
+        if (!$user->isDepartmentHeadFaculty()) {
+            throw $this->createAccessDeniedException('Superior access is restricted to authorized superior accounts.');
+        }
+    }
+
+    private function evaluatorMatchesAssignedFaculty(User $evaluator, EvaluationPeriod $eval): bool
+    {
         $assignedEvaluator = trim((string) ($eval->getFaculty() ?? ''));
         if ($assignedEvaluator === '') {
-            // Blank assignment means any department head/chair in scope may evaluate.
+            // Blank assignment means any eligible superior in scope may evaluate.
             return true;
         }
 
@@ -570,8 +550,17 @@ class SuperiorController extends AbstractController
 
     private function resolveEvaluateeType(User $evaluatee): string
     {
-        $status = mb_strtolower(trim((string) $evaluatee->getEmploymentStatus()));
-        return str_contains($status, 'dean') ? SuperiorEvaluation::TYPE_DEAN : SuperiorEvaluation::TYPE_DEPARTMENT_HEAD;
+        return $this->resolveEvaluateeTypeByRank($this->resolveSuperiorRank($evaluatee));
+    }
+
+    private function resolveEvaluateeTypeByRank(?string $rank): string
+    {
+        return match ($rank) {
+            self::RANK_VICE_PRESIDENT => SuperiorEvaluation::TYPE_VICE_PRESIDENT,
+            self::RANK_CAMPUS_DIRECTOR => SuperiorEvaluation::TYPE_CAMPUS_DIRECTOR,
+            self::RANK_DEAN => SuperiorEvaluation::TYPE_DEAN,
+            default => SuperiorEvaluation::TYPE_DEPARTMENT_HEAD,
+        };
     }
 
     /**
@@ -602,28 +591,72 @@ class SuperiorController extends AbstractController
         return array_values(array_unique($selected));
     }
 
-    private function isDean(User $user): bool
-    {
-        $status = mb_strtolower(trim((string) $user->getEmploymentStatus()));
-        return str_contains($status, 'dean');
-    }
-
     private function resolveEvaluateeLabel(User $evaluatee): string
     {
-        $status = trim((string) $evaluatee->getEmploymentStatus());
+        $label = $this->resolveEvaluateeLabelByRank($this->resolveSuperiorRank($evaluatee));
+        if ($label !== '') {
+            return $label;
+        }
+
+        $status = trim((string) ($evaluatee->getPosition() ?: $evaluatee->getEmploymentStatus()));
         if ($status === '') {
             return 'Faculty Member';
         }
 
-        $normalized = mb_strtolower($status);
-        if (str_contains($normalized, 'dean')) {
-            return 'Dean';
-        }
-        if (str_contains($normalized, 'head') || str_contains($normalized, 'chair')) {
-            return 'Department Head';
+        return $status;
+    }
+
+    private function resolveEvaluateeLabelByRank(?string $rank): string
+    {
+        return match ($rank) {
+            self::RANK_VICE_PRESIDENT => 'Vice President',
+            self::RANK_CAMPUS_DIRECTOR => 'Campus Director',
+            self::RANK_DEAN => 'Dean',
+            self::RANK_DEPARTMENT_HEAD => 'Department Head',
+            default => '',
+        };
+    }
+
+    private function resolveTargetSuperiorRank(User $evaluator): ?string
+    {
+        return match ($this->resolveSuperiorRank($evaluator)) {
+            self::RANK_PRESIDENT => self::RANK_VICE_PRESIDENT,
+            self::RANK_VICE_PRESIDENT => self::RANK_CAMPUS_DIRECTOR,
+            self::RANK_CAMPUS_DIRECTOR => self::RANK_DEAN,
+            self::RANK_DEAN => self::RANK_DEPARTMENT_HEAD,
+            default => null,
+        };
+    }
+
+    private function resolveSuperiorRank(User $user): ?string
+    {
+        $raw = mb_strtolower(trim((string) ($user->getPosition() ?: '') . ' ' . (string) ($user->getEmploymentStatus() ?: '')));
+        if ($raw === '') {
+            return null;
         }
 
-        return $status;
+        if (str_contains($raw, 'vice president')) {
+            return self::RANK_VICE_PRESIDENT;
+        }
+        if (str_contains($raw, 'president')) {
+            return self::RANK_PRESIDENT;
+        }
+        if (str_contains($raw, 'campus director')) {
+            return self::RANK_CAMPUS_DIRECTOR;
+        }
+        if (str_contains($raw, 'dean')) {
+            return self::RANK_DEAN;
+        }
+        if (str_contains($raw, 'head') || str_contains($raw, 'chair')) {
+            return self::RANK_DEPARTMENT_HEAD;
+        }
+
+        return null;
+    }
+
+    private function requiresDepartmentMatchForRank(string $rank): bool
+    {
+        return $rank === self::RANK_DEAN || $rank === self::RANK_DEPARTMENT_HEAD;
     }
 
     /**

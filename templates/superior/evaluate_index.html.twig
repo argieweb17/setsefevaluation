@@ -45,6 +45,7 @@
 .sp-item-role { display: inline-flex; align-items: center; gap: .2rem; padding: .15rem .5rem; border-radius: 6px; font-size: .7rem; font-weight: 700; letter-spacing: .3px; }
 .sp-item-role-dean { background: #fef3c7; color: #92400e; }
 .sp-item-role-head { background: #dbeafe; color: #1e40af; }
+.sp-item-role-lead { background: #ede9fe; color: #5b21b6; }
 .sp-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
 .sp-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
 
@@ -99,7 +100,7 @@
 <div class="sp-header">
     <div>
         <h1 class="sp-header-title">Evaluate Personnel</h1>
-        <div class="sp-header-sub">SEF Workflow &middot; Department heads evaluate co-faculty in their department</div>
+        <div class="sp-header-sub">SEF Workflow &middot; President → Vice President → Campus Director → Dean → Department Head</div>
     </div>
     {% if totalEvaluatees > 0 %}
     <div class="sp-search-wrap">
@@ -179,7 +180,7 @@
                     <div class="sp-item-body">
                         <div class="sp-item-top">
                             <span class="sp-item-name">{{ item.user.fullName }}</span>
-                            <span class="sp-item-role {{ item.type == 'dean' ? 'sp-item-role-dean' : 'sp-item-role-head' }}">{{ item.label }}</span>
+                            <span class="sp-item-role {{ item.type == 'dean' ? 'sp-item-role-dean' : (item.type == 'department_head' ? 'sp-item-role-head' : 'sp-item-role-lead') }}">{{ item.label }}</span>
                             {% if submissions[key] is defined and submissions[key] %}
                                 <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
                             {% else %}
@@ -211,7 +212,7 @@
             {% endfor %}
             {% if evalEvaluatees|length == 0 %}
             <div class="sp-item" style="justify-content:center;color:#64748b;">
-                No faculty found in your department for this SEF period.
+                No eligible personnel found for your hierarchy level in this SEF period.
             </div>
             {% endif %}
         </div>
@@ -279,7 +280,7 @@
             <div class="sp-item-body">
                 <div class="sp-item-top">
                     <span class="sp-item-name">{{ item.evaluatee.fullName }}</span>
-                    <span class="sp-item-role {{ item.evaluateeLabel == 'Dean' ? 'sp-item-role-dean' : 'sp-item-role-head' }}">{{ item.evaluateeLabel }}</span>
+                    <span class="sp-item-role {{ item.evaluateeLabel == 'Dean' ? 'sp-item-role-dean' : (item.evaluateeLabel == 'Department Head' ? 'sp-item-role-head' : 'sp-item-role-lead') }}">{{ item.evaluateeLabel }}</span>
                     <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
                 </div>
                 <div class="sp-item-meta">

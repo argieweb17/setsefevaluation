@@ -90,10 +90,9 @@
                             { value: 'student',  label: 'Student',  icon: 'bi-mortarboard',  color: '#6c757d' },
                             { value: 'faculty',  label: 'Faculty',  icon: 'bi-journal-text', color: '#0d6efd' },
                             { value: 'staff',    label: 'Staff',    icon: 'bi-briefcase',    color: '#198754' },
-                            { value: 'superior', label: 'Superior', icon: 'bi-award',        color: '#6f42c1' },
                             { value: 'admin',    label: 'Admin',    icon: 'bi-shield-lock',  color: '#dc3545' },
                         ] %}
-                        {% set roleToConst = { student: '', faculty: 'ROLE_FACULTY', staff: 'ROLE_STAFF', superior: 'ROLE_SUPERIOR', admin: 'ROLE_ADMIN' } %}
+                        {% set roleToConst = { student: '', faculty: 'ROLE_FACULTY', staff: 'ROLE_STAFF', admin: 'ROLE_ADMIN' } %}
                         {# Student is checked when no special role is present #}
                         {% set isStudent = isEdit and ('ROLE_FACULTY' not in userRoles) and ('ROLE_STAFF' not in userRoles) and ('ROLE_SUPERIOR' not in userRoles) and ('ROLE_ADMIN' not in userRoles) %}
                         {% for opt in roleOptions %}
@@ -104,7 +103,7 @@
                             </label>
                         {% endfor %}
                     </div>
-                    <div class="form-text mt-1" style="font-size:.72rem;">You can assign multiple roles to this user.</div>
+                    <div class="form-text mt-1" style="font-size:.72rem;">You can assign multiple roles to this user. Superior access is automatic for faculty with Department Head or Chair employment status.</div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label fw-semibold small text-muted"><i class="bi bi-building me-1"></i>Department</label>

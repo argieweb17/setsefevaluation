@@ -192,7 +192,22 @@ class ReportController extends AbstractController
             $evaluatorCounts[$epId] = ($evaluatorCounts[$epId] ?? 0) + $cnt;
         }
 
-        $facultyUsers = $userRepo->createQueryBuilder('u')->andWhere("u.roles LIKE :role")->andWhere("u.roles NOT LIKE :superior")->setParameter('role', '%ROLE_FACULTY%')->setParameter('superior', '%ROLE_SUPERIOR%')->orderBy('u.lastName', 'ASC')->getQuery()->getResult();
+        $facultyUsers = $userRepo->createQueryBuilder('u')
+            ->andWhere("u.roles LIKE :role")
+            ->andWhere("u.roles NOT LIKE :superior")
+            ->setParameter('role', '%ROLE_FACULTY%')
+            ->setParameter('superior', '%ROLE_SUPERIOR%')
+            ->orderBy('u.lastName', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        $sefEvaluatorUsers = $userRepo->createQueryBuilder('u')
+            ->andWhere('u.accountStatus = :status')
+            ->setParameter('status', 'active')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC')
+            ->getQuery()
+            ->getResult();
 
         $facultyPositionMap = [];
         foreach ($facultyUsers as $fu) {
@@ -222,6 +237,7 @@ class ReportController extends AbstractController
             'currentAY' => $ayRepo->findCurrent(),
             'academicYears' => $ayRepo->findAllOrdered(),
             'facultyUsers' => $facultyUsers,
+            'sefEvaluatorUsers' => $sefEvaluatorUsers,
             'evaluatorCounts' => $evaluatorCounts,
             'facultyPositionMap' => $facultyPositionMap,
             'activeScheduleRows' => $activeScheduleRows,
@@ -506,7 +522,10 @@ class ReportController extends AbstractController
     ): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
-            $evaluationType = $request->request->get('evaluationType', 'SET');
+            $evaluationType = strtoupper(trim((string) $request->request->get('evaluationType', 'SET')));
+            if ($evaluationType === 'SEF') {
+                $evaluationType = 'SUPERIOR';
+            }
             $faculty = $request->request->get('faculty');
             $facultyId = (int) $request->request->get('facultyId', 0);
             $subject = $request->request->get('subject');
@@ -540,29 +559,23 @@ class ReportController extends AbstractController
                 }
             }
 
-            if ($evaluationType === 'SUPERIOR' && !$deptId) {
-                $this->addFlash('danger', 'Please select a department for SEF evaluation period.');
-                return $this->redirectToRoute('staff_evaluations');
-            }
-
             if ($evaluationType === 'SUPERIOR' && is_string($faculty) && trim($faculty) !== '') {
                 $selectedFaculty = $userRepo->findOneByFullName(trim($faculty));
                 if (!$selectedFaculty) {
-                    $this->addFlash('danger', 'Please select a valid department head.');
+                    $this->addFlash('danger', 'Please select a valid superior evaluator.');
                     return $this->redirectToRoute('staff_evaluations');
                 }
 
-                $position = mb_strtolower(trim((string) $selectedFaculty->getEmploymentStatus()));
-                $isDepartmentHead = str_contains($position, 'head') || str_contains($position, 'chair');
-                if (!$isDepartmentHead) {
-                    $this->addFlash('danger', 'Only department heads can be selected in SEF evaluation.');
+                $rank = $this->resolveSuperiorHierarchyRank($selectedFaculty);
+                if ($rank === null) {
+                    $this->addFlash('danger', 'SEF evaluator must be President, Vice President, Campus Director, Dean, or Department Head/Chair.');
                     return $this->redirectToRoute('staff_evaluations');
                 }
 
-                if ($deptId) {
+                if ($deptId && ($rank === 'dean' || $rank === 'department_head')) {
                     $facultyDept = $selectedFaculty->getDepartment();
                     if (!$facultyDept || (int) $facultyDept->getId() !== (int) $deptId) {
-                        $this->addFlash('danger', 'Selected department head must belong to the selected department.');
+                        $this->addFlash('danger', 'Selected evaluator must belong to the selected department.');
                         return $this->redirectToRoute('staff_evaluations');
                     }
                 }
@@ -609,6 +622,32 @@ class ReportController extends AbstractController
         return $this->redirectToRoute('staff_evaluations');
     }
 
+    private function resolveSuperiorHierarchyRank(User $user): ?string
+    {
+        $raw = mb_strtolower(trim((string) ($user->getPosition() ?: '') . ' ' . (string) ($user->getEmploymentStatus() ?: '')));
+        if ($raw === '') {
+            return null;
+        }
+
+        if (str_contains($raw, 'vice president')) {
+            return 'vice_president';
+        }
+        if (str_contains($raw, 'president')) {
+            return 'president';
+        }
+        if (str_contains($raw, 'campus director')) {
+            return 'campus_director';
+        }
+        if (str_contains($raw, 'dean')) {
+            return 'dean';
+        }
+        if (str_contains($raw, 'head') || str_contains($raw, 'chair')) {
+            return 'department_head';
+        }
+
+        return null;
+    }
+
     #[Route('/evaluations/{id}/toggle', name: 'staff_evaluation_toggle', methods: ['POST'])]
     #[IsGranted('ROLE_STAFF')]
     public function toggleEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
@@ -631,7 +670,10 @@ class ReportController extends AbstractController
     public function editEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('edit_eval' . $eval->getId(), $request->request->get('_token'))) {
-            $evaluationType = $request->request->get('evaluationType', 'SET');
+            $evaluationType = strtoupper(trim((string) $request->request->get('evaluationType', 'SET')));
+            if ($evaluationType === 'SEF') {
+                $evaluationType = 'SUPERIOR';
+            }
             $schoolYear = $request->request->get('schoolYear');
             $sem = $request->request->get('semester');
             $faculty = $request->request->get('faculty');

@@ -109,8 +109,8 @@ class AdminController extends AbstractController
             $selectedRoles = $request->request->all('roles');
             $roleMap = [
                 'admin' => 'ROLE_ADMIN',
-                'superior' => 'ROLE_SUPERIOR',
                 'faculty' => 'ROLE_FACULTY',
+                'superior' => 'ROLE_SUPERIOR',
                 'staff' => 'ROLE_STAFF',
             ];
             $roles = [];
@@ -167,8 +167,8 @@ class AdminController extends AbstractController
             $selectedRoles = $request->request->all('roles');
             $roleMap = [
                 'admin' => 'ROLE_ADMIN',
-                'superior' => 'ROLE_SUPERIOR',
                 'faculty' => 'ROLE_FACULTY',
+                'superior' => 'ROLE_SUPERIOR',
                 'staff' => 'ROLE_STAFF',
             ];
             $roles = [];
@@ -303,8 +303,8 @@ class AdminController extends AbstractController
 
             $roleMap = [
                 'admin' => ['ROLE_ADMIN'],
-                'superior' => ['ROLE_SUPERIOR'],
                 'faculty' => ['ROLE_FACULTY'],
+                'superior' => ['ROLE_SUPERIOR'],
                 'staff' => ['ROLE_STAFF'],
                 'student' => [],
             ];
@@ -349,7 +349,9 @@ class AdminController extends AbstractController
     public function facultyList(UserRepository $repo, DepartmentRepository $deptRepo): Response
     {
         $all = $repo->findBy([], ['createdAt' => 'DESC']);
-        $faculty = array_filter($all, fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles()));
+        $faculty = array_filter($all, fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles(), true)
+            && !$u->hasAssignedRole('ROLE_SUPERIOR')
+            && !$u->isDepartmentHeadFaculty());
 
         return $this->render('admin/faculty/faculty_list.html.twig', [
             'users' => array_values($faculty),
@@ -373,7 +375,7 @@ class AdminController extends AbstractController
     public function superiorList(UserRepository $repo, DepartmentRepository $deptRepo): Response
     {
         $all = $repo->findBy([], ['createdAt' => 'DESC']);
-        $superiors = array_filter($all, fn(User $u) => in_array('ROLE_SUPERIOR', $u->getRoles()));
+        $superiors = array_filter($all, fn(User $u) => $u->hasAssignedRole('ROLE_SUPERIOR') || $u->isDepartmentHeadFaculty());
 
         return $this->render('admin/superiors.html.twig', [
             'users' => array_values($superiors),
@@ -400,9 +402,11 @@ class AdminController extends AbstractController
     {
         $allUsers = $userRepo->findBy([], ['createdAt' => 'DESC']);
         $students = array_filter($allUsers, fn(User $u) => !in_array('ROLE_ADMIN', $u->getRoles()) && !in_array('ROLE_SUPERIOR', $u->getRoles()) && !in_array('ROLE_FACULTY', $u->getRoles()) && !in_array('ROLE_STAFF', $u->getRoles()));
-        $faculty = array_filter($allUsers, fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles()));
+        $faculty = array_filter($allUsers, fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles(), true)
+            && !$u->hasAssignedRole('ROLE_SUPERIOR')
+            && !$u->isDepartmentHeadFaculty());
         $staff = array_filter($allUsers, fn(User $u) => in_array('ROLE_STAFF', $u->getRoles()));
-        $superiors = array_filter($allUsers, fn(User $u) => in_array('ROLE_SUPERIOR', $u->getRoles()));
+        $superiors = array_filter($allUsers, fn(User $u) => $u->hasAssignedRole('ROLE_SUPERIOR') || $u->isDepartmentHeadFaculty());
         $admins = array_filter($allUsers, fn(User $u) => in_array('ROLE_ADMIN', $u->getRoles()));
 
         return $this->render('admin/migration.html.twig', [
@@ -445,8 +449,8 @@ class AdminController extends AbstractController
 
         $roleMap = [
             'admin' => ['ROLE_ADMIN'],
-            'superior' => ['ROLE_SUPERIOR'],
             'faculty' => ['ROLE_FACULTY'],
+            'superior' => ['ROLE_SUPERIOR'],
             'staff' => ['ROLE_STAFF'],
             'student' => [],
         ];
@@ -527,9 +531,11 @@ class AdminController extends AbstractController
 
         $roleFilterMap = [
             'student' => fn(User $u) => !in_array('ROLE_ADMIN', $u->getRoles()) && !in_array('ROLE_SUPERIOR', $u->getRoles()) && !in_array('ROLE_FACULTY', $u->getRoles()) && !in_array('ROLE_STAFF', $u->getRoles()),
-            'faculty' => fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles()),
+            'faculty' => fn(User $u) => in_array('ROLE_FACULTY', $u->getRoles(), true)
+                && !$u->hasAssignedRole('ROLE_SUPERIOR')
+                && !$u->isDepartmentHeadFaculty(),
             'staff' => fn(User $u) => in_array('ROLE_STAFF', $u->getRoles()),
-            'superior' => fn(User $u) => in_array('ROLE_SUPERIOR', $u->getRoles()),
+            'superior' => fn(User $u) => $u->hasAssignedRole('ROLE_SUPERIOR') || $u->isDepartmentHeadFaculty(),
             'admin' => fn(User $u) => in_array('ROLE_ADMIN', $u->getRoles()),
         ];
 

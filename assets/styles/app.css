@@ -1148,10 +1148,12 @@ body {
 .reveal-delay-4 { transition-delay: 0.46s; }
 
 .welcome-hero-bg::before {
-    animation: float 6s ease-in-out infinite;
+    animation: none;
+    transform: none;
 }
 .welcome-hero-bg::after {
-    animation: float 8s ease-in-out infinite reverse;
+    animation: none;
+    transform: none;
 }
 
 /* ── Auth page animations (Login & Register) ──
@@ -2561,11 +2563,13 @@ html { scroll-behavior: smooth; }
     inset: 0;
     z-index: 0;
     background: linear-gradient(135deg, rgba(30, 58, 138, 0.88), rgba(30, 64, 175, 0.82) 40%, rgba(5, 150, 105, 0.78) 100%),
-                url('/images/norsu.jpg') center/cover no-repeat;
+                url('/images/norsu.jpg') center 8%/cover no-repeat;
+    background-attachment: scroll, fixed;
 }
 .ertqa-section-bg-alt {
     background: linear-gradient(135deg, rgba(30, 64, 175, 0.88), rgba(30, 58, 138, 0.85) 50%, rgba(5, 150, 105, 0.78) 100%),
-                url('/images/norsu.jpg') center/cover no-repeat;
+                url('/images/norsu.jpg') center 8%/cover no-repeat;
+    background-attachment: scroll, fixed;
 }
 
 /* Decorative orbs */
@@ -2901,6 +2905,7 @@ html { scroll-behavior: smooth; }
     inset: 0;
     background: linear-gradient(135deg, rgba(30, 58, 138, 0.82), rgba(30, 64, 175, 0.75) 40%, rgba(5, 150, 105, 0.7) 100%),
                 url('/images/norsu.jpg') center 8%/cover no-repeat;
+    background-attachment: scroll, fixed;
     z-index: 0;
 }
 .welcome-hero-bg::before {

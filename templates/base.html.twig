@@ -25,8 +25,8 @@
                 </button>
                 <span class="navbar-text text-white fw-semibold" style="font-size:0.9rem;">SET-SEF Evaluation</span>
                 <div class="d-flex align-items-center ms-auto gap-2">
-                    {% set showNotifBell = (not is_granted('ROLE_ADMIN')) and (is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF')) %}
-                    {% if showNotifBell and is_granted('ROLE_FACULTY') %}
+                    {% set showNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff) %}
+                    {% if showNotifBell and app.user.isFaculty %}
                     <a href="{{ path('faculty_eval_request') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
                         <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
@@ -34,7 +34,7 @@
                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill notif-count-badge" style="font-size:0.65rem;padding:3px 6px;">{{ notifCount }}</span>
                         {% endif %}
                     </a>
-                    {% elseif showNotifBell and is_granted('ROLE_STAFF') %}
+                    {% elseif showNotifBell and app.user.isStaff %}
                     <a href="{{ path('staff_faculty_messages') }}" class="btn btn-link text-white p-0 position-relative mobile-notif-link" title="Notifications">
                         <i class="bi bi-bell-fill fs-5 mobile-notif-icon"></i>
                         {% set notifCount = unread_message_notifications() %}
@@ -90,8 +90,7 @@
             </a>
 
             {% set sc = sidebar_counts() %}
-            {% set _emp_status = (app.user.employmentStatus ?? '')|lower %}
-            {% set _is_dept_head = _emp_status is not empty and ('head' in _emp_status or 'chair' in _emp_status) %}
+            {% set _is_assigned_superior = app.user.hasAssignedRole('ROLE_SUPERIOR') %}
             <div class="sidebar-header">Main Menu</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}"
@@ -100,7 +99,7 @@
                 </a>
 
                 {# ── Student: SET Evaluation ── #}
-                {% if not is_granted('ROLE_FACULTY') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+                {% if not app.user.isFaculty and not app.user.isStaff and not app.user.isAdmin %}
                     <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('evaluation_history') }}">
                         <i class="bi bi-clock-history sidebar-icon"></i> Evaluation History
@@ -108,16 +107,8 @@
 
                 {% endif %}
 
-                {# ── Superior: Evaluation ── #}
-                {% if is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') and not is_granted('ROLE_FACULTY') %}
-                    <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                       href="{{ path('superior_evaluate_index') }}">
-                        <i class="bi bi-pencil-square sidebar-icon"></i> Evaluate Personnel
-                    </a>
-                {% endif %}
-
                 {# ── Faculty: Management ── #}
-                {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_ADMIN') %}
+                {% if app.user.isFaculty and not app.user.isAdmin and not _is_assigned_superior %}
                     <div class="sidebar-header">Subject Management</div>
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
@@ -138,7 +129,7 @@
             </nav>
 
             {# ── Faculty: Evaluation ── #}
-            {% if is_granted('ROLE_FACULTY') and not is_granted('ROLE_ADMIN') %}
+            {% if app.user.isFaculty and not app.user.isAdmin and not _is_assigned_superior %}
             <div class="sidebar-header">Evaluation</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
@@ -150,7 +141,7 @@
                    href="{{ path('faculty_eval_results') }}">
                     <i class="bi bi-clipboard-data sidebar-icon"></i> Result
                 </a>
-                {% if _is_dept_head and is_granted('ROLE_SUPERIOR') %}
+                {% if app.user.isDepartmentHeadFaculty and not app.user.isStaff and not app.user.isAdmin %}
                 <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('superior_evaluate_index') }}">
                     <i class="bi bi-diagram-3-fill sidebar-icon"></i> Superior Access
@@ -167,8 +158,36 @@
             </nav>
             {% endif %}
 
+            {# ── Superior: Dedicated Sidebar ── #}
+            {% if _is_assigned_superior and not app.user.isAdmin %}
+            <div class="sidebar-header">Navigation</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'faculty_eval_request' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_eval_request') }}">
+                    <i class="bi bi-send sidebar-icon"></i> Request
+                    {% if unread_message_notifications() > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ unread_message_notifications() }}</span>{% endif %}
+                </a>
+            </nav>
+
+            <div class="sidebar-header">Evaluation</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('superior_evaluate_index') }}">
+                    <i class="bi bi-diagram-3-fill sidebar-icon"></i> Evaluate Personnel
+                </a>
+            </nav>
+
+            <div class="sidebar-header">SYSTEM LOGS</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('faculty_audit_log') }}">
+                    <i class="bi bi-journal-text sidebar-icon"></i> Audit Log
+                </a>
+            </nav>
+            {% endif %}
+
             {# ── Staff: Management ── #}
-            {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_SUPERIOR') and not is_granted('ROLE_ADMIN') %}
+            {% if app.user.isStaff and not app.user.isFaculty and not app.user.isAdmin %}
             <div class="sidebar-header">Evaluation</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'staff_evaluation' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
@@ -308,10 +327,11 @@
                     <div class="sidebar-user-info">
                         <span class="sidebar-user-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
                         <span class="sidebar-user-role">
-                            {% if is_granted('ROLE_ADMIN') %}Administrator
-                            {% elseif is_granted('ROLE_SUPERIOR') %}Superior
-                            {% elseif is_granted('ROLE_STAFF') %}Staff
-                            {% elseif is_granted('ROLE_FACULTY') %}Faculty
+                            {% if app.user.isAdmin %}Administrator
+                            {% elseif app.user.hasAssignedRole('ROLE_SUPERIOR') %}Superior
+                            {% elseif app.user.isFaculty %}Faculty
+                            {% elseif app.user.isStaff %}Staff
+                            {% elseif app.user.isSuperior %}Superior
                             {% else %}Student{% endif %}
                         </span>
                     </div>
@@ -356,7 +376,7 @@
             {% endif %}
             <div class="topbar-right">
                 {# ── Message Notifications Bell ── #}
-                {% set showTopbarNotifBell = (not is_granted('ROLE_ADMIN')) and (is_granted('ROLE_FACULTY') or is_granted('ROLE_STAFF')) %}
+                {% set showTopbarNotifBell = (not app.user.isAdmin) and (app.user.isFaculty or app.user.isStaff) %}
                 {% if showTopbarNotifBell %}
                 {% set messageNotifCount = unread_message_notifications() %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
@@ -369,7 +389,7 @@
                     <div class="topbar-notif-dropdown" id="topbarMessageNotifDropdown" style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 36px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
                         <div class="topbar-notif-header" style="padding:12px 16px;font-weight:600;font-size:.85rem;color:#1E293B;border-bottom:1px solid #F1F5F9;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;">
                             <span><i class="bi bi-bell-fill me-1"></i> Notifications</span>
-                            <a href="{% if is_granted('ROLE_FACULTY') %}{{ path('faculty_eval_request') }}{% else %}{{ path('staff_faculty_messages') }}{% endif %}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
+                            <a href="{% if app.user.isFaculty %}{{ path('faculty_eval_request') }}{% else %}{{ path('staff_faculty_messages') }}{% endif %}" style="color:#2563EB;font-size:.75rem;cursor:pointer;font-weight:500;text-decoration:none;">View all</a>
                         </div>
                         {% if messageNotifCount > 0 %}
                             <div class="topbar-notif-list" style="max-height:300px;overflow-y:auto;padding:12px 16px;">
@@ -393,10 +413,11 @@
                     <div class="topbar-profile-info">
                         <span class="topbar-profile-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
                         <span class="topbar-profile-role">
-                            {% if is_granted('ROLE_ADMIN') %}Administrator
-                            {% elseif is_granted('ROLE_SUPERIOR') %}Superior
-                            {% elseif is_granted('ROLE_STAFF') %}Staff
-                            {% elseif is_granted('ROLE_FACULTY') %}Faculty
+                            {% if app.user.isAdmin %}Administrator
+                            {% elseif app.user.hasAssignedRole('ROLE_SUPERIOR') %}Superior
+                            {% elseif app.user.isFaculty %}Faculty
+                            {% elseif app.user.isStaff %}Staff
+                            {% elseif app.user.isSuperior %}Superior
                             {% else %}Student{% endif %}
                         </span>
                     </div>

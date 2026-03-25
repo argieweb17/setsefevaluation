@@ -1720,16 +1720,28 @@ a.rg-contact-item:hover {
                             </div>
                             <div class="row g-3">
                                 <div class="col-sm-6">
+                                    <label class="rg-label">Campus</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <select class="form-select rg-select" name="{{ registrationForm.campus.vars.full_name }}" required>
+                                            <option value="">Select campus</option>
+                                            {% for choice in registrationForm.campus.vars.choices %}
+                                                <option value="{{ choice.value }}" {{ registrationForm.campus.vars.value == choice.value ? 'selected' : '' }}>{{ choice.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
                                     <label class="rg-label">Position / Designation</label>
                                     <div class="rg-input-wrap">
                                         <i class="bi bi-briefcase"></i>
                                         <select class="form-select rg-select" name="_position" required>
                                             <option value="">Select position</option>
                                             <option value="President">President</option>
-                                            <option value="Vice President of Academic Affairs">Vice President of Academic Affairs</option>
+                                            <option value="Vice President">Vice President</option>
                                             <option value="Campus Director">Campus Director</option>
                                             <option value="Dean">Dean</option>
-                                            <option value="Program Chair">Program Chair</option>
+                                            <option value="Department Head">Department Head</option>
                                         </select>
                                     </div>
                                 </div>
@@ -2096,12 +2108,19 @@ a.rg-contact-item:hover {
             var forRoles = el.getAttribute('data-for').split(' ');
             var visible = forRoles.indexOf(role) !== -1;
             el.style.display = visible ? '' : 'none';
-            el.querySelectorAll('input[required], select[required]').forEach(function(inp) {
+            el.querySelectorAll('input, select, textarea').forEach(function(inp) {
                 if (!visible) {
-                    inp.removeAttribute('required');
-                    inp.setAttribute('data-was-required', '1');
+                    if (inp.hasAttribute('required')) {
+                        inp.removeAttribute('required');
+                        inp.setAttribute('data-was-required', '1');
+                    }
+                    inp.disabled = true;
                 } else {
-                    inp.setAttribute('required', 'required');
+                    inp.disabled = false;
+                    if (inp.getAttribute('data-was-required') === '1') {
+                        inp.setAttribute('required', 'required');
+                        inp.removeAttribute('data-was-required');
+                    }
                 }
             });
         });
@@ -2176,11 +2195,34 @@ a.rg-contact-item:hover {
                 var isVisible = roles.indexOf(selectedRole) !== -1;
                 section.querySelectorAll('input, select, textarea').forEach(function(field) {
                     if (!isVisible) {
-                        field.removeAttribute('required');
+                        if (field.hasAttribute('required')) {
+                            field.removeAttribute('required');
+                            field.setAttribute('data-was-required', '1');
+                        }
                         field.disabled = true;
+                    } else {
+                        field.disabled = false;
+                        if (field.getAttribute('data-was-required') === '1') {
+                            field.setAttribute('required', 'required');
+                            field.removeAttribute('data-was-required');
+                        }
                     }
                 });
             });
+
+            /* Keep department selectors coherent with selected role */
+            if (selectedRole === 'student' && studentDeptSel) {
+                studentDeptSel.disabled = false;
+            }
+            if (selectedRole === 'faculty' && facultyDeptSel) {
+                facultyDeptSel.disabled = false;
+            }
+            if (selectedRole !== 'student' && studentDeptSel) {
+                studentDeptSel.disabled = true;
+            }
+            if (selectedRole !== 'faculty' && facultyDeptSel) {
+                facultyDeptSel.disabled = true;
+            }
 
             /* Always validate the form first — if invalid, let the browser show errors */
             if (!regForm.checkValidity()) {

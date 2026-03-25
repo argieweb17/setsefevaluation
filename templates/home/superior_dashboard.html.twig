@@ -24,6 +24,8 @@
     </div>
 </div>
 
+{# Hidden dashboard body per request; keep header/banner visible #}
+{% if false %}
 {# ═══════ STAT CARDS ROW ═══════ #}
 <div class="analytics-grid mb-4">
     <div class="analytics-stat-card">
@@ -227,5 +229,6 @@
     <i class="bi bi-exclamation-triangle me-2"></i>
     No Deans or Department Heads found. Users need to have their employment status set to "Dean", "Department Head", or "Chair" to appear here.
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

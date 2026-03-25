@@ -83,10 +83,21 @@ class RegistrationController extends AbstractController
                 $roleMap = [
                     'faculty' => ['ROLE_FACULTY'],
                     'staff'   => ['ROLE_STAFF'],
-                    'superior' => ['ROLE_SUPERIOR'],
+                    'superior' => ['ROLE_FACULTY', 'ROLE_SUPERIOR'],
                     'student' => [],
                 ];
                 $user->setRoles($roleMap[$role] ?? []);
+
+                if ($role === 'superior') {
+                    $position = trim((string) $request->request->get('_position', ''));
+                    $user->setPosition($position !== '' ? $position : null);
+                    $user->setAcademicRank($request->request->get('_academic_rank') ?: null);
+
+                    // Keep superior rank discoverable even when employmentStatus is not explicitly shown in the form.
+                    if ($position !== '' && !$user->getEmploymentStatus()) {
+                        $user->setEmploymentStatus($this->normalizeSuperiorEmploymentStatus($position));
+                    }
+                }
 
                 // Students are active immediately; faculty/staff/superior need admin approval
                 if ($role === 'student') {
@@ -123,5 +134,27 @@ class RegistrationController extends AbstractController
             'deptCollegeMap' => $deptCollegeMap,
             'securityError' => $securityError,
         ]);
+    }
+
+    private function normalizeSuperiorEmploymentStatus(string $position): string
+    {
+        $normalized = mb_strtolower(trim($position));
+        if (str_contains($normalized, 'vice president')) {
+            return 'Vice President';
+        }
+        if (str_contains($normalized, 'president')) {
+            return 'President';
+        }
+        if (str_contains($normalized, 'campus director')) {
+            return 'Campus Director';
+        }
+        if (str_contains($normalized, 'dean')) {
+            return 'Dean';
+        }
+        if (str_contains($normalized, 'head') || str_contains($normalized, 'chair')) {
+            return 'Department Head';
+        }
+
+        return $position;
     }
 }

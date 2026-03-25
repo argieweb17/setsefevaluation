@@ -12,6 +12,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(columns: ['evaluation_period_id'], name: 'idx_sup_period')]
 class SuperiorEvaluation
 {
+    public const TYPE_VICE_PRESIDENT = 'vice_president';
+    public const TYPE_CAMPUS_DIRECTOR = 'campus_director';
     public const TYPE_DEAN = 'dean';
     public const TYPE_DEPARTMENT_HEAD = 'department_head';
 
