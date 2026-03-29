@@ -235,6 +235,16 @@
             margin-bottom: 3px;
         }
 
+        .sig-image {
+            display: block;
+            max-width: 220px;
+            max-height: 52px;
+            width: auto;
+            height: auto;
+            margin: 0 auto 4px;
+            object-fit: contain;
+        }
+
         .sig-title {
             font-size: 9px;
         }
@@ -270,7 +280,7 @@
             <table class="doc-info-table">
                 <tr>
                     <td class="di-lbl">Document ID</td>
-                    <td class="di-val"></td>
+                    <td class="di-val">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
                     <td class="di-lbl">Issue Status</td>
                     <td class="di-val"></td>
                     <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong></td>
@@ -373,13 +383,19 @@
     <div class="signature-wrap">
         <div class="sig-block">
             <div class="sig-label">Prepared by:</div>
-            <div class="sig-name">Argie Pair Pagbunocan</div>
-            <div class="sig-title">QUAMC Staff</div>
+            {% if preparedSignature is defined and preparedSignature is not empty %}
+                <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
+            <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
         </div>
         <div class="sig-block">
             <div class="sig-label">Noted by:</div>
-            <div class="sig-name">CESAR P. ESTROPE, Ed.D</div>
-            <div class="sig-title">Director, Quality Assurance Management Center</div>
+            {% if certifiedSignature is defined and certifiedSignature is not empty %}
+                <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
+            <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
         </div>
     </div>
 

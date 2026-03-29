@@ -916,6 +916,7 @@ class HomeController extends AbstractController
     #[Route('/faculty/loaded-subjects', name: 'faculty_loaded_subjects', methods: ['GET'])]
     #[IsGranted('ROLE_FACULTY')]
     public function facultyLoadedSubjects(
+        Request $request,
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
@@ -926,7 +927,16 @@ class HomeController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $currentAY = $ayRepo->findCurrent();
-        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $currentAY?->getId());
+        $academicYears = $ayRepo->findAllOrdered();
+        $selectedAyId = (int) $request->query->get('ay', $currentAY?->getId() ?? 0);
+        $selectedAY = $selectedAyId > 0 ? $ayRepo->find($selectedAyId) : null;
+        if (!$selectedAY) {
+            $selectedAY = $currentAY;
+            $selectedAyId = $selectedAY?->getId() ?? 0;
+        }
+        $isHistoricalView = ($selectedAY && $currentAY) ? ($selectedAY->getId() !== $currentAY->getId()) : false;
+
+        $savedLoads = $fslRepo->findByFacultyAndAcademicYear($user->getId(), $selectedAY?->getId());
 
         // Build a flat list of loaded items from FSL entries (each section is a separate row)
         $loadedItems = [];
@@ -949,18 +959,20 @@ class HomeController extends AbstractController
             }
         }
 
-        // Also include direct Subject.faculty subjects without FSL entries
-        $directLoaded = $subjectRepo->findByFaculty($user->getId());
-        foreach ($directLoaded as $subject) {
-            if (!in_array($subject->getId(), $loadedSubjectIds)) {
-                $loadedItems[] = [
-                    'fslId' => null,
-                    'subject' => $subject,
-                    'section' => $subject->getSection(),
-                    'schedule' => $subject->getSchedule(),
-                ];
-                $totalUnits += $subject->getUnits() ?? 0;
-                $loadedSubjectIds[] = $subject->getId();
+        // Include direct Subject.faculty items only on current AY view.
+        if (!$isHistoricalView) {
+            $directLoaded = $subjectRepo->findByFaculty($user->getId());
+            foreach ($directLoaded as $subject) {
+                if (!in_array($subject->getId(), $loadedSubjectIds)) {
+                    $loadedItems[] = [
+                        'fslId' => null,
+                        'subject' => $subject,
+                        'section' => $subject->getSection(),
+                        'schedule' => $subject->getSchedule(),
+                    ];
+                    $totalUnits += $subject->getUnits() ?? 0;
+                    $loadedSubjectIds[] = $subject->getId();
+                }
             }
         }
 
@@ -989,8 +1001,8 @@ class HomeController extends AbstractController
 
         // Determine if the current semester has ended
         $semesterEnded = false;
-        if ($currentAY && $currentAY->getEndDate()) {
-            $semesterEnded = new \DateTime() > $currentAY->getEndDate();
+        if ($selectedAY && $selectedAY->getEndDate()) {
+            $semesterEnded = new \DateTime() > $selectedAY->getEndDate();
         }
 
         // Find active SET evaluations matching the faculty's subjects
@@ -1062,7 +1074,7 @@ class HomeController extends AbstractController
 
         // Build active evaluations map for real-time polling (same as Class Schedule)
         $now = new \DateTime();
-        $activeEvals = $evalRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
+        $activeEvals = $isHistoricalView ? [] : $evalRepo->findBy(['evaluationType' => 'SET', 'status' => true]);
         $activeEvalMap = [];
         foreach ($activeEvals as $eval) {
             $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
@@ -1133,6 +1145,10 @@ class HomeController extends AbstractController
             'previousLoads' => array_values($previousLoads),
             'pastLoadsByAY' => array_values($pastLoadsByAY),
             'currentAY' => $currentAY,
+            'selectedAY' => $selectedAY,
+            'selectedAyId' => $selectedAyId,
+            'academicYears' => $academicYears,
+            'isHistoricalView' => $isHistoricalView,
             'semesterEnded' => $semesterEnded,
             'activeEvalMap' => $activeEvalMap,
             'previousEvaluations' => $previousEvaluations,

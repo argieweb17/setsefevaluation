@@ -160,9 +160,11 @@
 .rs-filter-select:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,.1); }
 .rs-search-box {
     position: relative;
-    flex: 0 1 420px;
-    width: 100%;
-    min-width: 200px;
+    flex: 0 0 320px;
+    width: 320px;
+    max-width: 100%;
+    min-width: 220px;
+    margin-left: auto;
 }
 .rs-search-icon {
     position: absolute;
@@ -431,6 +433,12 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .rs-stats { grid-template-columns: repeat(2, 1fr); }
+    .rs-search-box {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        margin-left: 0;
+    }
 }
 </style>
 {% endblock %}

@@ -342,7 +342,7 @@
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     <a
-                                        href="{{ path(staffMode|default(false) ? 'staff_results_superior_print' : 'admin_results_superior_print', {evaluation: row.evaluationId, faculty: row.facultyId}) }}"
+                                        href="{{ path(staffMode|default(false) ? 'staff_results_superior_print_setup' : 'admin_results_superior_print_setup', {evaluation: row.evaluationId, faculty: row.facultyId}) }}"
                                         target="_blank"
                                         class="fe-action-btn fe-action-btn-icon"
                                         title="Print Result"

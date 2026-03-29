@@ -11,7 +11,7 @@
            ══════════════════════════════════════════════ */
 
         @page {
-            size: A4 portrait;
+            size: 8.5in 13in;
             margin: 12mm 16mm 12mm 16mm;
         }
 
@@ -20,7 +20,7 @@
         body {
             font-family: Arial, Helvetica, sans-serif;
             margin: 0;
-            padding: 20px 36px;
+            padding: 0;
             color: #000;
             font-size: 11px;
             line-height: 1.35;
@@ -158,17 +158,21 @@
 
         /* ── Signatures ── */
         .signature-section {
-            margin-top: 60px;
+            margin-top: 36px;
             font-size: 10px;
             display: flex;
             justify-content: flex-start;
-            gap: 100px;
+            gap: 80px;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
         }
         .sig-block {
             text-align: left;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
         }
         .sig-label {
-            margin-bottom: 30px;
+            margin-bottom: 16px;
         }
         .sig-name {
             font-weight: 700;
@@ -180,10 +184,15 @@
 
         /* ── Disclaimer ── */
         .disclaimer {
-            margin-top: 30px;
+            margin-top: auto;
+            margin-bottom: 6mm;
             padding: 12px 0;
             font-size: 10px;
-            line-height: 1.20;
+            line-height: 1.15;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
+            orphans: 3;
+            widows: 3;
         }
         .disclaimer strong { font-style: normal; }
 
@@ -191,8 +200,10 @@
         .doc-footer-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 60px;
+            margin-top: 0;
             font-size: 9px;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
         }
         .doc-footer-table td {
             border: 1px solid #000;
@@ -222,6 +233,30 @@
             page-break-inside: avoid;
         }
 
+        .page-sheet {
+            position: relative;
+            min-height: calc(13in - 24mm);
+            overflow: hidden;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
+        }
+
+        .page-main {
+            display: flex;
+            flex-direction: column;
+            min-height: calc(13in - 24mm);
+            padding-bottom: 30mm;
+        }
+
+        .page-footer {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
+        }
+
         /* ── Print-specific ── */
         @media print {
             body { padding: 0; }
@@ -230,6 +265,9 @@
     </style>
 </head>
 <body>
+
+    <div class="page-sheet">
+    <div class="page-main">
 
     {# ═══════════════════════════════════════════
        LETTERHEAD
@@ -288,37 +326,53 @@
                 <th rowspan="2">Weighted<br>Rating</th>
             </tr>
             <tr>
-                <th>Weighted<br>Mean</th>
-                <th>Weight<br>(%)</th>
-                <th>Weighted<br>Rating</th>
+                <th>Average<br>Score</th>
+                <th>Max<br>Score</th>
+                <th>Rating<br>%</th>
             </tr>
         </thead>
         <tbody>
+            {% set totalAvgScore = 0 %}
+            {% set totalMaxScore = 0 %}
             {% for cat in categorySummary %}
+            {% set itemCount = cat.questionCount|default(0) %}
+            {% set itemAvg = cat.averageScore|default((cat.mean|default(0)) * itemCount) %}
+            {% set itemMax = cat.maxScore|default(itemCount * 5) %}
+            {% set itemPct = cat.ratingPct|default(itemMax > 0 ? (itemAvg / itemMax) * 100 : 0) %}
+            {% set romanLabel = cat.roman|default(loop.index) %}
+            {% set romanPrefix = romanLabel ~ '.' %}
+            {% set cleanName = cat.name|trim %}
+            {% if cleanName starts with romanPrefix %}
+                {% set cleanName = cleanName|slice(romanPrefix|length)|trim %}
+            {% endif %}
+            {% set totalAvgScore = totalAvgScore + itemAvg %}
+            {% set totalMaxScore = totalMaxScore + itemMax %}
             <tr>
-                <td class="area-cell">{{ cat.name }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightPct }}%</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
-                <td>{{ cat.mean|number_format(2) }}</td>
-                <td>{{ cat.weightedRating|number_format(2) }}</td>
+                <td class="area-cell">{{ romanLabel }}. {{ cleanName }}</td>
+                <td>{{ itemAvg|round(0, 'common') }}</td>
+                <td>{{ itemMax }}</td>
+                <td>{{ itemPct|round(0, 'common') }}</td>
+                <td>{{ itemAvg|round(0, 'common') }}</td>
+                <td>{{ itemPct|round(0, 'common') }}</td>
             </tr>
             {% endfor %}
+            {% set totalPct = totalMaxScore > 0 ? (totalAvgScore / totalMaxScore) * 100 : 0 %}
+            {% set pctLevel = totalPct >= 91 ? 'ALWAYS MANIFESTED' : (totalPct >= 61 ? 'OFTEN MANIFESTED' : (totalPct >= 31 ? 'SOMETIMES MANIFESTED' : (totalPct >= 11 ? 'SELDOM MANIFESTED' : 'NEVER/RARELY MANIFESTED'))) %}
             <tr class="total-row">
-                <td class="area-cell">Total</td>
-                <td></td>
-                <td>100%</td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
-                <td></td>
-                <td>{{ compositeTotal|number_format(2) }}</td>
+                <td class="area-cell" style="text-align:right;">Total Score</td>
+                <td>{{ totalAvgScore|round(0, 'common') }}</td>
+                <td>{{ totalMaxScore }}</td>
+                <td>{{ totalPct|round(0, 'common') }}</td>
+                <td>{{ totalAvgScore|round(0, 'common') }}</td>
+                <td>{{ totalPct|round(0, 'common') }}</td>
             </tr>
             <tr class="verbal-row">
                 <td class="area-cell" style="font-weight:400;">Verbal Description</td>
-                <td colspan="3">{{ performanceLevel|upper }}</td>
+                <td colspan="3">{{ pctLevel }}</td>
                 <td colspan="2">{{ performanceLevel|upper }}</td>
             </tr>
             <tr class="subject-row">
-                <td class="area-cell">{{ evaluation.subject ?? evaluation.evaluationType }}</td>
+                <td class="area-cell">{{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</td>
                 <td>{{ evaluatorCount }}</td>
             
             </tr>
@@ -330,11 +384,11 @@
        ═══════════════════════════════════════════ #}
     <div class="rating-scale">
         <strong>RATING SCALE:</strong>
-        5 – <em>Always manifested</em>;
-        4 – <em>Often manifested</em>;
-        3 – <em>Sometimes manifested</em>;
-        2 – <em>Seldom manifested</em>; and
-        1 – <em>Never/Rarely manifested</em>
+        91 - 100% - <em>Always manifested</em>;
+        61 - 90% - <em>Often manifested</em>;
+        31 - 60% - <em>Sometimes manifested</em>;
+        11 - 30% - <em>Seldom manifested</em>; and
+        0 - 10% - <em>Never/Rarely manifested</em>
     </div>
 
     {# ═══════════════════════════════════════════
@@ -374,19 +428,19 @@
     {# ═══════════════════════════════════════════
        DOCUMENT FOOTER — PAGE 1
        ═══════════════════════════════════════════ #}
+    </div>
+    <div class="page-footer">
     <table class="doc-footer-table">
         <tr>
             <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val"></td>
-            <td class="ft-lbl"></td>
-            <td class="ft-val"></td>
+            <td class="ft-val" colspan="3">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
             <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>2</strong></td>
         </tr>
         <tr>
             <td class="ft-lbl">Issue Date</td>
             <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
             <td class="ft-lbl">Issue Status</td>
-            <td class="ft-val"></td>
+            <td class="ft-val">3</td>
         </tr>
         <tr>
             <td class="ft-lbl">Reviewed &amp; authorized by</td>
@@ -395,11 +449,16 @@
             <td class="ft-val">ODQA</td>
         </tr>
     </table>
+    </div>
+    </div>
 
     {# ═══════════════════════════════════════════
        PAGE BREAK — COMMENTS PAGE
        ═══════════════════════════════════════════ #}
     <div class="page-break"></div>
+
+    <div class="page-sheet">
+    <div class="page-main">
 
     {# ═══════════════════════════════════════════
        LETTERHEAD (PAGE 2)
@@ -445,7 +504,7 @@
        COMMENTS (PAGE 2)
        ═══════════════════════════════════════════ #}
     <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
+        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</h3>
         <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
             <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
         </div>
@@ -490,19 +549,19 @@
     {# ═══════════════════════════════════════════
        DOCUMENT FOOTER — PAGE 2
        ═══════════════════════════════════════════ #}
+    </div>
+    <div class="page-footer">
     <table class="doc-footer-table">
         <tr>
             <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val"></td>
-            <td class="ft-lbl"></td>
-            <td class="ft-val"></td>
+            <td class="ft-val" colspan="3">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
             <td rowspan="3" class="ft-page">Page <strong>2</strong> of <strong>2</strong></td>
         </tr>
         <tr>
             <td class="ft-lbl">Issue Date</td>
             <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
             <td class="ft-lbl">Issue Status</td>
-            <td class="ft-val"></td>
+            <td class="ft-val">3</td>
         </tr>
         <tr>
             <td class="ft-lbl">Reviewed &amp; authorized by</td>
@@ -511,6 +570,8 @@
             <td class="ft-val">ODQA</td>
         </tr>
     </table>
+    </div>
+    </div>
 
     {# Auto-trigger print dialog #}
     <script>

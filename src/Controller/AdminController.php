@@ -1725,8 +1725,188 @@ class AdminController extends AbstractController
     //  E3. RESULTS — PRINT VIEW (Twig template)
     // ════════════════════════════════════════════════
 
-    #[Route('/results/print', name: 'admin_results_print', methods: ['GET'])]
+    #[Route('/results/print/setup', name: 'admin_results_print_setup', methods: ['GET'])]
+    public function resultsPrintSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Print Report',
+            'printActionUrl' => $this->generateUrl('admin_results_print'),
+            'evaluation' => (int) $request->query->get('evaluation', 0),
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => $request->query->get('subject'),
+            'section' => $request->query->get('section'),
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+        ]);
+    }
+
+    #[Route('/results/print', name: 'admin_results_print', methods: ['GET', 'POST'])]
     public function resultsPrint(
+        Request $request,
+        EvaluationPeriodRepository $evalRepo,
+        EvaluationResponseRepository $responseRepo,
+        UserRepository $userRepo,
+        QuestionRepository $questionRepo,
+        SubjectRepository $subjectRepo,
+    ): Response {
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+        $subjectId = $input->get('subject') ? (int) $input->get('subject') : null;
+        $section = $input->get('section');
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
+
+        $evaluation = $evalRepo->find($evalId);
+        $faculty = $userRepo->find($facultyId);
+
+        if (!$evaluation || !$faculty) {
+            throw $this->createNotFoundException('Evaluation or faculty not found.');
+        }
+
+        // Build section-aware results used by the print template.
+        $subjectSectionResults = $responseRepo->getAverageRatingsByFacultyAndSection($facultyId, $evalId, $subjectId, $section);
+        $questions = $questionRepo->findByType($evaluation->getEvaluationType());
+
+        $calculateCategoryAverages = function ($questionAverages) use ($questions) {
+            $categoryAverages = [];
+            foreach ($questions as $q) {
+                $qId = $q->getId();
+                $avgData = $questionAverages[$qId] ?? null;
+                $avg = is_array($avgData) ? $avgData['average'] : null;
+                $cat = $q->getCategory();
+                if (!isset($categoryAverages[$cat])) {
+                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
+                }
+                $categoryAverages[$cat]['questionCount']++;
+                if ($avg !== null) {
+                    $categoryAverages[$cat]['sum'] += $avg;
+                    $categoryAverages[$cat]['n']++;
+                }
+            }
+
+            return $categoryAverages;
+        };
+
+        $buildCategorySummary = function ($categoryAverages) {
+            $romNum = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+            $catCount = count($categoryAverages);
+            $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
+            $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+            $categorySummary = [];
+            $compositeTotal = 0.0;
+            $idx = 0;
+            foreach ($categoryAverages as $cat => $data) {
+                $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+                $weightedRating = $mean * $weightFrac;
+                $compositeTotal += $weightedRating;
+                $questionCount = (int) ($data['questionCount'] ?? 0);
+                $averageScore = $mean * $questionCount;
+                $maxScore = $questionCount * 5;
+                $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
+                $categorySummary[] = [
+                    'roman' => $romNum[$idx] ?? (string) ($idx + 1),
+                    'name' => $cat,
+                    'mean' => round($mean, 2),
+                    'weightPct' => $weightPct,
+                    'weightedRating' => round($weightedRating, 2),
+                    'questionCount' => $questionCount,
+                    'averageScore' => round($averageScore, 2),
+                    'maxScore' => $maxScore,
+                    'ratingPct' => round($ratingPct, 2),
+                ];
+                $idx++;
+            }
+
+            return [$categorySummary, round($compositeTotal, 2), $weightPct];
+        };
+
+        $sectionResults = [];
+        foreach ($subjectSectionResults as $subjectSection) {
+            $categoryAverages = $calculateCategoryAverages($subjectSection['questionAverages']);
+            [$categorySummary, $compositeTotal, $weightPct] = $buildCategorySummary($categoryAverages);
+
+            $sectionOverallAvg = 0.0;
+            if (count($subjectSection['questionAverages']) > 0) {
+                $sum = 0.0;
+                $count = 0;
+                foreach ($subjectSection['questionAverages'] as $avgData) {
+                    $sum += $avgData['average'];
+                    $count++;
+                }
+                $sectionOverallAvg = $count > 0 ? round($sum / $count, 2) : 0.0;
+            }
+
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection(
+                $facultyId,
+                $evalId,
+                $subjectSection['subjectId'],
+                $subjectSection['section']
+            );
+
+            $comments = $responseRepo->getCommentsBySubjectAndSection(
+                $facultyId,
+                $evalId,
+                $subjectSection['subjectId'],
+                $subjectSection['section']
+            );
+            $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
+
+            $sectionResults[] = [
+                'subjectCode' => $subjectSection['subjectCode'],
+                'subjectName' => $subjectSection['subjectName'],
+                'section' => $subjectSection['section'],
+                'categorySummary' => $categorySummary,
+                'compositeTotal' => $compositeTotal,
+                'weightPct' => $weightPct,
+                'overallAvg' => $sectionOverallAvg,
+                'performanceLevel' => $this->getPerformanceLevel($sectionOverallAvg),
+                'evaluatorCount' => $evaluatorCount,
+                'comments' => $filteredComments,
+            ];
+        }
+
+        $firstResult = $sectionResults[0] ?? null;
+        $isSingleSection = count($sectionResults) === 1;
+
+        return $this->render('report/print_results.html.twig', [
+            'faculty' => $faculty,
+            'evaluation' => $evaluation,
+            'sectionResults' => $sectionResults,
+            'isSingleSection' => $isSingleSection,
+            'printSubjectCode' => $firstResult ? $firstResult['subjectCode'] : null,
+            'printSubjectName' => $firstResult ? $firstResult['subjectName'] : null,
+            'printSection' => $firstResult ? $firstResult['section'] : null,
+            'categorySummary' => $firstResult ? $firstResult['categorySummary'] : [],
+            'compositeTotal' => $firstResult ? $firstResult['compositeTotal'] : 0,
+            'performanceLevel' => $firstResult ? $firstResult['performanceLevel'] : '',
+            'evaluatorCount' => $firstResult ? $firstResult['evaluatorCount'] : 0,
+            'comments' => $firstResult ? $firstResult['comments'] : [],
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ]);
+    }
+
+    // ════════════════════════════════════════════════
+    //  E4. RESULTS — PRINT COMMENTS (Twig template)
+    // ════════════════════════════════════════════════
+
+    #[Route('/results/print-comments', name: 'admin_results_print_comments', methods: ['GET'])]
+    public function resultsPrintComments(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
@@ -1746,132 +1926,78 @@ class AdminController extends AbstractController
             throw $this->createNotFoundException('Evaluation or faculty not found.');
         }
 
-        $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
-        $questions = $questionRepo->findByType($evaluation->getEvaluationType());
+        // Get comments filtered by subject and section if provided
+        if ($subjectId !== null || $section !== null) {
+            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
+        } else {
+            $comments = $responseRepo->getComments($facultyId, $evalId);
+            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
+        }
+        $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
-        $questionData = [];
+        $questionAverages = [];
+        if ($subjectId !== null || $section !== null) {
+            $sectionResults = $responseRepo->getAverageRatingsByFacultyAndSection($facultyId, $evalId, $subjectId, $section);
+            if (!empty($sectionResults)) {
+                $questionAverages = $sectionResults[0]['questionAverages'] ?? [];
+            }
+        } else {
+            $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+        }
+
+        $questions = $questionRepo->findByType($evaluation->getEvaluationType());
         $categoryAverages = [];
         foreach ($questions as $q) {
             $qId = $q->getId();
             $avgData = $questionAverages[$qId] ?? null;
-            $avg = is_array($avgData) ? $avgData['average'] : null;
-            $cnt = is_array($avgData) ? $avgData['count'] : 0;
-            $questionData[] = [
-                'category' => $q->getCategory(),
-                'text' => $q->getQuestionText(),
-                'average' => $avg,
-                'count' => $cnt,
-            ];
+            $qAvg = is_array($avgData) ? $avgData['average'] : null;
             $cat = $q->getCategory();
             if (!isset($categoryAverages[$cat])) {
-                $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+                $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
             }
-            if ($avg !== null) {
-                $categoryAverages[$cat]['sum'] += $avg;
+            $categoryAverages[$cat]['questionCount']++;
+            if ($qAvg !== null) {
+                $categoryAverages[$cat]['sum'] += $qAvg;
                 $categoryAverages[$cat]['n']++;
             }
         }
 
-        // Category summary with equal weighting
         $catCount = count($categoryAverages);
         $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
         $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
         $categorySummary = [];
         $compositeTotal = 0.0;
-        $romNum = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
-        $idx = 0;
         foreach ($categoryAverages as $cat => $data) {
             $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
             $weightedRating = $mean * $weightFrac;
             $compositeTotal += $weightedRating;
+            $questionCount = (int) ($data['questionCount'] ?? 0);
+            $averageScore = $mean * $questionCount;
+            $maxScore = $questionCount * 5;
+            $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
             $categorySummary[] = [
-                'roman' => $romNum[$idx] ?? (string)($idx + 1),
+                'roman' => '',
                 'name' => $cat,
                 'mean' => round($mean, 2),
                 'weightPct' => $weightPct,
                 'weightedRating' => round($weightedRating, 2),
+                'questionCount' => $questionCount,
+                'averageScore' => round($averageScore, 2),
+                'maxScore' => $maxScore,
+                'ratingPct' => round($ratingPct, 2),
             ];
-            $idx++;
         }
 
-        // Get comments filtered by subject and section if provided
-        if ($subjectId !== null || $section !== null) {
-            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-        } else {
-            $comments = $responseRepo->getComments($facultyId, $evalId);
-        }
-        $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
-
-        $overallAvg = $responseRepo->getOverallAverage($facultyId, $evalId);
-
-        // Get evaluator count filtered by subject and section if provided
-        if ($subjectId !== null || $section !== null) {
-            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-        } else {
-            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
-        }
-
-        // Get subject info if specific subject is being printed
-        $subjectCode = null;
-        $subjectName = null;
-        if ($subjectId !== null) {
-            $subject = $subjectRepo->find($subjectId);
-            if ($subject) {
-                $subjectCode = $subject->getSubjectCode();
-                $subjectName = $subject->getSubjectName();
+        $sumAvg = 0.0;
+        $countAvg = 0;
+        foreach ($questionAverages as $avgData) {
+            if (is_array($avgData) && isset($avgData['average'])) {
+                $sumAvg += (float) $avgData['average'];
+                $countAvg++;
             }
         }
-
-        return $this->render('report/print_results.html.twig', [
-            'faculty' => $faculty,
-            'evaluation' => $evaluation,
-            'questions' => $questionData,
-            'comments' => $filteredComments,
-            'overallAverage' => $overallAvg,
-            'evaluatorCount' => $evaluatorCount,
-            'performanceLevel' => $this->getPerformanceLevel($overallAvg),
-            'categorySummary' => $categorySummary,
-            'compositeTotal' => round($compositeTotal, 2),
-            'weightPct' => $weightPct,
-            'printSubjectCode' => $subjectCode,
-            'printSubjectName' => $subjectName,
-            'printSection' => $section,
-        ]);
-    }
-
-    // ════════════════════════════════════════════════
-    //  E4. RESULTS — PRINT COMMENTS (Twig template)
-    // ════════════════════════════════════════════════
-
-    #[Route('/results/print-comments', name: 'admin_results_print_comments', methods: ['GET'])]
-    public function resultsPrintComments(
-        Request $request,
-        EvaluationPeriodRepository $evalRepo,
-        EvaluationResponseRepository $responseRepo,
-        UserRepository $userRepo,
-        SubjectRepository $subjectRepo,
-    ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
-        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
-        $section = $request->query->get('section');
-
-        $evaluation = $evalRepo->find($evalId);
-        $faculty = $userRepo->find($facultyId);
-
-        if (!$evaluation || !$faculty) {
-            throw $this->createNotFoundException('Evaluation or faculty not found.');
-        }
-
-        // Get comments filtered by subject and section if provided
-        if ($subjectId !== null || $section !== null) {
-            $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-            $evaluatorCount = $responseRepo->countEvaluatorsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
-        } else {
-            $comments = $responseRepo->getComments($facultyId, $evalId);
-            $evaluatorCount = $responseRepo->countEvaluators($facultyId, $evalId);
-        }
-        $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
+        $overallAvg = $countAvg > 0 ? round($sumAvg / $countAvg, 2) : 0.0;
 
         // Get subject info if specific subject is being printed
         $subjectCode = null;
@@ -1889,6 +2015,9 @@ class AdminController extends AbstractController
             'evaluatorCount' => $evaluatorCount,
             'printSubjectCode' => $subjectCode,
             'printSection' => $section,
+            'categorySummary' => $categorySummary,
+            'compositeTotal' => round($compositeTotal, 2),
+            'performanceLevel' => $this->getPerformanceLevel($overallAvg),
         ]);
     }
 
@@ -1988,7 +2117,26 @@ class AdminController extends AbstractController
     //  E6. RESULTS — PRINT ALL EVALUATIONS
     // ════════════════════════════════════════════════
 
-    #[Route('/results/print-all', name: 'admin_results_print_all', methods: ['GET'])]
+    #[Route('/results/print-all/setup', name: 'admin_results_print_all_setup', methods: ['GET'])]
+    public function resultsPrintAllSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Print All Report',
+            'printActionUrl' => $this->generateUrl('admin_results_print_all'),
+            'evaluation' => 0,
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => null,
+            'section' => null,
+            'selectedEvals' => $request->query->all('evals'),
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+        ]);
+    }
+
+    #[Route('/results/print-all', name: 'admin_results_print_all', methods: ['GET', 'POST'])]
     public function resultsPrintAll(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
@@ -1996,15 +2144,25 @@ class AdminController extends AbstractController
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
     ): Response {
-        $facultyId = (int) $request->query->get('faculty', 0);
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $facultyId = (int) $input->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
 
         if (!$faculty) {
             throw $this->createNotFoundException('Faculty not found.');
         }
 
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
+
         // Check if specific evaluations were selected
-        $selectedEvals = $request->query->all('evals');
+        $selectedEvals = $input->all('evals');
+        $selectedEvalStrings = array_map('strval', $selectedEvals);
 
         $evalData = $responseRepo->getEvaluationsByFaculty($facultyId);
         $allEvaluations = [];
@@ -2014,7 +2172,7 @@ class AdminController extends AbstractController
             if (!$eval) continue;
 
             // If specific evaluations were selected, skip those not in the list
-            if (!empty($selectedEvals) && !in_array((string) $eval->getId(), $selectedEvals, true)) {
+            if (!empty($selectedEvalStrings) && !in_array((string) $eval->getId(), $selectedEvalStrings, true)) {
                 continue;
             }
 
@@ -2032,8 +2190,9 @@ class AdminController extends AbstractController
                 $qAvg = is_array($avgData) ? $avgData['average'] : null;
                 $cat = $q->getCategory();
                 if (!isset($categoryAverages[$cat])) {
-                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
                 }
+                $categoryAverages[$cat]['questionCount']++;
                 if ($qAvg !== null) {
                     $categoryAverages[$cat]['sum'] += $qAvg;
                     $categoryAverages[$cat]['n']++;
@@ -2044,18 +2203,32 @@ class AdminController extends AbstractController
             $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
             $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
             $categorySummary = [];
-            $compositeTotal = 0.0;
+            $totalAvgScore = 0.0;
+            $totalMaxScore = 0.0;
             foreach ($categoryAverages as $cat => $data) {
                 $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
-                $weightedRating = $mean * $weightFrac;
-                $compositeTotal += $weightedRating;
+                $questionCount = (int) ($data['questionCount'] ?? 0);
+                $averageScore = $mean * $questionCount;
+                $maxScore = $questionCount * 5;
+                $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
+                $totalAvgScore += $averageScore;
+                $totalMaxScore += $maxScore;
                 $categorySummary[] = [
                     'name' => $cat,
-                    'mean' => round($mean, 2),
-                    'weightPct' => $weightPct,
-                    'weightedRating' => round($weightedRating, 2),
+                    'mean' => round($averageScore, 2),
+                    'rawMean' => round($mean, 2),
+                    'weightPct' => $maxScore,
+                    'weightedRating' => round($ratingPct, 2),
                 ];
             }
+            $totalPct = $totalMaxScore > 0 ? round(($totalAvgScore / $totalMaxScore) * 100, 2) : 0.0;
+            $pctLevel = match (true) {
+                $totalPct >= 91 => 'ALWAYS MANIFESTED',
+                $totalPct >= 61 => 'OFTEN MANIFESTED',
+                $totalPct >= 31 => 'SOMETIMES MANIFESTED',
+                $totalPct >= 11 => 'SELDOM MANIFESTED',
+                default => 'NEVER/RARELY MANIFESTED',
+            };
 
             $comments = $responseRepo->getComments($facultyId, $evalId);
             $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
@@ -2086,9 +2259,9 @@ class AdminController extends AbstractController
                 'evaluation' => $eval,
                 'average' => $avg,
                 'evaluators' => $count,
-                'level' => $this->getPerformanceLevel($avg),
+                'level' => $pctLevel,
                 'categorySummary' => $categorySummary,
-                'compositeTotal' => round($compositeTotal, 2),
+                'compositeTotal' => $totalPct,
                 'comments' => $filteredComments,
                 'subjectComments' => $subjectComments,
             ];
@@ -2109,7 +2282,7 @@ class AdminController extends AbstractController
                     $compositeSums[$name] = 0.0;
                     $compositeCounts[$name] = 0;
                 }
-                $compositeSums[$name] += $cat['mean'];
+                $compositeSums[$name] += $cat['rawMean'] ?? $cat['mean'];
                 $compositeCounts[$name]++;
             }
         }
@@ -2128,6 +2301,7 @@ class AdminController extends AbstractController
             $compositeGrandTotal += $wRating;
             $compositeCategories[] = [
                 'name' => $name,
+                'weightedMean' => $wMean,
                 'mean' => $wMean,
                 'weightPct' => $weightPct,
                 'weightedRating' => $wRating,
@@ -2153,7 +2327,8 @@ class AdminController extends AbstractController
             $emptyCategories[] = [
                 'name' => $name,
                 'mean' => 0.00,
-                'weightPct' => $catCount > 0 ? round(100 / $catCount) : 0,
+                'rawMean' => 0.00,
+                'weightPct' => 0,
                 'weightedRating' => 0.00,
             ];
         }
@@ -2185,6 +2360,13 @@ class AdminController extends AbstractController
             'compositeCategories' => $compositeCategories,
             'compositeGrandTotal' => round($compositeGrandTotal, 2),
             'compositeLevel' => $this->getPerformanceLevel(round($compositeGrandTotal, 2)),
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
         ]);
     }
 
@@ -2257,7 +2439,25 @@ class AdminController extends AbstractController
     //  E8. SEF RESULTS — PRINT VIEW
     // ════════════════════════════════════════════════
 
-    #[Route('/results/superior/print', name: 'admin_results_superior_print', methods: ['GET'])]
+    #[Route('/results/superior/print/setup', name: 'admin_results_superior_print_setup', methods: ['GET'])]
+    public function resultsSuperiorPrintSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Superior Print Report',
+            'printActionUrl' => $this->generateUrl('admin_results_superior_print'),
+            'evaluation' => (int) $request->query->get('evaluation', 0),
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => null,
+            'section' => null,
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+        ]);
+    }
+
+    #[Route('/results/superior/print', name: 'admin_results_superior_print', methods: ['GET', 'POST'])]
     public function resultsSuperiorPrint(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
@@ -2265,8 +2465,17 @@ class AdminController extends AbstractController
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
     ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2342,6 +2551,13 @@ class AdminController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'weightPct' => $weightPct,
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
         ]);
     }
 

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\AcademicYear;
 use App\Entity\AuditLog;
+use App\Entity\CorrespondenceRecord;
 use App\Entity\Curriculum;
 use App\Entity\Department;
 use App\Entity\EvaluationMessage;
@@ -14,6 +15,7 @@ use App\Entity\QuestionCategoryDescription;
 use App\Entity\Subject;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
+use App\Repository\CorrespondenceRecordRepository;
 use App\Repository\CourseRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\DepartmentRepository;
@@ -28,11 +30,14 @@ use App\Repository\SubjectRepository;
 use App\Repository\SuperiorEvaluationRepository;
 use App\Repository\UserRepository;
 use App\Service\AuditLogger;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -432,10 +437,11 @@ class ReportController extends AbstractController
     }
 
     #[Route('/api/faculty/{id}/subjects', name: 'staff_api_faculty_subjects', methods: ['GET'])]
-    public function apiFacultySubjects(int $id, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo, SubjectRepository $subjectRepo): JsonResponse
+    public function apiFacultySubjects(int $id, Request $request, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo, SubjectRepository $subjectRepo): JsonResponse
     {
         $currentAY = $ayRepo->findCurrent();
         $loads = $fslRepo->findByFacultyAndAcademicYear($id, $currentAY ? $currentAY->getId() : null);
+        $strictLoad = $request->query->getBoolean('strictLoad', false);
 
         $data = [];
         $seen = [];
@@ -462,6 +468,10 @@ class ReportController extends AbstractController
             ];
         }
 
+        if ($strictLoad) {
+            return $this->json($data);
+        }
+
         // Fallback for legacy direct assignments in Subject.faculty.
         foreach ($subjectRepo->findByFaculty($id) as $subject) {
             $value = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
@@ -483,7 +493,7 @@ class ReportController extends AbstractController
         return $this->json($data);
     }
 
-    private function facultyHasScheduledLoad(int $facultyId, ?int $currentAyId, FacultySubjectLoadRepository $fslRepo, SubjectRepository $subjectRepo): bool
+    private function facultyHasScheduledLoad(int $facultyId, ?int $currentAyId, FacultySubjectLoadRepository $fslRepo): bool
     {
         $loads = $fslRepo->findByFacultyAndAcademicYear($facultyId, $currentAyId);
         foreach ($loads as $load) {
@@ -493,15 +503,6 @@ class ReportController extends AbstractController
 
             $schedule = trim((string) ($load->getSchedule() ?? ''));
             $section = trim((string) ($load->getSection() ?? ''));
-            if ($schedule !== '' && $section !== '') {
-                return true;
-            }
-        }
-
-        // Fallback for legacy direct assignments in Subject.faculty.
-        foreach ($subjectRepo->findByFaculty($facultyId) as $subject) {
-            $schedule = trim((string) ($subject->getSchedule() ?? ''));
-            $section = trim((string) ($subject->getSection() ?? ''));
             if ($schedule !== '' && $section !== '') {
                 return true;
             }
@@ -518,7 +519,6 @@ class ReportController extends AbstractController
         UserRepository $userRepo,
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
-        SubjectRepository $subjectRepo,
     ): Response
     {
         if ($this->isCsrfTokenValid('create_eval', $request->request->get('_token'))) {
@@ -549,8 +549,7 @@ class ReportController extends AbstractController
                 $hasScheduledLoad = $this->facultyHasScheduledLoad(
                     $facultyUser->getId(),
                     $currentAY ? $currentAY->getId() : null,
-                    $fslRepo,
-                    $subjectRepo
+                    $fslRepo
                 );
 
                 if (!$hasScheduledLoad) {
@@ -828,16 +827,22 @@ class ReportController extends AbstractController
     // ════════════════════════════════════════════════
 
     #[Route('/questions', name: 'staff_questions', methods: ['GET'])]
-    public function questions(Request $request, QuestionRepository $repo): Response
+    public function questions(
+        Request $request,
+        QuestionRepository $repo,
+        QuestionCategoryDescriptionRepository $descRepo,
+    ): Response
     {
         $type = $request->query->get('type', 'SET');
         $questions = $repo->findByType($type);
         $categories = $repo->findCategories($type);
+        $categoryDescriptions = $descRepo->findDescriptionsByType($type);
 
         return $this->render('admin/questions.html.twig', [
             'questions' => $questions,
             'categories' => $categories,
             'selectedType' => $type,
+            'categoryDescriptions' => $categoryDescriptions,
             'staffMode' => true,
         ]);
     }
@@ -1840,6 +1845,146 @@ class ReportController extends AbstractController
         };
     }
 
+    private function saveCorrespondenceRecord(
+        EntityManagerInterface $em,
+        ?string $correspondenceId,
+        string $evaluationType,
+        string $printScope,
+    ): ?CorrespondenceRecord {
+        $value = trim((string) $correspondenceId);
+        if ($value === '') {
+            return null;
+        }
+
+        $record = (new CorrespondenceRecord())
+            ->setCorrespondenceId($value)
+            ->setEvaluationType($evaluationType)
+            ->setPrintScope($printScope);
+
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            $record->setCreatedBy($currentUser);
+        }
+
+        $em->persist($record);
+        $em->flush();
+
+        return $record;
+    }
+
+    private function getCorrespondenceStorageDir(): string
+    {
+        return rtrim((string) $this->getParameter('kernel.project_dir'), '/\\') . '/public/uploads/correspondence';
+    }
+
+    private function buildCorrespondenceArtifactBaseName(CorrespondenceRecord $record): string
+    {
+        $safeType = strtoupper((string) $record->getEvaluationType()) === 'SEF' ? 'sef' : 'set';
+        $safeId = (string) preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) $record->getCorrespondenceId());
+        $safeId = trim($safeId) !== '' ? $safeId : 'record';
+        $createdAt = $record->getCreatedAt() ?? new \DateTimeImmutable();
+        $recordId = $record->getId() ?? 0;
+
+        return $safeType . '_' . $safeId . '_' . $createdAt->format('Ymd_His') . '_record_' . $recordId;
+    }
+
+    /**
+     * @return array{pdfAbs: string, htmlAbs: string}
+     */
+    private function getCorrespondenceArtifactPaths(CorrespondenceRecord $record): array
+    {
+        $baseName = $this->buildCorrespondenceArtifactBaseName($record);
+        $dir = $this->getCorrespondenceStorageDir();
+
+        return [
+            'pdfAbs' => $dir . '/' . $baseName . '.pdf',
+            'htmlAbs' => $dir . '/' . $baseName . '.html',
+        ];
+    }
+
+    private function saveCorrespondencePdf(string $html, CorrespondenceRecord $record): bool
+    {
+        $paths = $this->getCorrespondenceArtifactPaths($record);
+        $baseDir = dirname($paths['pdfAbs']);
+        if (!is_dir($baseDir) && !@mkdir($baseDir, 0775, true) && !is_dir($baseDir)) {
+            return false;
+        }
+
+        @file_put_contents($paths['htmlAbs'], $html, LOCK_EX);
+
+        try {
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultFont', 'DejaVu Sans');
+
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->setPaper([0, 0, 612, 936], 'portrait');
+            $dompdf->render();
+
+            $pdfOutput = $dompdf->output();
+            if ($pdfOutput === '') {
+                return false;
+            }
+
+            $writtenBytes = @file_put_contents($paths['pdfAbs'], $pdfOutput, LOCK_EX);
+            clearstatcache(true, $paths['pdfAbs']);
+
+            return $writtenBytes !== false && $writtenBytes > 0 && is_file($paths['pdfAbs']);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function normalizeCorrespondenceHtmlForPdf(string $html): string
+    {
+        // Keep saved-PDF margins consistent with the live print templates.
+        $normalized = $html;
+
+        $normalized = preg_replace(
+            '/@page\s*\{\s*size:\s*8\.5in\s+13in;\s*margin:\s*[^;]+;\s*\}/i',
+            '@page { size: 8.5in 13in; margin: 12mm 16mm 12mm 16mm; }',
+            $normalized
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/body\s*\{([^{}]*?)margin:\s*[^;]+;([^{}]*?)padding:\s*[^;]+;([^{}]*?)\}/is',
+            'body {$1margin: 0;$2padding: 0;$3}',
+            $normalized
+        ) ?? $normalized;
+
+        // Fix legacy saved templates that always rendered a second comments page,
+        // even when no actual evaluator comments were present.
+        $hasComments = preg_match('/<li\b/i', $normalized) === 1;
+        if ($hasComments) {
+            return $normalized;
+        }
+
+        if (!str_contains($normalized, 'No comments were submitted for this evaluation.')) {
+            return $normalized;
+        }
+
+        $normalizedNoBlankPage = preg_replace(
+            '/<div class="page-break"><\/div>\s*<div class="page-sheet">.*?<\/div>\s*<\/div>\s*(?=<script|<\/body>)/s',
+            '',
+            $normalized,
+            1
+        );
+
+        if (is_string($normalizedNoBlankPage) && $normalizedNoBlankPage !== '') {
+            $normalizedNoBlankPage = str_replace(
+                'Page <strong>1</strong> of <strong>2</strong>',
+                'Page <strong>1</strong> of <strong>1</strong>',
+                $normalizedNoBlankPage
+            );
+
+            return $normalizedNoBlankPage;
+        }
+
+        return $normalized;
+    }
+
     // ════════════════════════════════════════════════
     //  FACULTY MESSAGES (Staff)
     // ════════════════════════════════════════════════
@@ -2232,7 +2377,25 @@ class ReportController extends AbstractController
     //  RESULTS: PRINT (Staff)
     // ════════════════════════════════════════════════
 
-    #[Route('/results/print', name: 'staff_results_print', methods: ['GET'])]
+    #[Route('/results/print/setup', name: 'staff_results_print_setup', methods: ['GET'])]
+    public function resultsPrintSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Print Report',
+            'printActionUrl' => $this->generateUrl('staff_results_print'),
+            'evaluation' => (int) $request->query->get('evaluation', 0),
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => $request->query->get('subject'),
+            'section' => $request->query->get('section'),
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+        ]);
+    }
+
+    #[Route('/results/print', name: 'staff_results_print', methods: ['GET', 'POST'])]
     public function resultsPrint(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
@@ -2240,11 +2403,21 @@ class ReportController extends AbstractController
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
         SubjectRepository $subjectRepo,
+        EntityManagerInterface $em,
     ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
-        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
-        $section = $request->query->get('section') ?? null;
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+        $subjectId = $input->get('subject') ? (int) $input->get('subject') : null;
+        $section = $input->get('section') ?? null;
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2266,8 +2439,9 @@ class ReportController extends AbstractController
                 $avg = is_array($avgData) ? $avgData['average'] : null;
                 $cat = $q->getCategory();
                 if (!isset($categoryAverages[$cat])) {
-                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
                 }
+                $categoryAverages[$cat]['questionCount']++;
                 if ($avg !== null) {
                     $categoryAverages[$cat]['sum'] += $avg;
                     $categoryAverages[$cat]['n']++;
@@ -2289,12 +2463,20 @@ class ReportController extends AbstractController
                 $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
                 $weightedRating = $mean * $weightFrac;
                 $compositeTotal += $weightedRating;
+                $questionCount = (int) ($data['questionCount'] ?? 0);
+                $averageScore = $mean * $questionCount;
+                $maxScore = $questionCount * 5;
+                $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
                 $categorySummary[] = [
                     'roman' => $romNum[$idx] ?? (string)($idx + 1),
                     'name' => $cat,
                     'mean' => round($mean, 2),
                     'weightPct' => $weightPct,
                     'weightedRating' => round($weightedRating, 2),
+                    'questionCount' => $questionCount,
+                    'averageScore' => round($averageScore, 2),
+                    'maxScore' => $maxScore,
+                    'ratingPct' => round($ratingPct, 2),
                 ];
                 $idx++;
             }
@@ -2354,7 +2536,7 @@ class ReportController extends AbstractController
         $firstResult = $sectionResults[0] ?? null;
         $isSingleSection = count($sectionResults) === 1;
 
-        return $this->render('report/print_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'sectionResults' => $sectionResults,
@@ -2368,7 +2550,27 @@ class ReportController extends AbstractController
             'performanceLevel' => $firstResult ? $firstResult['performanceLevel'] : '',
             'evaluatorCount' => $firstResult ? $firstResult['evaluatorCount'] : 0,
             'comments' => $firstResult ? $firstResult['comments'] : [],
-        ]);
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ];
+
+        $html = $this->renderView('report/print_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            (string) $evaluation->getEvaluationType(),
+            'set-print'
+        );
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondencePdf($html, $record);
+        }
+
+        return new Response($html);
     }
 
     // ════════════════════════════════════════════════
@@ -2381,6 +2583,7 @@ class ReportController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
+        QuestionRepository $questionRepo,
         SubjectRepository $subjectRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
@@ -2405,6 +2608,69 @@ class ReportController extends AbstractController
         }
         $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
 
+        $questionAverages = [];
+        if ($subjectId !== null || $section !== null) {
+            $sectionResults = $responseRepo->getAverageRatingsByFacultyAndSection($facultyId, $evalId, $subjectId, $section);
+            if (!empty($sectionResults)) {
+                $questionAverages = $sectionResults[0]['questionAverages'] ?? [];
+            }
+        } else {
+            $questionAverages = $responseRepo->getAverageRatingsByFaculty($facultyId, $evalId);
+        }
+
+        $questions = $questionRepo->findByType($evaluation->getEvaluationType());
+        $categoryAverages = [];
+        foreach ($questions as $q) {
+            $qId = $q->getId();
+            $avgData = $questionAverages[$qId] ?? null;
+            $qAvg = is_array($avgData) ? $avgData['average'] : null;
+            $cat = $q->getCategory();
+            if (!isset($categoryAverages[$cat])) {
+                $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
+            }
+            $categoryAverages[$cat]['questionCount']++;
+            if ($qAvg !== null) {
+                $categoryAverages[$cat]['sum'] += $qAvg;
+                $categoryAverages[$cat]['n']++;
+            }
+        }
+
+        $catCount = count($categoryAverages);
+        $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
+        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+        $categorySummary = [];
+        $compositeTotal = 0.0;
+        foreach ($categoryAverages as $cat => $data) {
+            $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+            $weightedRating = $mean * $weightFrac;
+            $compositeTotal += $weightedRating;
+            $questionCount = (int) ($data['questionCount'] ?? 0);
+            $averageScore = $mean * $questionCount;
+            $maxScore = $questionCount * 5;
+            $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
+            $categorySummary[] = [
+                'roman' => '',
+                'name' => $cat,
+                'mean' => round($mean, 2),
+                'weightPct' => $weightPct,
+                'weightedRating' => round($weightedRating, 2),
+                'questionCount' => $questionCount,
+                'averageScore' => round($averageScore, 2),
+                'maxScore' => $maxScore,
+                'ratingPct' => round($ratingPct, 2),
+            ];
+        }
+
+        $sumAvg = 0.0;
+        $countAvg = 0;
+        foreach ($questionAverages as $avgData) {
+            if (is_array($avgData) && isset($avgData['average'])) {
+                $sumAvg += (float) $avgData['average'];
+                $countAvg++;
+            }
+        }
+        $overallAvg = $countAvg > 0 ? round($sumAvg / $countAvg, 2) : 0.0;
+
         // Get subject info if specific subject is being printed
         $subjectCode = null;
         if ($subjectId !== null) {
@@ -2421,6 +2687,9 @@ class ReportController extends AbstractController
             'evaluatorCount' => $evaluatorCount,
             'printSubjectCode' => $subjectCode,
             'printSection' => $section,
+            'categorySummary' => $categorySummary,
+            'compositeTotal' => round($compositeTotal, 2),
+            'performanceLevel' => $this->performanceLevel($overallAvg),
         ]);
     }
 
@@ -2428,23 +2697,52 @@ class ReportController extends AbstractController
     //  RESULTS: PRINT ALL (Staff)
     // ════════════════════════════════════════════════
 
-    #[Route('/results/print-all', name: 'staff_results_print_all', methods: ['GET'])]
+    #[Route('/results/print-all/setup', name: 'staff_results_print_all_setup', methods: ['GET'])]
+    public function resultsPrintAllSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Print All Report',
+            'printActionUrl' => $this->generateUrl('staff_results_print_all'),
+            'evaluation' => 0,
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => null,
+            'section' => null,
+            'selectedEvals' => $request->query->all('evals'),
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+        ]);
+    }
+
+    #[Route('/results/print-all', name: 'staff_results_print_all', methods: ['GET', 'POST'])]
     public function resultsPrintAll(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
-        $facultyId = (int) $request->query->get('faculty', 0);
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $facultyId = (int) $input->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
 
         if (!$faculty) {
             throw $this->createNotFoundException('Faculty not found.');
         }
 
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
+
         // Check if specific evaluations were selected
-        $selectedEvals = $request->query->all('evals');
+        $selectedEvals = $input->all('evals');
         $selectedEvalIds = array_map('intval', $selectedEvals);
 
         // ── Get all subject-section evaluations ──
@@ -2478,8 +2776,9 @@ class ReportController extends AbstractController
                 $qAvg = is_array($avgData) ? $avgData['average'] : null;
                 $cat = $q->getCategory();
                 if (!isset($categoryAverages[$cat])) {
-                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0];
+                    $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
                 }
+                $categoryAverages[$cat]['questionCount']++;
                 if ($qAvg !== null) {
                     $categoryAverages[$cat]['sum'] += $qAvg;
                     $categoryAverages[$cat]['n']++;
@@ -2490,18 +2789,32 @@ class ReportController extends AbstractController
             $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
             $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
             $categorySummary = [];
-            $compositeTotal = 0.0;
+            $totalAvgScore = 0.0;
+            $totalMaxScore = 0.0;
             foreach ($categoryAverages as $cat => $data) {
                 $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
-                $weightedRating = $mean * $weightFrac;
-                $compositeTotal += $weightedRating;
+                $questionCount = (int) ($data['questionCount'] ?? 0);
+                $averageScore = $mean * $questionCount;
+                $maxScore = $questionCount * 5;
+                $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
+                $totalAvgScore += $averageScore;
+                $totalMaxScore += $maxScore;
                 $categorySummary[] = [
                     'name' => $cat,
-                    'mean' => round($mean, 2),
-                    'weightPct' => $weightPct,
-                    'weightedRating' => round($weightedRating, 2),
+                    'mean' => round($averageScore, 2),
+                    'rawMean' => round($mean, 2),
+                    'weightPct' => $maxScore,
+                    'weightedRating' => round($ratingPct, 2),
                 ];
             }
+            $totalPct = $totalMaxScore > 0 ? round(($totalAvgScore / $totalMaxScore) * 100, 2) : 0.0;
+            $pctLevel = match (true) {
+                $totalPct >= 91 => 'ALWAYS MANIFESTED',
+                $totalPct >= 61 => 'OFTEN MANIFESTED',
+                $totalPct >= 31 => 'SOMETIMES MANIFESTED',
+                $totalPct >= 11 => 'SELDOM MANIFESTED',
+                default => 'NEVER/RARELY MANIFESTED',
+            };
 
             $comments = $responseRepo->getCommentsBySubjectAndSection($facultyId, $evalId, $subjectId, $section);
             $filteredComments = array_values(array_filter($comments, fn($c) => trim($c) !== ''));
@@ -2513,9 +2826,9 @@ class ReportController extends AbstractController
                 'section' => $section ?? '—',
                 'average' => $avg,
                 'evaluators' => $count,
-                'level' => $this->performanceLevel($avg),
+                'level' => $pctLevel,
                 'categorySummary' => $categorySummary,
-                'compositeTotal' => round($compositeTotal, 2),
+                'compositeTotal' => $totalPct,
                 'comments' => $filteredComments,
                 'college' => $eval->getCollege() ?? '',
             ];
@@ -2536,7 +2849,7 @@ class ReportController extends AbstractController
                     $compositeSums[$name] = 0.0;
                     $compositeCounts[$name] = 0;
                 }
-                $compositeSums[$name] += $cat['mean'];
+                $compositeSums[$name] += $cat['rawMean'] ?? $cat['mean'];
                 $compositeCounts[$name]++;
             }
         }
@@ -2580,7 +2893,8 @@ class ReportController extends AbstractController
             $emptyCategories[] = [
                 'name' => $name,
                 'mean' => 0.00,
-                'weightPct' => $catCount > 0 ? round(100 / $catCount) : 0,
+                'rawMean' => 0.00,
+                'weightPct' => 0,
                 'weightedRating' => 0.00,
             ];
         }
@@ -2619,7 +2933,7 @@ class ReportController extends AbstractController
             }
         }
 
-        return $this->render('report/print_all_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'allEvaluations' => $allEvaluations,
             'baccEvaluations' => $baccEvaluations,
@@ -2631,19 +2945,67 @@ class ReportController extends AbstractController
             'evaluationType' => $evaluationType,
             'semester' => $semester,
             'schoolYear' => $schoolYear,
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ];
+
+        $html = $this->renderView('report/print_all_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            (string) $evaluationType,
+            'set-print-all'
+        );
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondencePdf($html, $record);
+        }
+
+        return new Response($html);
+    }
+
+    #[Route('/results/superior/print/setup', name: 'staff_results_superior_print_setup', methods: ['GET'])]
+    public function resultsSuperiorPrintSetup(Request $request): Response
+    {
+        return $this->render('report/print_setup.html.twig', [
+            'title' => 'Prepare Superior Print Report',
+            'printActionUrl' => $this->generateUrl('staff_results_superior_print'),
+            'evaluation' => (int) $request->query->get('evaluation', 0),
+            'faculty' => (int) $request->query->get('faculty', 0),
+            'subject' => null,
+            'section' => null,
+            'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
+            'preparedByDefault' => 'Argie Pair Pagbunocan',
+            'preparedTitleDefault' => 'QUAMC Staff',
+            'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
         ]);
     }
 
-    #[Route('/results/superior/print', name: 'staff_results_superior_print', methods: ['GET'])]
+    #[Route('/results/superior/print', name: 'staff_results_superior_print', methods: ['GET', 'POST'])]
     public function resultsSuperiorPrint(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2709,7 +3071,7 @@ class ReportController extends AbstractController
         $overallAvg = $superiorEvalRepo->getOverallAverage($facultyId, $evalId);
         $evaluatorCount = $superiorEvalRepo->countEvaluators($facultyId, $evalId);
 
-        return $this->render('report/superior/print_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'questions' => $questionData,
@@ -2720,7 +3082,27 @@ class ReportController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'weightPct' => $weightPct,
-        ]);
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ];
+
+        $html = $this->renderView('report/superior/print_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SEF',
+            'sef-print'
+        );
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondencePdf($html, $record);
+        }
+
+        return new Response($html);
     }
 
     #[Route('/results/superior/print-all', name: 'staff_results_superior_print_all', methods: ['GET'])]
@@ -2730,6 +3112,7 @@ class ReportController extends AbstractController
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
         $faculty = $userRepo->find($facultyId);
@@ -2739,6 +3122,7 @@ class ReportController extends AbstractController
         }
 
         $selectedEvals = $request->query->all('evals');
+        $correspondenceId = trim((string) $request->query->get('correspondenceId', ''));
 
         $evalData = $superiorEvalRepo->getEvaluationsByEvaluator($facultyId);
         $allEvaluations = [];
@@ -2886,7 +3270,7 @@ class ReportController extends AbstractController
             $gradEvaluations[] = $emptySlot;
         }
 
-        return $this->render('report/superior/print_all_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'allEvaluations' => $allEvaluations,
             'baccEvaluations' => $baccEvaluations,
@@ -2895,6 +3279,136 @@ class ReportController extends AbstractController
             'compositeCategories' => $compositeCategories,
             'compositeGrandTotal' => round($compositeGrandTotal, 2),
             'compositeLevel' => $this->performanceLevel(round($compositeGrandTotal, 2)),
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+        ];
+
+        $html = $this->renderView('report/superior/print_all_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SEF',
+            'sef-print-all'
+        );
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondencePdf($html, $record);
+        }
+
+        return new Response($html);
+    }
+
+    #[Route('/correspondence/set-id', name: 'staff_correspondence_set_ids', methods: ['GET'])]
+    public function correspondenceSetIds(CorrespondenceRecordRepository $correspondenceRepo): Response
+    {
+        return $this->render('report/correspondence_ids.html.twig', [
+            'title' => 'Correspondence - SET ID',
+            'idType' => 'SET ID',
+            'records' => $correspondenceRepo->findRecentByEvaluationType('SET'),
         ]);
+    }
+
+    #[Route('/correspondence/sef-id', name: 'staff_correspondence_sef_ids', methods: ['GET'])]
+    public function correspondenceSefIds(CorrespondenceRecordRepository $correspondenceRepo): Response
+    {
+        return $this->render('report/correspondence_ids.html.twig', [
+            'title' => 'Correspondence - SEF ID',
+            'idType' => 'SEF ID',
+            'records' => $correspondenceRepo->findRecentByEvaluationType('SEF'),
+        ]);
+    }
+
+    #[Route('/correspondence/delete/{id}', name: 'staff_correspondence_delete', methods: ['POST'])]
+    public function correspondenceDelete(Request $request, CorrespondenceRecord $record, EntityManagerInterface $em): Response
+    {
+        $id = $record->getId() ?? 0;
+        $evaluationType = strtoupper((string) $record->getEvaluationType()) === 'SEF' ? 'SEF' : 'SET';
+
+        if (!$this->isCsrfTokenValid('delete_correspondence' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid delete request token.');
+
+            return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+        }
+
+        $paths = $this->getCorrespondenceArtifactPaths($record);
+        if (is_file($paths['pdfAbs'])) {
+            @unlink($paths['pdfAbs']);
+        }
+        if (is_file($paths['htmlAbs'])) {
+            @unlink($paths['htmlAbs']);
+        }
+
+        $em->remove($record);
+        $em->flush();
+
+        $this->addFlash('success', 'Correspondence record deleted.');
+
+        return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+    }
+
+    #[Route('/correspondence/file/{id}', name: 'staff_correspondence_file', methods: ['GET'])]
+    public function correspondenceFile(CorrespondenceRecord $record): Response
+    {
+        $safeId = (string) preg_replace('/[^A-Za-z0-9._-]+/', '_', $record->getCorrespondenceId());
+        $fileName = strtolower($record->getEvaluationType()) . '_' . $safeId . '_record_' . $record->getId() . '.pdf';
+        $paths = $this->getCorrespondenceArtifactPaths($record);
+
+        $htmlSnapshot = '';
+        if (is_file($paths['htmlAbs'])) {
+            $htmlSnapshot = trim((string) @file_get_contents($paths['htmlAbs']));
+        }
+
+        if ($htmlSnapshot !== '') {
+            $normalizedHtml = $this->normalizeCorrespondenceHtmlForPdf($htmlSnapshot);
+            if ($this->saveCorrespondencePdf($normalizedHtml, $record) && is_file($paths['pdfAbs'])) {
+                return $this->file($paths['pdfAbs'], $fileName, ResponseHeaderBag::DISPOSITION_INLINE);
+            }
+
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
+            $options->set('defaultFont', 'DejaVu Sans');
+
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($htmlSnapshot, 'UTF-8');
+            $dompdf->setPaper([0, 0, 612, 936], 'portrait');
+            $dompdf->render();
+
+            $response = new Response($dompdf->output());
+            $response->headers->set('Content-Type', 'application/pdf');
+            $response->headers->set('Content-Disposition', 'inline; filename="' . $fileName . '"');
+
+            return $response;
+        }
+
+        if (is_file($paths['pdfAbs'])) {
+            return $this->file($paths['pdfAbs'], $fileName, ResponseHeaderBag::DISPOSITION_INLINE);
+        }
+
+        $fallbackHtml = '<html><head><meta charset="UTF-8"><style>body{font-family:DejaVu Sans, sans-serif;font-size:12px;padding:20px;}h1{font-size:16px;margin-bottom:12px;}table{border-collapse:collapse;width:100%;}td{border:1px solid #ddd;padding:8px;}td:first-child{width:35%;font-weight:700;background:#f8fafc;}</style></head><body>'
+            . '<h1>Correspondence Record</h1>'
+            . '<table>'
+            . '<tr><td>Record ID</td><td>#' . $record->getId() . '</td></tr>'
+            . '<tr><td>Correspondence ID</td><td>' . htmlspecialchars($record->getCorrespondenceId(), ENT_QUOTES, 'UTF-8') . '</td></tr>'
+            . '<tr><td>Type</td><td>' . htmlspecialchars($record->getEvaluationType(), ENT_QUOTES, 'UTF-8') . '</td></tr>'
+            . '<tr><td>Print Scope</td><td>' . htmlspecialchars($record->getPrintScope() ?: 'print', ENT_QUOTES, 'UTF-8') . '</td></tr>'
+            . '<tr><td>Saved By</td><td>' . htmlspecialchars($record->getCreatedBy()?->getFullName() ?? 'System', ENT_QUOTES, 'UTF-8') . '</td></tr>'
+            . '<tr><td>Saved At</td><td>' . htmlspecialchars($record->getCreatedAt()?->format('Y-m-d H:i:s') ?? '', ENT_QUOTES, 'UTF-8') . '</td></tr>'
+            . '</table>'
+            . '</body></html>';
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($fallbackHtml, 'UTF-8');
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $response = new Response($dompdf->output());
+        $response->headers->set('Content-Type', 'application/pdf');
+        $response->headers->set('Content-Disposition', 'inline; filename="' . $fileName . '"');
+
+        return $response;
     }
 }

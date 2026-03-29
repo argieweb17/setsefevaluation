@@ -108,14 +108,21 @@
     box-shadow: none;
 }
 .rs-toolbar-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    column-gap: 14px;
+    row-gap: 10px;
     min-width: 0;
 }
 .rs-toolbar.search-only .rs-toolbar-row {
-    justify-content: flex-end;
+    grid-template-columns: 1fr;
+}
+.rs-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 .rs-filter-select {
     font-size: .8rem;
@@ -126,23 +133,32 @@
     background: #fff;
     color: #475569;
     cursor: pointer;
-    min-width: 220px;
+    min-width: 0;
     transition: border-color .2s, box-shadow .2s;
 }
 .rs-filter-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
 .rs-filter-form {
     display: flex;
     align-items: center;
-    min-width: 220px;
+    min-width: 0;
+    flex: 1 1 0;
+}
+.rs-filter-group > .rs-filter-select {
+    flex: 1 1 0;
+}
+.rs-filter-form .rs-filter-select {
+    width: 100%;
 }
 .rs-search-box {
     position: relative;
-    width: clamp(260px, 32vw, 420px);
-    min-width: 220px;
-    margin-left: auto;
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
 }
 .rs-toolbar.search-only .rs-search-box {
-    width: clamp(170px, 20vw, 280px);
+    width: clamp(220px, 22vw, 320px);
+    margin-left: auto;
+    justify-self: end;
 }
 .rs-search-icon {
     position: absolute;
@@ -167,7 +183,12 @@
     font-size: .75rem;
     color: #64748b;
     font-weight: 500;
-    margin-top: .55rem;
+    margin: 0;
+}
+.rs-filter-status {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
 /* ── Table ── */
@@ -261,6 +282,18 @@
     font-size: .72rem;
     color: #475569;
     background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.rs-position-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .72rem;
+    color: #334155;
+    background: #eef2ff;
     padding: 3px 10px;
     border-radius: 6px;
     font-weight: 500;
@@ -402,6 +435,17 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+    .rs-toolbar-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .rs-filter-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
     .rs-filter-select,
     .rs-filter-form,
     .rs-search-box {
@@ -410,6 +454,15 @@
     }
     .rs-search-box {
         margin-left: 0;
+    }
+
+    .rs-toolbar.search-only .rs-search-box {
+        width: 100%;
+        justify-self: stretch;
+    }
+
+    .rs-filter-status {
+        width: 100%;
     }
 }
 </style>
@@ -436,26 +489,31 @@
 <div class="rs-toolbar no-print{% if isSefView %} search-only{% endif %}">
     <div class="rs-toolbar-row">
         {% if not isSefView %}
-        <select class="rs-filter-select" id="rsFilterCollege" onchange="filterDeptsByCollege(); applyFilters()">
-            <option value="">All Colleges</option>
-            {% for col in colleges %}
-                <option value="{{ col }}">{{ col }}</option>
-            {% endfor %}
-        </select>
-        <form method="get" action="{{ path(prefix ~ '_results') }}" class="rs-filter-form">
-            {% if isSefView %}
-                <input type="hidden" name="view" value="sef">
-            {% endif %}
-            {% if selectedEvaluation %}
-                <input type="hidden" name="evaluation" value="{{ selectedEvaluation }}">
-            {% endif %}
-            <select name="department" id="rsDeptSelect" class="rs-filter-select" onchange="this.form.submit()">
-                <option value="">All Departments</option>
-                {% for dept in departments %}
-                    <option value="{{ dept.id }}" data-college="{{ dept.collegeName ?? '' }}" {{ selectedDepartment == dept.id ? 'selected' }}>{{ dept.departmentName }}</option>
+        <div class="rs-filter-group">
+            <select class="rs-filter-select" id="rsFilterCollege" onchange="filterDeptsByCollege(); applyFilters()">
+                <option value="">All Colleges</option>
+                {% for col in colleges %}
+                    <option value="{{ col }}">{{ col }}</option>
                 {% endfor %}
             </select>
-        </form>
+            <form method="get" action="{{ path(prefix ~ '_results') }}" class="rs-filter-form">
+                {% if isSefView %}
+                    <input type="hidden" name="view" value="sef">
+                {% endif %}
+                {% if selectedEvaluation %}
+                    <input type="hidden" name="evaluation" value="{{ selectedEvaluation }}">
+                {% endif %}
+                <select name="department" id="rsDeptSelect" class="rs-filter-select" onchange="this.form.submit()">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                        <option value="{{ dept.id }}" data-college="{{ dept.collegeName ?? '' }}" {{ selectedDepartment == dept.id ? 'selected' }}>{{ dept.departmentName }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <div class="rs-filter-status">
+                <small class="rs-result-count" id="resultCount"></small>
+            </div>
+        </div>
         {% endif %}
         <div class="rs-search-box">
             <i class="bi bi-search rs-search-icon"></i>
@@ -472,9 +530,6 @@
         {% endif %}
         {% endif %}
     </div>
-    {% if not isSefView %}
-    <small class="rs-result-count mt-2 d-block" id="resultCount"></small>
-    {% endif %}
 </div>
 
 {# ── Results Table ── #}
@@ -492,6 +547,9 @@
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
                     <th>{{ isSefView ? 'Superior' : 'Faculty Name' }}</th>
+                    {% if isSefView %}
+                    <th>Position</th>
+                    {% endif %}
                     {% if not isSefView %}
                     <th>Department</th>
                     {% endif %}
@@ -532,6 +590,11 @@
                             </div>
                         </div>
                     </td>
+                    {% if isSefView %}
+                    <td>
+                        <span class="rs-position-tag">{{ r.faculty.position ?? r.faculty.employmentStatus ?? '—' }}</span>
+                    </td>
+                    {% endif %}
                     {% if not isSefView %}
                     <td>
                         <span class="rs-dept-tag">
@@ -573,7 +636,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="{{ isSefView ? 7 : 8 }}" class="text-center py-5">
+                    <td colspan="8" class="text-center py-5">
                         <div class="rs-empty-icon mx-auto mb-2"><i class="bi bi-inbox"></i></div>
                         <span class="text-muted">No results found for this evaluation period.</span>
                     </td>

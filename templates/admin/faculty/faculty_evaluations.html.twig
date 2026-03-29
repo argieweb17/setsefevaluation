@@ -1,5 +1,9 @@
 {% extends 'base.html.twig' %}
-{% set prefix = staffMode|default(false) ? 'staff' : 'admin' %}
+{% set isStaffMode = staffMode|default(false) %}
+{% set prefix = isStaffMode ? 'staff' : 'admin' %}
+{% set printAllSetupUrl = isStaffMode
+    ? app.request.basePath ~ '/reports/results/print-all/setup?faculty=' ~ faculty.id
+    : path('admin_results_print_all_setup', {faculty: faculty.id}) %}
 
 {% block title %}{{ faculty.fullName }} | Evaluations{% endblock %}
 
@@ -490,7 +494,7 @@
                     <i class="bi bi-arrow-left me-1"></i>Back to Results
                 </a>
                 {% if evaluations|length > 0 %}
-                <a href="{{ path(prefix ~ '_results_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fe-btn-print">
+                <a href="{{ printAllSetupUrl }}" target="_blank" class="btn btn-sm fe-btn-print">
                     <i class="bi bi-printer me-1"></i>Print All
                 </a>
                 {% if not staffMode %}
@@ -621,7 +625,7 @@
                 </td>
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-1">
-                        <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
+                        <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
                     </div>
                 </td>
             </tr>
@@ -665,7 +669,7 @@
                     </td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
-                            <a href="{{ path(prefix ~ '_results_print', {faculty: faculty.id, evaluation: ev.id, subject: subj.subjectId, section: subj.section}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
+                            <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id, subject: subj.subjectId, section: subj.section}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i class="bi bi-printer"></i></a>
                         </div>
                     </td>
                 </tr>
@@ -733,7 +737,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const thChecks = document.querySelectorAll('.fe-th-check');
     const tdChecks = document.querySelectorAll('.fe-td-check');
     const facultyId = {{ faculty.id }};
-    const basePrintUrl = '{{ path(prefix ~ '_results_print_all', {faculty: faculty.id}) }}';
+    const basePrintUrl = '{{ printAllSetupUrl|e('js') }}';
     let selectMode = false;
 
     if (!toggleBtn) return;

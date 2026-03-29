@@ -220,6 +220,24 @@
                         </a>
                     </div>
                 </div>
+                {% set _staff_correspondence_routes = ['staff_correspondence_set_ids','staff_correspondence_sef_ids'] %}
+                {% set _staff_correspondence_route = app.request.attributes.get('_route')|default('') %}
+                <div class="sidebar-dropdown {% if _staff_correspondence_route in _staff_correspondence_routes %}open{% endif %}">
+                    <a class="nav-link sidebar-dropdown-toggle {% if _staff_correspondence_route in _staff_correspondence_routes %}active{% endif %}" href="#">
+                        <i class="bi bi-folder2-open sidebar-icon"></i> Correspondence
+                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                    </a>
+                    <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
+                        <a class="sidebar-sub-link {% if 'staff_correspondence_set_ids' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                           href="{{ path('staff_correspondence_set_ids') }}">
+                            <i class="bi bi-hash me-1"></i> SET ID
+                        </a>
+                        <a class="sidebar-sub-link {% if 'staff_correspondence_sef_ids' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                           href="{{ path('staff_correspondence_sef_ids') }}">
+                            <i class="bi bi-hash me-1"></i> SEF ID
+                        </a>
+                    </div>
+                </div>
                 <div class="sidebar-header">Navigation</div>
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">

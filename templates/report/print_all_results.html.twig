@@ -300,7 +300,21 @@
             text-align: left;
         }
         .sig-label {
-            margin-bottom: 30px;
+            margin-bottom: 8px;
+        }
+        .sig-slot {
+            height: 40px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: flex-end;
+        }
+        .sig-image {
+            display: block;
+            max-width: 180px;
+            max-height: 38px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
         }
         .sig-name {
             font-weight: 700;
@@ -339,9 +353,9 @@
             <table class="doc-info-table">
                 <tr>
                     <td class="di-lbl">Document ID</td>
-                    <td class="di-val"></td>
+                    <td class="di-val">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
                     <td class="di-lbl">Issue Status</td>
-                    <td class="di-val"></td>
+                    <td class="di-val">3</td>
                     <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong></td>
                 </tr>
                 <tr>
@@ -610,13 +624,23 @@
     <div class="signature-section">
         <div class="sig-block">
             <div class="sig-label">Prepared by:</div>
-            <div class="sig-name">ARGIE PAIR PAGBUNOCAN</div>
-            <div class="sig-title">QUAMC Staff</div>
+            <div class="sig-slot">
+                {% if preparedSignature is defined and preparedSignature is not empty %}
+                    <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
+                {% endif %}
+            </div>
+            <div class="sig-name">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
+            <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
         </div>
         <div class="sig-block">
-            <div class="sig-label">Noted by:</div>
-            <div class="sig-name">CESAR P. ESTROPE, Ed.D.</div>
-            <div class="sig-title">Director, Quality Assurance Management Center</div>
+            <div class="sig-label">Certified by:</div>
+            <div class="sig-slot">
+                {% if certifiedSignature is defined and certifiedSignature is not empty %}
+                    <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
+                {% endif %}
+            </div>
+            <div class="sig-name">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
+            <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
         </div>
     </div>
 

@@ -4,324 +4,639 @@
 
 {% block stylesheets %}
 <style>
-.sp-page { max-width: 1140px; margin: 0 auto; }
-.sp-breadcrumb { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem; }
-.sp-breadcrumb a { color: #64748b; text-decoration: none; }
-.sp-breadcrumb a:hover { color: #2563eb; }
-.sp-breadcrumb .sep { color: #cbd5e1; }
-.sp-breadcrumb .current { color: #1e293b; font-weight: 600; }
-.sp-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
-.sp-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
-.sp-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
+.sp-page { max-width: 1200px; margin: 0 auto; }
+.sp-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.sp-header-title { margin: 0; font-size: 1.65rem; font-weight: 800; color: #0f172a; letter-spacing: -0.01em; }
+.sp-header-sub { margin-top: .3rem; color: #64748b; font-size: .86rem; }
 
-.sp-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-.sp-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
-.sp-chip-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; color: #fff; flex-shrink: 0; }
-.sp-chip-val { font-weight: 700; }
-
-.sp-panel { background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.04); overflow: hidden; margin-bottom: 1.25rem; }
-.sp-panel-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .85rem 1.25rem; border-bottom: 1px solid #f1f5f9; background: #fafbfc; }
-.sp-panel-title { font-size: .85rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: .45rem; }
-.sp-panel-title i { color: #059669; font-size: .95rem; }
-.sp-panel-meta { display: flex; align-items: center; gap: .75rem; font-size: .75rem; color: #64748b; }
-.sp-panel-badge { font-size: .68rem; font-weight: 600; background: #dcfce7; color: #166534; padding: .2rem .55rem; border-radius: 50px; display: inline-flex; align-items: center; gap: .2rem; }
-
-.sp-search-wrap { position: relative; }
-.sp-search-wrap > i { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: #94a3b8; pointer-events: none; }
-.sp-search-wrap input { border: 1.5px solid #e2e8f0; border-radius: 10px; padding: .4rem .75rem .4rem 2rem; font-size: .8rem; width: 200px; transition: border-color .15s, box-shadow .15s; background: #f8fafc; }
-.sp-search-wrap input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.08); background: #fff; }
-
-.sp-list { display: flex; flex-direction: column; }
-.sp-item { display: flex; align-items: center; gap: .85rem; padding: .8rem 1.25rem; border-bottom: 1px solid #f1f5f9; transition: background .1s; }
-.sp-item:last-child { border-bottom: none; }
-.sp-item:hover { background: #f8fafc; }
-
-.sp-item-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; background: #e2e8f0; }
-.sp-item-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.sp-item-avatar-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: .82rem; font-weight: 800; color: #fff; letter-spacing: .3px; }
-.sp-item-body { flex: 1; min-width: 0; }
-.sp-item-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-.sp-item-name { font-weight: 600; font-size: .88rem; color: #0f172a; }
-.sp-item-role { display: inline-flex; align-items: center; gap: .2rem; padding: .15rem .5rem; border-radius: 6px; font-size: .7rem; font-weight: 700; letter-spacing: .3px; }
-.sp-item-role-dean { background: #fef3c7; color: #92400e; }
-.sp-item-role-head { background: #dbeafe; color: #1e40af; }
-.sp-item-role-lead { background: #ede9fe; color: #5b21b6; }
-.sp-item-meta { display: flex; gap: .6rem; flex-wrap: wrap; font-size: .7rem; color: #94a3b8; margin-top: .25rem; }
-.sp-item-meta span { display: inline-flex; align-items: center; gap: .2rem; }
-
-.sp-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .65rem; border-radius: 50px; font-size: .72rem; font-weight: 600; letter-spacing: .2px; }
-.sp-badge-pending { background: #f1f5f9; color: #64748b; }
-.sp-badge-submitted { background: #dcfce7; color: #166534; }
-
-.sp-action-btn { display: inline-flex; align-items: center; gap: .3rem; padding: .4rem .85rem; border-radius: 8px; font-size: .78rem; font-weight: 600; text-decoration: none; transition: all .15s; border: none; cursor: pointer; white-space: nowrap; }
-.sp-action-evaluate { background: #059669; color: #fff; }
-.sp-action-evaluate:hover { background: #047857; color: #fff; box-shadow: 0 2px 8px rgba(5,150,105,.25); }
-.sp-action-view { background: #2563eb; color: #fff; }
-.sp-action-view:hover { background: #1d4ed8; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,.25); }
-.sp-action-done { background: #f0fdf4; color: #16a34a; cursor: default; }
-
-.sp-item-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
-
-.sp-history-filter {
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    padding: .38rem .7rem;
-    font-size: .78rem;
+.sp-toolbar {
     background: #fff;
-    color: #334155;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: .75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin-bottom: 1rem;
+}
+.sp-filter-group {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .2rem .45rem;
+}
+.sp-filter-label { font-size: .73rem; color: #475569; font-weight: 600; }
+.sp-filter-control {
+    border: none;
+    background: transparent;
+    font-size: .79rem;
+    color: #1e293b;
+    padding: .25rem .3rem;
+    min-width: 130px;
+}
+.sp-filter-control:focus { outline: none; }
+.sp-search-box {
+    position: relative;
+    min-width: 210px;
+    flex: 1;
+    max-width: 370px;
+}
+.sp-search-box i {
+    position: absolute;
+    left: .72rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: .8rem;
+}
+.sp-search-box input {
+    width: 100%;
+    border: 1px solid #dbe3ee;
+    border-radius: 10px;
+    padding: .47rem .72rem .47rem 2rem;
+    background: #fff;
+    color: #0f172a;
+    font-size: .8rem;
+}
+.sp-search-box input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+.sp-panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.sp-panel.is-hidden { display: none; }
+.sp-panel-head {
+    padding: .85rem 1rem;
+    border-bottom: 1px solid #eef2f7;
+    background: #fbfcfe;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+.sp-panel-title { margin: 0; font-size: .95rem; font-weight: 700; color: #0f172a; display: inline-flex; align-items: center; gap: .45rem; }
+.sp-panel-title i { color: #2563eb; }
+.sp-panel-note { font-size: .76rem; color: #64748b; }
+
+.sp-table-wrap { overflow-x: auto; }
+.sp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 860px;
+}
+.sp-table thead th {
+    text-align: left;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .045em;
+    color: #516484;
+    font-weight: 700;
+    padding: .58rem .82rem;
+    border-bottom: 1px solid #e8edf4;
+    background: #f5f8fc;
+}
+.sp-th-sort {
+    margin-left: .3rem;
+    color: #9aa8bd;
+    font-size: .65rem;
+    vertical-align: middle;
+}
+.sp-table tbody td {
+    padding: .58rem .82rem;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: middle;
+    font-size: .76rem;
+    color: #1e293b;
+}
+.sp-table tbody tr:hover { background: #fbfdff; }
+.sp-table tbody tr:last-child td { border-bottom: none; }
+
+.sp-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    border-radius: 8px;
+    padding: .2rem .42rem;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #0f53d7;
+    background: #dbeafe;
 }
 
-/* Progress bar */
-.sp-progress { display: flex; align-items: center; gap: .5rem; font-size: .75rem; color: #64748b; }
-.sp-progress-bar { width: 80px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
-.sp-progress-fill { height: 100%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 3px; transition: width .3s; }
+.sp-person {
+    display: flex;
+    align-items: center;
+    gap: .52rem;
+    min-width: 190px;
+}
+.sp-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sp-avatar-fallback { color: #fff; font-size: .72rem; font-weight: 700; letter-spacing: .02em; }
+.sp-person-name { font-weight: 700; color: #0f172a; font-size: .78rem; }
+.sp-person-meta { margin-top: .08rem; color: #64748b; font-size: .68rem; }
 
-/* Empty State */
-.sp-empty { text-align: center; padding: 4rem 2rem 3.5rem; }
-.sp-empty-illustration { width: 130px; height: 130px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
-.sp-empty-illustration::before { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 2px dashed #d1d5db; animation: sp-spin 20s linear infinite; }
-@keyframes sp-spin { to { transform: rotate(360deg); } }
-.sp-empty-illustration i { font-size: 3.2rem; color: #059669; opacity: .5; }
-.sp-empty-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
-.sp-empty-desc { font-size: .84rem; color: #64748b; max-width: 360px; margin: 0 auto; line-height: 1.5; }
+.sp-role {
+    display: inline-flex;
+    align-items: center;
+    gap: .28rem;
+    border-radius: 8px;
+    padding: .2rem .42rem;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    line-height: 1;
+    width: fit-content;
+    max-width: 100%;
+    white-space: nowrap;
+}
+.sp-role-dean { background: #fef3c7; color: #92400e; }
+.sp-role-head { background: #d9e9ff; color: #0c5f99; }
+.sp-role-lead { background: #f3e8ff; color: #6b21a8; }
+.sp-role i {
+    margin-top: 0;
+    flex-shrink: 0;
+    font-size: .7rem;
+}
 
-@media (max-width: 768px) {
-    .sp-header-title { font-size: 1.25rem; }
-    .sp-item { padding: .7rem .85rem; }
-    .sp-search-wrap input { width: 150px; }
+.sp-department-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .28rem;
+    border-radius: 8px;
+    padding: .2rem .42rem;
+    font-size: .72rem;
+    font-weight: 600;
+    background: #e9eef5;
+    border: 1px solid #d5deea;
+    color: #25364f;
+    line-height: 1;
+    width: fit-content;
+    max-width: 100%;
+    white-space: nowrap;
+}
+.sp-department-chip i {
+    font-size: .7rem;
+    margin-top: 0;
+    flex-shrink: 0;
+}
+
+.sp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .24rem;
+    border-radius: 999px;
+    padding: .16rem .5rem;
+    font-size: .64rem;
+    font-weight: 600;
+}
+.sp-status-submitted { background: #dcfce7; color: #166534; }
+.sp-status-pending { background: #f1f5f9; color: #475569; }
+.sp-status-note {
+    margin-top: .14rem;
+    color: #6b7280;
+    font-size: .64rem;
+    font-weight: 600;
+}
+
+.sp-period-title { font-weight: 600; color: #0f172a; font-size: .82rem; }
+.sp-period-meta { margin-top: .08rem; font-size: .66rem; color: #64748b; }
+
+.sp-action {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    font-weight: 700;
+    font-size: .75rem;
+    padding: .42rem .72rem;
+    white-space: nowrap;
+}
+.sp-action-view { background: #2563eb; color: #fff; }
+.sp-action-view:hover { background: #1d4ed8; color: #fff; }
+.sp-action-evaluate { background: #059669; color: #fff; }
+.sp-action-evaluate:hover { background: #047857; color: #fff; }
+.sp-action-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid #cfd9e6;
+    background: #fff;
+    color: #315b93;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: .78rem;
+}
+.sp-action-icon:hover {
+    background: #edf3fe;
+    border-color: #b7c9e5;
+    color: #1d4ed8;
+}
+
+.sp-empty { padding: 2.3rem 1rem; text-align: center; color: #64748b; font-size: .85rem; }
+.sp-no-results { display: none; }
+.sp-no-results td { text-align: center; color: #64748b; font-style: italic; padding: 1.2rem 1rem; }
+
+@media (max-width: 900px) {
+    .sp-header-title { font-size: 1.35rem; }
+    .sp-toolbar { padding: .65rem; }
+    .sp-filter-control { min-width: 110px; }
 }
 </style>
 {% endblock %}
 
 {% block body %}
-
 <div class="sp-page">
-
-<div class="sp-header">
-    <div>
-        <h1 class="sp-header-title">Evaluate Personnel</h1>
-        <div class="sp-header-sub">SEF Workflow &middot; President → Vice President → Campus Director → Dean → Department Head</div>
-    </div>
-    {% if totalEvaluatees > 0 %}
-    <div class="sp-search-wrap">
-        <i class="bi bi-search"></i>
-        <input type="search" id="spSearch" placeholder="Search personnel...">
-    </div>
-    {% endif %}
-</div>
-
-{% if openEvals|length > 0 and totalEvaluatees > 0 %}
-
-{% set totalSubmitted = 0 %}
-{% set totalPersonnel = 0 %}
-{% for eval in openEvals %}
-    {% set evalEvaluatees = evaluateesByEval[eval.id]|default([]) %}
-    {% for item in evalEvaluatees %}
-        {% set key = eval.id ~ '-' ~ item.user.id %}
-        {% set totalPersonnel = totalPersonnel + 1 %}
-        {% if submissions[key] is defined and submissions[key] %}{% set totalSubmitted = totalSubmitted + 1 %}{% endif %}
-    {% endfor %}
-{% endfor %}
-
-<div class="sp-chips">
-    <div class="sp-chip">
-        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#059669,#047857);"><i class="bi bi-people"></i></span>
-        <span><span class="sp-chip-val">{{ totalEvaluatees }}</span> Personnel</span>
-    </div>
-    <div class="sp-chip">
-        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="bi bi-journal-text"></i></span>
-        <span><span class="sp-chip-val">{{ openEvals|length }}</span> Open Period{{ openEvals|length > 1 ? 's' : '' }}</span>
-    </div>
-    <div class="sp-chip">
-        <span class="sp-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="bi bi-check-circle"></i></span>
-        <span><span class="sp-chip-val">{{ totalSubmitted }}</span>/{{ totalPersonnel }} Done</span>
-    </div>
-</div>
-
-{% for eval in openEvals %}
-    {% set evalEvaluatees = evaluateesByEval[eval.id]|default([]) %}
-    {% set evalSubmitted = 0 %}
-    {% for item in evalEvaluatees %}
-        {% set key = eval.id ~ '-' ~ item.user.id %}
-        {% if submissions[key] is defined and submissions[key] %}{% set evalSubmitted = evalSubmitted + 1 %}{% endif %}
-    {% endfor %}
-    {% set progressPct = evalEvaluatees|length > 0 ? ((evalSubmitted / evalEvaluatees|length) * 100)|round : 0 %}
-
-    <div class="sp-panel">
-        <div class="sp-panel-head">
-            <div class="sp-panel-title">
-                <i class="bi bi-calendar-check"></i>
-                {{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }} &mdash; {{ eval.schoolYear ?? '' }} {{ eval.semester ?? '' }}
-            </div>
-            <div class="sp-panel-meta">
-                <span class="sp-panel-badge"><i class="bi bi-broadcast"></i> Open</span>
-                <span><i class="bi bi-clock me-1"></i>{{ eval.startDate|date('M d') }} – {{ eval.endDate|date('M d, Y') }}</span>
-                <div class="sp-progress">
-                    <div class="sp-progress-bar"><div class="sp-progress-fill" style="width:{{ progressPct }}%"></div></div>
-                    <span>{{ evalSubmitted }}/{{ evalEvaluatees|length }}</span>
-                </div>
-            </div>
-        </div>
-        <div class="sp-list">
-            {% set colors = ['#059669','#2563eb','#7c3aed','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
-            {% for item in evalEvaluatees %}
-                {% set key = eval.id ~ '-' ~ item.user.id %}
-                {% set colorIdx = loop.index0 % colors|length %}
-                {% set nameParts = item.user.fullName|split(' ') %}
-                {% set initials = nameParts[0][:1]|upper ~ (nameParts|length > 1 ? nameParts[nameParts|length - 1][:1]|upper : '') %}
-                <div class="sp-item" data-search="{{ item.user.fullName }} {{ item.label }} {{ item.user.department ? item.user.department.departmentName : '' }} {{ item.subjectPreview }}">
-                    <div class="sp-item-avatar">
-                        {% if item.user.profilePicture %}
-                            <img src="{{ asset('images/' ~ item.user.profilePictureOrDefault) }}" alt="{{ item.user.fullName }} profile" class="sp-item-avatar-img">
-                        {% else %}
-                            <span class="sp-item-avatar-fallback" style="background:{{ colors[colorIdx] }};">{{ initials }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="sp-item-body">
-                        <div class="sp-item-top">
-                            <span class="sp-item-name">{{ item.user.fullName }}</span>
-                            <span class="sp-item-role {{ item.type == 'dean' ? 'sp-item-role-dean' : (item.type == 'department_head' ? 'sp-item-role-head' : 'sp-item-role-lead') }}">{{ item.label }}</span>
-                            {% if submissions[key] is defined and submissions[key] %}
-                                <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
-                            {% else %}
-                                <span class="sp-badge sp-badge-pending"><i class="bi bi-clock"></i> Pending</span>
-                            {% endif %}
-                        </div>
-                        <div class="sp-item-meta">
-                            {% if item.user.department %}
-                                <span><i class="bi bi-building"></i> {{ item.user.department.departmentName }}</span>
-                            {% endif %}
-                            <span><i class="bi bi-journal-bookmark"></i> {{ item.subjectCount }} subject{{ item.subjectCount != 1 ? 's' : '' }}</span>
-                            {% if item.subjectPreview %}
-                                <span><i class="bi bi-list-ul"></i> {{ item.subjectPreview }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="sp-item-actions">
-                        {% if submissions[key] is defined and submissions[key] %}
-                            <a href="{{ path('superior_evaluate_view', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-btn sp-action-view">
-                                <i class="bi bi-eye"></i> View
-                            </a>
-                        {% else %}
-                            <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-btn sp-action-evaluate">
-                                <i class="bi bi-pencil-square"></i> Evaluate
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
-            {% if evalEvaluatees|length == 0 %}
-            <div class="sp-item" style="justify-content:center;color:#64748b;">
-                No eligible personnel found for your hierarchy level in this SEF period.
-            </div>
-            {% endif %}
+    <div class="sp-header">
+        <div>
+            <h1 class="sp-header-title">Evaluate Personnel</h1>
+            <div class="sp-header-sub">SEF Workflow &middot; President &rarr; Vice President &rarr; Campus Director &rarr; Dean &rarr; Department Head</div>
         </div>
     </div>
-{% endfor %}
 
-{% elseif openEvals|length == 0 %}
-<div class="sp-panel">
-    <div class="sp-panel-head">
-        <div class="sp-panel-title"><i class="bi bi-calendar-check"></i> Evaluation Periods</div>
-    </div>
-    <div class="sp-empty">
-        <div class="sp-empty-illustration">
-            <i class="bi bi-clipboard-check"></i>
-        </div>
-        <div class="sp-empty-title">No evaluations available</div>
-        <div class="sp-empty-desc">Evaluations will appear here when an evaluation period is open for your role.</div>
-    </div>
-</div>
-{% else %}
-<div class="sp-panel">
-    <div class="sp-panel-head">
-        <div class="sp-panel-title"><i class="bi bi-people"></i> Personnel</div>
-    </div>
-    <div class="sp-empty">
-        <div class="sp-empty-illustration">
-            <i class="bi bi-person-x"></i>
-        </div>
-        <div class="sp-empty-title">No personnel to evaluate</div>
-        <div class="sp-empty-desc">No faculty are currently available in your department for open SEF periods.</div>
-    </div>
-</div>
-{% endif %}
+    {% set hasOpenRecords = (openEvals|length > 0 and totalEvaluatees > 0) %}
+    {% set hasHistoryRecords = historyItems|length > 0 %}
+    {% set defaultRecordType = hasOpenRecords ? 'open' : 'previous' %}
 
-{% if historyYears|length > 0 or historyItems|length > 0 %}
-<div class="sp-panel">
-    <div class="sp-panel-head">
-        <div class="sp-panel-title">
-            <i class="bi bi-clock-history"></i>
-            Previous Submitted Evaluations
+    {% if hasOpenRecords or hasHistoryRecords %}
+    <div class="sp-toolbar">
+        <div class="sp-search-box">
+            <i class="bi bi-search"></i>
+            <input type="search" id="spSearch" placeholder="Search personnel, role, department, or period...">
         </div>
-        <form method="get" class="d-flex align-items-center gap-2">
-            <label for="spHistoryYear" class="small text-muted mb-0">Academic Year</label>
-            <select id="spHistoryYear" name="schoolYear" class="sp-history-filter" onchange="this.form.submit()">
-                <option value="">All years</option>
+
+        <div class="sp-filter-group">
+            <span class="sp-filter-label">Records</span>
+            <select id="spRecordType" class="sp-filter-control">
+                {% if hasOpenRecords %}<option value="open" {{ defaultRecordType == 'open' ? 'selected' : '' }}>Open evaluations</option>{% endif %}
+                {% if hasHistoryRecords %}<option value="previous" {{ defaultRecordType == 'previous' ? 'selected' : '' }}>Previous submitted</option>{% endif %}
+            </select>
+        </div>
+
+        <div class="sp-filter-group" id="spOpenStatusWrap"{% if defaultRecordType != 'open' %} style="display:none"{% endif %}>
+            <span class="sp-filter-label">Status</span>
+            <select id="spOpenStatus" class="sp-filter-control">
+                <option value="all">All status</option>
+                <option value="pending">Pending</option>
+                <option value="submitted">Submitted</option>
+            </select>
+        </div>
+
+        <div class="sp-filter-group" id="spOpenPeriodWrap"{% if defaultRecordType != 'open' %} style="display:none"{% endif %}>
+            <span class="sp-filter-label">Period</span>
+            <select id="spOpenPeriod" class="sp-filter-control">
+                <option value="all">All open periods</option>
+                {% for eval in openEvals %}
+                <option value="{{ eval.id }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }} - {{ eval.schoolYear ?? '' }} {{ eval.semester ?? '' }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="sp-filter-group" id="spHistoryYearWrap"{% if defaultRecordType != 'previous' %} style="display:none"{% endif %}>
+            <span class="sp-filter-label">Academic Year</span>
+            <select id="spHistoryYear" class="sp-filter-control">
+                <option value="all">All years</option>
                 {% for sy in historyYears %}
                 <option value="{{ sy }}" {{ selectedHistoryYear == sy ? 'selected' : '' }}>{{ sy }}</option>
                 {% endfor %}
             </select>
-        </form>
+        </div>
+
     </div>
-    {% if historyItems|length > 0 %}
-    <div class="sp-list">
-        {% for item in historyItems %}
-        <div class="sp-item">
-            <div class="sp-item-avatar">
-                {% if item.evaluatee.profilePicture %}
-                    <img src="{{ asset('images/' ~ item.evaluatee.profilePictureOrDefault) }}" alt="{{ item.evaluatee.fullName }} profile" class="sp-item-avatar-img">
-                {% else %}
+    {% endif %}
+
+    <div class="sp-panel {{ defaultRecordType != 'open' ? 'is-hidden' : '' }}" id="spOpenPanel">
+        <div class="sp-panel-head">
+            <h2 class="sp-panel-title">Open Evaluations</h2>
+            <div class="sp-panel-note">Active evaluation records.</div>
+        </div>
+
+        {% if hasOpenRecords %}
+        <div class="sp-table-wrap">
+            <table class="sp-table" id="spOpenTable">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Period <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Faculty <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Position <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Department <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set colors = ['#0f766e','#1d4ed8','#6d28d9','#c2410c','#be123c','#0e7490','#475569'] %}
+                    {% for eval in openEvals %}
+                        {% set evalEvaluatees = evaluateesByEval[eval.id]|default([]) %}
+                        {% for item in evalEvaluatees %}
+                            {% set key = eval.id ~ '-' ~ item.user.id %}
+                            {% set colorIdx = loop.index0 % colors|length %}
+                            {% set parts = item.user.fullName|split(' ') %}
+                            {% set initials = parts[0][:1]|upper ~ (parts|length > 1 ? parts[parts|length - 1][:1]|upper : '') %}
+                            {% set isSubmitted = submissions[key] is defined and submissions[key] %}
+                            {% set rowStatus = isSubmitted ? 'submitted' : 'pending' %}
+                            <tr class="sp-open-row" data-search="{{ item.user.fullName }} {{ item.label }} {{ item.user.department ? item.user.department.departmentName : '' }} {{ eval.schoolYear }} {{ eval.semester }} {{ item.subjectPreview }}" data-status="{{ rowStatus }}" data-period="{{ eval.id }}">
+                                <td>
+                                    <span class="sp-type-badge">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span>
+                                </td>
+                                <td>
+                                    <div class="sp-period-title">{{ eval.schoolYear ?? '-' }} {{ eval.semester ?? '' }}</div>
+                                    <div class="sp-period-meta">{{ eval.startDate|date('M d, Y h:i A') }} - {{ eval.endDate|date('M d, Y h:i A') }}</div>
+                                </td>
+                                <td>
+                                    <div class="sp-person">
+                                        <span class="sp-avatar">
+                                            <img src="{{ asset('images/' ~ item.user.profilePictureOrDefault) }}" alt="{{ item.user.fullName }} profile" onerror="this.onerror=null;this.src='{{ asset('images/default-profile.svg') }}';">
+                                        </span>
+                                        <div>
+                                            <div class="sp-person-name">{{ item.user.fullName }}</div>
+                                            <div class="sp-person-meta">{{ item.subjectCount }} subject{{ item.subjectCount != 1 ? 's' : '' }}{% if item.subjectPreview %} &middot; {{ item.subjectPreview }}{% endif %}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="sp-role {{ item.type == 'dean' ? 'sp-role-dean' : (item.type == 'department_head' ? 'sp-role-head' : 'sp-role-lead') }}"><i class="bi bi-person-badge"></i> {{ item.label }}</span>
+                                </td>
+                                <td>
+                                    <span class="sp-department-chip"><i class="bi bi-building"></i> {{ item.user.department ? item.user.department.departmentName : 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    {% if isSubmitted %}
+                                        <span class="sp-status sp-status-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                                    {% else %}
+                                        <span class="sp-status sp-status-pending"><i class="bi bi-clock"></i> Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if isSubmitted %}
+                                        <a href="{{ path('superior_evaluate_view', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="View evaluation"><i class="bi bi-eye"></i></a>
+                                    {% else %}
+                                        <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="Evaluate"><i class="bi bi-pencil-square"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                    <tr id="spOpenNoResults" class="sp-no-results">
+                        <td colspan="7">No records match your filter selection.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="sp-empty">No personnel are currently available for open evaluation periods.</div>
+        {% endif %}
+    </div>
+
+    {% if historyYears|length > 0 or historyItems|length > 0 %}
+    <div class="sp-panel {{ defaultRecordType != 'previous' ? 'is-hidden' : '' }}" id="spHistoryPanel">
+        <div class="sp-panel-head">
+            <h2 class="sp-panel-title"><i class="bi bi-clock-history"></i> Previous Submitted Evaluations</h2>
+            <div class="sp-panel-note">Completed submissions archive.</div>
+        </div>
+
+        {% if historyItems|length > 0 %}
+        <div class="sp-table-wrap">
+            <table class="sp-table" id="spHistoryTable">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Period <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Faculty <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Position <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Department <i class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in historyItems %}
                     {% set p = item.evaluatee.fullName|split(' ') %}
                     {% set initials = p[0][:1]|upper ~ (p|length > 1 ? p[p|length - 1][:1]|upper : '') %}
-                    <span class="sp-item-avatar-fallback" style="background:#64748b;">{{ initials }}</span>
-                {% endif %}
-            </div>
-            <div class="sp-item-body">
-                <div class="sp-item-top">
-                    <span class="sp-item-name">{{ item.evaluatee.fullName }}</span>
-                    <span class="sp-item-role {{ item.evaluateeLabel == 'Dean' ? 'sp-item-role-dean' : (item.evaluateeLabel == 'Department Head' ? 'sp-item-role-head' : 'sp-item-role-lead') }}">{{ item.evaluateeLabel }}</span>
-                    <span class="sp-badge sp-badge-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
-                </div>
-                <div class="sp-item-meta">
-                    {% if item.evaluatee.department %}
-                        <span><i class="bi bi-building"></i> {{ item.evaluatee.department.departmentName }}</span>
-                    {% endif %}
-                    <span><i class="bi bi-mortarboard"></i> {{ item.evaluation.schoolYear ?: '—' }}</span>
-                    <span><i class="bi bi-calendar3"></i> {{ item.evaluation.semester ?: '—' }}</span>
-                    <span><i class="bi bi-star-fill"></i> {{ item.averageRating|number_format(2) }}/5</span>
-                    <span><i class="bi bi-clock"></i> {{ item.submittedAt|date('M d, Y h:i A') }}</span>
-                </div>
-            </div>
-            <div class="sp-item-actions">
-                <a href="{{ path('superior_evaluate_view', {evalId: item.evaluation.id, evaluateeId: item.evaluatee.id}) }}" class="sp-action-btn sp-action-view">
-                    <i class="bi bi-eye"></i> View
-                </a>
-            </div>
+                    <tr class="sp-history-row" data-search="{{ item.evaluatee.fullName }} {{ item.evaluateeLabel }} {{ item.evaluatee.department ? item.evaluatee.department.departmentName : '' }} {{ item.evaluation.schoolYear }} {{ item.evaluation.semester }}" data-year="{{ item.evaluation.schoolYear ?: '' }}">
+                        <td>
+                            <span class="sp-type-badge">{{ item.evaluation.evaluationType == 'SUPERIOR' ? 'SEF' : item.evaluation.evaluationType }}</span>
+                        </td>
+                        <td>
+                            <div class="sp-period-title">{{ item.evaluation.schoolYear ?: '-' }} {{ item.evaluation.semester ?: '' }}</div>
+                            <div class="sp-period-meta">Submitted {{ item.submittedAt|date('M d, Y h:i A') }}</div>
+                        </td>
+                        <td>
+                            <div class="sp-person">
+                                <span class="sp-avatar">
+                                    <img src="{{ asset('images/' ~ item.evaluatee.profilePictureOrDefault) }}" alt="{{ item.evaluatee.fullName }} profile" onerror="this.onerror=null;this.src='{{ asset('images/default-profile.svg') }}';">
+                                </span>
+                                <div>
+                                    <div class="sp-person-name">{{ item.evaluatee.fullName }}</div>
+                                    <div class="sp-person-meta">Archived evaluation</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="sp-role {{ item.evaluateeLabel == 'Dean' ? 'sp-role-dean' : (item.evaluateeLabel == 'Department Head' ? 'sp-role-head' : 'sp-role-lead') }}">{{ item.evaluateeLabel }}</span>
+                        </td>
+                        <td>
+                            <span class="sp-department-chip"><i class="bi bi-building"></i> {{ item.evaluatee.department ? item.evaluatee.department.departmentName : 'N/A' }}</span>
+                        </td>
+                        <td>
+                            <span class="sp-status sp-status-submitted"><i class="bi bi-check-circle-fill"></i> Submitted</span>
+                            <div class="sp-status-note">Avg: {{ item.averageRating|number_format(2) }}/5</div>
+                        </td>
+                        <td>
+                            <a href="{{ path('superior_evaluate_view', {evalId: item.evaluation.id, evaluateeId: item.evaluatee.id}) }}" class="sp-action-icon" title="View evaluation"><i class="bi bi-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr id="spHistoryNoResults" class="sp-no-results">
+                        <td colspan="7">No previous submissions match your filter selection.</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        {% endfor %}
+        {% else %}
+        <div class="sp-empty">No previous evaluations found for the selected filter.</div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="sp-empty" style="padding:2.2rem 1.2rem;">
-        <div class="sp-empty-title" style="font-size:.95rem;">No previous evaluations found</div>
-        <div class="sp-empty-desc">Try a different academic year filter.</div>
+    {% endif %}
+
+    {% if not hasOpenRecords and not hasHistoryRecords %}
+    <div class="sp-panel">
+        <div class="sp-empty">No evaluations are available at this time.</div>
     </div>
     {% endif %}
 </div>
-{% endif %}
-
-</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const input = document.getElementById('spSearch');
-    if (!input) return;
-    input.addEventListener('input', () => {
-        const term = input.value.trim().toLowerCase();
-        document.querySelectorAll('.sp-item').forEach(item => {
-            item.style.display = !term || (item.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
+(() => {
+    const initSuperiorEvaluateFilters = () => {
+    const pageRoot = document.querySelector('.sp-page');
+    if (!pageRoot || pageRoot.dataset.filtersBound === '1') {
+        return;
+    }
+    pageRoot.dataset.filtersBound = '1';
+
+    const searchInput = document.getElementById('spSearch');
+    const recordType = document.getElementById('spRecordType');
+    const openStatus = document.getElementById('spOpenStatus');
+    const openPeriod = document.getElementById('spOpenPeriod');
+    const historyYear = document.getElementById('spHistoryYear');
+
+    const openPanel = document.getElementById('spOpenPanel');
+    const historyPanel = document.getElementById('spHistoryPanel');
+
+    const openStatusWrap = document.getElementById('spOpenStatusWrap');
+    const openPeriodWrap = document.getElementById('spOpenPeriodWrap');
+    const historyYearWrap = document.getElementById('spHistoryYearWrap');
+
+    const openRows = Array.from(document.querySelectorAll('.sp-open-row'));
+    const historyRows = Array.from(document.querySelectorAll('.sp-history-row'));
+
+    const openNoResults = document.getElementById('spOpenNoResults');
+    const historyNoResults = document.getElementById('spHistoryNoResults');
+
+    if (!recordType && !searchInput) {
+        return;
+    }
+
+    const getSearchTerm = () => (searchInput ? searchInput.value.trim().toLowerCase() : '');
+    const getMode = () => {
+        if (recordType) {
+            return recordType.value;
+        }
+
+        return historyPanel && !openPanel ? 'previous' : 'open';
+    };
+
+    const applyOpenFilters = () => {
+        let visibleCount = 0;
+        const term = getSearchTerm();
+        const status = openStatus ? openStatus.value : 'all';
+        const period = openPeriod ? openPeriod.value : 'all';
+
+        openRows.forEach((row) => {
+            const rowSearch = (row.dataset.search || '').toLowerCase();
+            const rowStatus = row.dataset.status || '';
+            const rowPeriod = row.dataset.period || '';
+
+            const matchesSearch = !term || rowSearch.includes(term);
+            const matchesStatus = status === 'all' || rowStatus === status;
+            const matchesPeriod = period === 'all' || rowPeriod === period;
+
+            const visible = matchesSearch && matchesStatus && matchesPeriod;
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
         });
-    });
-});
+
+        if (openNoResults) {
+            openNoResults.style.display = visibleCount === 0 ? '' : 'none';
+        }
+    };
+
+    const applyHistoryFilters = () => {
+        let visibleCount = 0;
+        const term = getSearchTerm();
+        const year = historyYear ? historyYear.value : 'all';
+
+        historyRows.forEach((row) => {
+            const rowSearch = (row.dataset.search || '').toLowerCase();
+            const rowYear = row.dataset.year || '';
+
+            const matchesSearch = !term || rowSearch.includes(term);
+            const matchesYear = year === 'all' || rowYear === year;
+
+            const visible = matchesSearch && matchesYear;
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        if (historyNoResults) {
+            historyNoResults.style.display = visibleCount === 0 ? '' : 'none';
+        }
+    };
+
+    const togglePanels = () => {
+        const mode = getMode();
+
+        if (openPanel) {
+            openPanel.classList.toggle('is-hidden', mode !== 'open');
+        }
+        if (historyPanel) {
+            historyPanel.classList.toggle('is-hidden', mode !== 'previous');
+        }
+
+        if (openStatusWrap) {
+            openStatusWrap.style.display = mode === 'open' ? '' : 'none';
+        }
+        if (openPeriodWrap) {
+            openPeriodWrap.style.display = mode === 'open' ? '' : 'none';
+        }
+        if (historyYearWrap) {
+            historyYearWrap.style.display = mode === 'previous' ? '' : 'none';
+        }
+
+        if (mode === 'open') {
+            applyOpenFilters();
+        } else {
+            applyHistoryFilters();
+        }
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const mode = getMode();
+            if (mode === 'open') {
+                applyOpenFilters();
+            } else {
+                applyHistoryFilters();
+            }
+        });
+    }
+
+    if (recordType) {
+        recordType.addEventListener('change', togglePanels);
+    }
+    if (openStatus) {
+        openStatus.addEventListener('change', applyOpenFilters);
+    }
+    if (openPeriod) {
+        openPeriod.addEventListener('change', applyOpenFilters);
+    }
+    if (historyYear) {
+        historyYear.addEventListener('change', applyHistoryFilters);
+    }
+
+    togglePanels();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSuperiorEvaluateFilters, { once: true });
+    } else {
+        initSuperiorEvaluateFilters();
+    }
+    document.addEventListener('turbo:load', initSuperiorEvaluateFilters);
+})();
 </script>
 {% endblock %}

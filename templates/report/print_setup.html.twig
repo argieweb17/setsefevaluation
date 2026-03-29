@@ -1,0 +1,504 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ title|default('Prepare Print Report') }}{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .ps-wrap {
+        max-width: 980px;
+        margin: 1.25rem auto;
+    }
+
+    .ps-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+
+    .ps-head {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e2e8f0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
+        color: #fff;
+    }
+
+    .ps-head h1 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    .ps-head p {
+        margin: .35rem 0 0;
+        font-size: .82rem;
+        opacity: .9;
+    }
+
+    .ps-body {
+        padding: 1rem 1.25rem 1.25rem;
+    }
+
+    .ps-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .ps-field label {
+        display: block;
+        font-size: .78rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: .35rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .ps-field input {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: .62rem .75rem;
+        font-size: .92rem;
+        color: #0f172a;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .ps-field-wide {
+        grid-column: 1 / -1;
+        max-width: calc((100% - 1rem) / 2);
+    }
+
+    .ps-field input:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .ps-sign-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .ps-pad-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: .75rem;
+    }
+
+    .ps-pad-title {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: .5rem;
+    }
+
+    .ps-pad {
+        width: 100%;
+        height: 170px;
+        border: 1px dashed #94a3b8;
+        border-radius: 10px;
+        background: #fff;
+        touch-action: none;
+        display: block;
+        cursor: crosshair;
+    }
+
+    .ps-pad-hint {
+        margin-top: .45rem;
+        font-size: .74rem;
+        color: #64748b;
+    }
+
+    .ps-pad-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-top: .5rem;
+    }
+
+    .ps-pad-import {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #0f172a;
+        border-radius: 8px;
+        padding: .35rem .6rem;
+        font-size: .78rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .ps-pad-file {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .ps-pad-clear {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #0f172a;
+        border-radius: 8px;
+        padding: .35rem .6rem;
+        font-size: .78rem;
+        font-weight: 600;
+    }
+
+    .ps-pad-status {
+        margin-top: .35rem;
+        font-size: .72rem;
+        color: #475569;
+        min-height: 1.1em;
+    }
+
+    .ps-pad-status.is-error {
+        color: #b91c1c;
+    }
+
+    .ps-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.1rem;
+        padding-top: .9rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .ps-note {
+        margin: 0;
+        font-size: .78rem;
+        color: #64748b;
+    }
+
+    .ps-submit {
+        border: none;
+        background: #1d4ed8;
+        color: #fff;
+        border-radius: 10px;
+        padding: .62rem 1rem;
+        font-size: .85rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    .ps-submit:hover {
+        background: #1e40af;
+    }
+
+    @media (max-width: 900px) {
+        .ps-grid,
+        .ps-sign-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ps-field-wide {
+            max-width: 100%;
+        }
+
+        .ps-foot {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .ps-submit {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid ps-wrap">
+    <div class="ps-card">
+        <div class="ps-head">
+            <h1>{{ title|default('Prepare Print Report') }}</h1>
+            <p>Update signatory details and add e-signatures before opening the print report.</p>
+        </div>
+
+        <form id="printSetupForm" class="ps-body" method="post" action="{{ printActionUrl }}" data-turbo="false">
+            <input type="hidden" name="evaluation" value="{{ evaluation|default(0) }}">
+            <input type="hidden" name="faculty" value="{{ faculty|default(0) }}">
+            {% if selectedEvals is defined and selectedEvals|length > 0 %}
+                {% for evalId in selectedEvals %}
+                    <input type="hidden" name="evals[]" value="{{ evalId }}">
+                {% endfor %}
+            {% endif %}
+            {% if subject is defined and subject is not null and subject != '' %}
+                <input type="hidden" name="subject" value="{{ subject }}">
+            {% endif %}
+            {% if section is defined and section is not null and section != '' %}
+                <input type="hidden" name="section" value="{{ section }}">
+            {% endif %}
+
+            <div class="ps-grid">
+                <div class="ps-field ps-field-wide">
+                    <label for="correspondenceId">Correspondence ID</label>
+                    <input id="correspondenceId" name="correspondenceId" type="text" maxlength="120" value="{{ correspondenceIdDefault|default('DTAL-OTUP-ODQA-F1249-V002') }}" required>
+                </div>
+                <div class="ps-field">
+                    <label for="preparedBy">Prepared By</label>
+                    <input id="preparedBy" name="preparedBy" type="text" maxlength="120" value="{{ preparedByDefault|default('Argie Pair Pagbunocan') }}" required>
+                </div>
+                <div class="ps-field">
+                    <label for="preparedTitle">Prepared By Title</label>
+                    <input id="preparedTitle" name="preparedTitle" type="text" maxlength="160" value="{{ preparedTitleDefault|default('QUAMC Staff') }}" required>
+                </div>
+                <div class="ps-field">
+                    <label for="certifiedBy">Certified By</label>
+                    <input id="certifiedBy" name="certifiedBy" type="text" maxlength="120" value="{{ certifiedByDefault|default('CESAR P. ESTROPE, Ed.D') }}" required>
+                </div>
+                <div class="ps-field">
+                    <label for="certifiedTitle">Certified By Title</label>
+                    <input id="certifiedTitle" name="certifiedTitle" type="text" maxlength="160" value="{{ certifiedTitleDefault|default('Director, Quality Assurance Management Center') }}" required>
+                </div>
+            </div>
+
+            <div class="ps-sign-grid">
+                <div class="ps-pad-card">
+                    <div class="ps-pad-title">Prepared By Signature</div>
+                    <canvas id="preparedPad" class="ps-pad"></canvas>
+                    <input type="hidden" id="preparedSignature" name="preparedSignature">
+                    <div class="ps-pad-actions">
+                        <label class="ps-pad-import">
+                            <i class="bi bi-upload"></i> Import
+                            <input type="file" id="preparedFile" class="ps-pad-file" accept="image/png,image/jpeg,image/webp">
+                        </label>
+                        <button type="button" class="ps-pad-clear" id="clearPrepared">Clear</button>
+                    </div>
+                    <div class="ps-pad-hint">Draw or import a signature image (PNG/JPG/WEBP).</div>
+                    <div id="preparedStatus" class="ps-pad-status"></div>
+                </div>
+
+                <div class="ps-pad-card">
+                    <div class="ps-pad-title">Certified By Signature</div>
+                    <canvas id="certifiedPad" class="ps-pad"></canvas>
+                    <input type="hidden" id="certifiedSignature" name="certifiedSignature">
+                    <div class="ps-pad-actions">
+                        <label class="ps-pad-import">
+                            <i class="bi bi-upload"></i> Import
+                            <input type="file" id="certifiedFile" class="ps-pad-file" accept="image/png,image/jpeg,image/webp">
+                        </label>
+                        <button type="button" class="ps-pad-clear" id="clearCertified">Clear</button>
+                    </div>
+                    <div class="ps-pad-hint">Draw, import, or leave blank if no e-signature is needed.</div>
+                    <div id="certifiedStatus" class="ps-pad-status"></div>
+                </div>
+            </div>
+
+            <div class="ps-foot">
+                <p class="ps-note">The print preview opens in a new tab and auto-triggers the browser print dialog.</p>
+                <button type="submit" class="ps-submit">Open Print Preview</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    function setupPad(canvasId, hiddenId, clearId, fileId, statusId) {
+        var canvas = document.getElementById(canvasId);
+        var hidden = document.getElementById(hiddenId);
+        var clearBtn = document.getElementById(clearId);
+        var fileInput = document.getElementById(fileId);
+        var status = document.getElementById(statusId);
+
+        if (!canvas || !hidden || !clearBtn) {
+            return { capture: function () {} };
+        }
+
+        var ctx = canvas.getContext('2d');
+        var drawing = false;
+        var hasInk = false;
+
+        function setStatus(message, isError) {
+            if (!status) {
+                return;
+            }
+            status.textContent = message || '';
+            status.classList.toggle('is-error', !!isError);
+        }
+
+        function fitAndDraw(img) {
+            var width = canvas.clientWidth;
+            var height = canvas.clientHeight;
+            var padding = 8;
+            var maxW = Math.max(width - (padding * 2), 1);
+            var maxH = Math.max(height - (padding * 2), 1);
+            var scale = Math.min(maxW / img.width, maxH / img.height);
+            var drawW = img.width * scale;
+            var drawH = img.height * scale;
+            var x = (width - drawW) / 2;
+            var y = (height - drawH) / 2;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(img, x, y, drawW, drawH);
+            hasInk = true;
+        }
+
+        function configureContext() {
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#111827';
+        }
+
+        function resizeCanvas() {
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            var width = canvas.clientWidth;
+            var height = canvas.clientHeight;
+            var snapshot = hasInk ? canvas.toDataURL('image/png') : null;
+
+            canvas.width = Math.floor(width * ratio);
+            canvas.height = Math.floor(height * ratio);
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            configureContext();
+            ctx.clearRect(0, 0, width, height);
+
+            if (snapshot) {
+                var img = new Image();
+                img.onload = function () {
+                    ctx.drawImage(img, 0, 0, width, height);
+                };
+                img.src = snapshot;
+            }
+        }
+
+        function pointFromEvent(event) {
+            var rect = canvas.getBoundingClientRect();
+            if (event.touches && event.touches.length > 0) {
+                return {
+                    x: event.touches[0].clientX - rect.left,
+                    y: event.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+            };
+        }
+
+        function start(event) {
+            event.preventDefault();
+            drawing = true;
+            var point = pointFromEvent(event);
+            ctx.beginPath();
+            ctx.moveTo(point.x, point.y);
+        }
+
+        function move(event) {
+            if (!drawing) {
+                return;
+            }
+            event.preventDefault();
+            var point = pointFromEvent(event);
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+            hasInk = true;
+        }
+
+        function end(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            drawing = false;
+            ctx.closePath();
+        }
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        canvas.addEventListener('mouseup', end);
+        canvas.addEventListener('mouseleave', end);
+
+        canvas.addEventListener('touchstart', start, { passive: false });
+        canvas.addEventListener('touchmove', move, { passive: false });
+        canvas.addEventListener('touchend', end, { passive: false });
+        canvas.addEventListener('touchcancel', end, { passive: false });
+
+        clearBtn.addEventListener('click', function () {
+            var width = canvas.clientWidth;
+            var height = canvas.clientHeight;
+            ctx.clearRect(0, 0, width, height);
+            hasInk = false;
+            hidden.value = '';
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            setStatus('');
+        });
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function () {
+                var file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+                if (!file) {
+                    return;
+                }
+
+                if (!/^image\//.test(file.type)) {
+                    setStatus('Only image files are allowed.', true);
+                    fileInput.value = '';
+                    return;
+                }
+
+                if (file.size > (5 * 1024 * 1024)) {
+                    setStatus('Image size must be 5MB or less.', true);
+                    fileInput.value = '';
+                    return;
+                }
+
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    var img = new Image();
+                    img.onload = function () {
+                        fitAndDraw(img);
+                        setStatus('Signature imported successfully.', false);
+                    };
+                    img.onerror = function () {
+                        setStatus('Unable to load selected image.', true);
+                    };
+                    img.src = event.target && event.target.result ? event.target.result : '';
+                };
+                reader.onerror = function () {
+                    setStatus('Failed to read selected image.', true);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        return {
+            capture: function () {
+                hidden.value = hasInk ? canvas.toDataURL('image/png') : '';
+            }
+        };
+    }
+
+    var prepared = setupPad('preparedPad', 'preparedSignature', 'clearPrepared', 'preparedFile', 'preparedStatus');
+    var certified = setupPad('certifiedPad', 'certifiedSignature', 'clearCertified', 'certifiedFile', 'certifiedStatus');
+
+    var form = document.getElementById('printSetupForm');
+    if (form) {
+        form.addEventListener('submit', function () {
+            prepared.capture();
+            certified.capture();
+        });
+    }
+})();
+</script>
+{% endblock %}

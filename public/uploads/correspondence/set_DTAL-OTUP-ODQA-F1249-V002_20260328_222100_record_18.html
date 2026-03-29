@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Evaluation Report — {{ faculty.fullName }}</title>
+    <title>Evaluation Report — Ryan Escorial</title>
     <style>
         /* ══════════════════════════════════════════════
            PRINT LAYOUT — Edit this file to customise
@@ -293,67 +293,48 @@
 </head>
 <body>
 
-    {% set hasCommentsPage = false %}
-    {% for _result in sectionResults %}
-        {% if _result.comments|length > 0 %}
-            {% set hasCommentsPage = true %}
-        {% endif %}
-    {% endfor %}
-
+                                        
     <div class="page-sheet">
     <div class="page-main">
 
-    {# ═══════════════════════════════════════════
-       LETTERHEAD
-       ═══════════════════════════════════════════ #}
-    <div class="letterhead">
-        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        <div class="letterhead">
+        <img src="https://127.0.0.1:8000/images/header.jpg" alt="NORSU Letterhead">
     </div>
 
-    {# ═══════════════════════════════════════════
-       TITLE BLOCK
-       ═══════════════════════════════════════════ #}
-    <div class="title-block">
+        <div class="title-block">
         <h1>Office of the University Quality Assurance Management Center</h1>
         <br>
-        <h2>RESULT OF {{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }}</h2>
+        <h2>RESULT OF STUDENT EVALUATION FOR TEACHER</h2>
 
     </div>
 
-    {# ═══════════════════════════════════════════
-       FACULTY INFO
-       ═══════════════════════════════════════════ #}
-    <table class="info-table">
+        <table class="info-table">
         <tr>
             <td class="lbl">Name of Faculty:</td>
-            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
+            <td class="val" style="width:38%">Escorial, Ryan</td>
             <td class="lbl">Subject:</td>
-            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
+            <td class="val-right">ITS 401</td>
         </tr>
         <tr>
             <td class="lbl">College/Department:</td>
-            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
+            <td class="val">College of Arts and Sciences (CAS)</td>
             <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+            <td class="val-right">1st Semester</td>
         </tr>
         <tr>
             <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
+            <td class="val">Main Campus I</td>
             <td class="lbl">Section:</td>
-            <td class="val-right">{{ printSection ?? '—' }}</td>
+            <td class="val-right">E</td>
         </tr>
     </table>
 
-    {# ═══════════════════════════════════════════
-       SUMMARY RESULTS TABLE
-       ═══════════════════════════════════════════ #}
-    {% for result in sectionResults %}
-    <div class="section-result" style="margin-bottom: 15px;">
+            <div class="section-result" style="margin-bottom: 15px;">
         <table class="results-table">
             <thead>
                 <tr>
                     <th rowspan="3" style="width:30%">Areas of Instruction</th>
-                    <th colspan="3">{{ result.subjectCode }}</th>
+                    <th colspan="3">ITS 401</th>
                     <th colspan="2">Composite Results</th>
                 </tr>
                 <tr>
@@ -368,61 +349,52 @@
                 </tr>
             </thead>
             <tbody>
-                {% set totalAvgScore = 0 %}
-                {% set totalMaxScore = 0 %}
-                {% for cat in result.categorySummary %}
-                {% set itemCount = cat.questionCount|default(0) %}
-                {% set itemAvg = cat.averageScore|default((cat.mean|default(0)) * itemCount) %}
-                {% set itemMax = cat.maxScore|default(itemCount * 5) %}
-                {% set itemPct = cat.ratingPct|default(itemMax > 0 ? (itemAvg / itemMax) * 100 : 0) %}
-                {% set romanLabel = cat.roman|default(loop.index) %}
-                {% set romanPrefix = romanLabel ~ '.' %}
-                {% set cleanName = cat.name|trim %}
-                {% if cleanName starts with romanPrefix %}
-                    {% set cleanName = cleanName|slice(romanPrefix|length)|trim %}
-                {% endif %}
-                {% set totalAvgScore = totalAvgScore + itemAvg %}
-                {% set totalMaxScore = totalMaxScore + itemMax %}
-                <tr>
-                    <td class="area-cell">{{ romanLabel }}. {{ cleanName }}</td>
-                    <td>{{ itemAvg|round(0, 'common') }}</td>
-                    <td>{{ itemMax }}</td>
-                    <td>{{ itemPct|round(0, 'common') }}</td>
-                    <td>{{ itemAvg|round(0, 'common') }}</td>
-                    <td>{{ itemPct|round(0, 'common') }}</td>
+                                                                                                                                                                                                                                                                    <tr>
+                    <td class="area-cell">I. Management of Teaching and Learning</td>
+                    <td>24</td>
+                    <td>30</td>
+                    <td>79</td>
+                    <td>24</td>
+                    <td>79</td>
                 </tr>
-                {% endfor %}
-                {% set totalPct = totalMaxScore > 0 ? (totalAvgScore / totalMaxScore) * 100 : 0 %}
-                {% set pctLevel = totalPct >= 91 ? 'ALWAYS MANIFESTED' : (totalPct >= 61 ? 'OFTEN MANIFESTED' : (totalPct >= 31 ? 'SOMETIMES MANIFESTED' : (totalPct >= 11 ? 'SELDOM MANIFESTED' : 'NEVER/RARELY MANIFESTED'))) %}
-                <tr class="total-row">
+                                                                                                                                                                                                                                    <tr>
+                    <td class="area-cell">II. Content Knowledge, Pedagogy and Technology</td>
+                    <td>20</td>
+                    <td>25</td>
+                    <td>82</td>
+                    <td>20</td>
+                    <td>82</td>
+                </tr>
+                                                                                                                                                                                                                                    <tr>
+                    <td class="area-cell">III. Commitment and Transparency</td>
+                    <td>17</td>
+                    <td>20</td>
+                    <td>86</td>
+                    <td>17</td>
+                    <td>86</td>
+                </tr>
+                                                                <tr class="total-row">
                     <td class="area-cell" style="text-align:right;">Total Score</td>
-                    <td>{{ totalAvgScore|round(0, 'common') }}</td>
-                    <td>{{ totalMaxScore }}</td>
-                    <td>{{ totalPct|round(0, 'common') }}</td>
-                    <td>{{ totalAvgScore|round(0, 'common') }}</td>
-                    <td>{{ totalPct|round(0, 'common') }}</td>
+                    <td>61</td>
+                    <td>75</td>
+                    <td>82</td>
+                    <td>61</td>
+                    <td>82</td>
                 </tr>
                 <tr class="verbal-row">
                     <td class="area-cell" style="font-weight:400;">Verbal Description</td>
-                    <td colspan="3">{{ pctLevel }}</td>
-                    <td colspan="2">{{ result.performanceLevel|upper }}</td>
+                    <td colspan="3">OFTEN MANIFESTED</td>
+                    <td colspan="2">OFTEN MANIFESTED</td>
                 </tr>
                 <tr class="subject-row">
-                    <td class="area-cell">{{ result.subjectCode }}</td>
-                    <td>{{ result.evaluatorCount }}</td>
+                    <td class="area-cell">ITS 401</td>
+                    <td>5</td>
                 </tr>
             </tbody>
         </table>
     </div>
-    {% if not loop.last %}
-        <div style="page-break-after: always; margin-bottom: 20px;"></div>
-    {% endif %}
-    {% endfor %}
-
-    {# ═══════════════════════════════════════════
-       RATING SCALE
-       ═══════════════════════════════════════════ #}
-    <div class="rating-scale">
+        
+        <div class="rating-scale">
         <strong>RATING SCALE:</strong>
         91 - 100% - <em>Always manifested</em>;
         61 - 90% - <em>Often manifested</em>;
@@ -431,27 +403,18 @@
         0 - 10% - <em>Never/Rarely manifested</em>
     </div>
 
-    {# ═══════════════════════════════════════════
-       PURPOSE
-       ═══════════════════════════════════════════ #}
-    <div class="purpose">
+        <div class="purpose">
         Purpose: <span style="font-weight:400;">For IPCR Requirement only.</span>
     </div>
 
-    {# ═══════════════════════════════════════════
-       SIGNATURE SECTION
-       ═══════════════════════════════════════════ #}
-   <div class="signature-section">
+       <div class="signature-section">
         <div class="sig-block">
             <div class="sig-label">Prepared by:</div>
             <div class="sig-left">
                 <div class="sig-slot">
-                    {% if preparedSignature is defined and preparedSignature is not empty %}
-                        <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
-                    {% endif %}
-                </div>
-                <div class="sig-line">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
-                <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
+                                    </div>
+                <div class="sig-line">Argie Pair Pagbunocan</div>
+                <div class="sig-title">QUAMC Staff</div>
             </div>
             <div style="clear:both;"></div>
         </div>
@@ -461,21 +424,15 @@
             <div class="sig-label">Certified true and correct:</div>
             <div class="sig-right">
                 <div class="sig-slot">
-                    {% if certifiedSignature is defined and certifiedSignature is not empty %}
-                        <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
-                    {% endif %}
-                </div>
-                <div class="sig-line">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
-                <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
+                                    </div>
+                <div class="sig-line">CESAR P. ESTROPE, Ed.D</div>
+                <div class="sig-title">Director, Quality Assurance Management Center</div>
             </div>
             <div style="clear:both;"></div>
         </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DISCLAIMER
-       ═══════════════════════════════════════════ #}
-    <div class="disclaimer">
+        <div class="disclaimer">
         <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
         addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
         the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
@@ -483,20 +440,17 @@
         sender. Thank you</em>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DOCUMENT FOOTER — PAGE 1
-       ═══════════════════════════════════════════ #}
-    </div>
+        </div>
     <div class="page-footer">
     <table class="doc-footer-table">
         <tr>
             <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val" colspan="3">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
-            <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>{{ hasCommentsPage ? '2' : '1' }}</strong></td>
+            <td class="ft-val" colspan="3">DTAL-OTUP-ODQA-F1249-V002</td>
+            <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>2</strong></td>
         </tr>
         <tr>
             <td class="ft-lbl">Issue Date</td>
-            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
+            <td class="ft-val">03-28-2026</td>
             <td class="ft-lbl">Issue Status</td>
             <td class="ft-val">3</td>
         </tr>
@@ -510,90 +464,64 @@
     </div>
     </div>
 
-     {% if hasCommentsPage %}
-    {# ═══════════════════════════════════════════
-       PAGE BREAK — COMMENTS PAGE
-       ═══════════════════════════════════════════ #}
-    <div class="page-break"></div>
+             <div class="page-break"></div>
 
     <div class="page-sheet">
     <div class="page-main">
 
-    {# ═══════════════════════════════════════════
-       LETTERHEAD (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="letterhead">
-        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        <div class="letterhead">
+        <img src="https://127.0.0.1:8000/images/header.jpg" alt="NORSU Letterhead">
     </div>
 
-    {# ═══════════════════════════════════════════
-       TITLE BLOCK (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="title-block">
+        <div class="title-block">
         <h1>Office of the University Quality Assurance Management Center</h1>
         <br>
-        <h2>{{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }} — COMMENTS</h2>
+        <h2>STUDENT EVALUATION FOR TEACHER — COMMENTS</h2>
     </div>
 
-    {# ═══════════════════════════════════════════
-       FACULTY INFO (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <table class="info-table">
+        <table class="info-table">
         <tr>
             <td class="lbl">Name of Faculty:</td>
-            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
+            <td class="val" style="width:38%">Escorial, Ryan</td>
             <td class="lbl">Subject:</td>
-            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
+            <td class="val-right">ITS 401</td>
         </tr>
         <tr>
             <td class="lbl">College/Department:</td>
-            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
+            <td class="val">College of Arts and Sciences (CAS)</td>
             <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+            <td class="val-right">1st Semester</td>
         </tr>
         <tr>
             <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
+            <td class="val">Main Campus I</td>
             <td class="lbl">Section:</td>
-            <td class="val-right">{{ printSection ?? '—' }}</td>
+            <td class="val-right">E</td>
         </tr>
     </table>
 
-    {# ═══════════════════════════════════════════
-       COMMENTS (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    {% for result in sectionResults %}
-    <div class="comments-section" style="{% if not loop.first %}page-break-before: always; padding-top: 20px;{% endif %}">
-        <h3>Evaluator Comments — {{ result.subjectCode }}</h3>
+            <div class="comments-section" style="">
+        <h3>Evaluator Comments — ITS 401</h3>
         <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
-            <strong>Evaluators:</strong> {{ result.evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ result.comments|length }}
+            <strong>Evaluators:</strong> 5 &nbsp; | &nbsp; <strong>Comments:</strong> 5
         </div>
-        {% if result.comments|length > 0 %}
-        <ol>
-            {% for c in result.comments %}
-                <li>{{ c }}</li>
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="no-comments">No comments were submitted for this evaluation.</p>
-        {% endif %}
-    </div>
-    {% endfor %}
-
-    {# ═══════════════════════════════════════════
-       SIGNATURE SECTION (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="signature-section">
+                <ol>
+                            <li>Oky sya</li>
+                            <li>Okyy</li>
+                            <li>Good</li>
+                            <li>Ok</li>
+                            <li>Haj</li>
+                    </ol>
+            </div>
+    
+        <div class="signature-section">
         <div class="sig-block">
             <div class="sig-label">Prepared by:</div>
             <div class="sig-left">
                 <div class="sig-slot">
-                    {% if preparedSignature is defined and preparedSignature is not empty %}
-                        <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
-                    {% endif %}
-                </div>
-                <div class="sig-line">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
-                <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
+                                    </div>
+                <div class="sig-line">Argie Pair Pagbunocan</div>
+                <div class="sig-title">QUAMC Staff</div>
             </div>
             <div style="clear:both;"></div>
         </div>
@@ -602,21 +530,15 @@
             <div class="sig-label">Certified true and correct:</div>
             <div class="sig-right">
                 <div class="sig-slot">
-                    {% if certifiedSignature is defined and certifiedSignature is not empty %}
-                        <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
-                    {% endif %}
-                </div>
-                <div class="sig-line">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
-                <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
+                                    </div>
+                <div class="sig-line">CESAR P. ESTROPE, Ed.D</div>
+                <div class="sig-title">Director, Quality Assurance Management Center</div>
             </div>
             <div style="clear:both;"></div>
         </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DISCLAIMER (PAGE 2)
-       ═══════════════════════════════════════════ #}
-    <div class="disclaimer">
+        <div class="disclaimer">
         <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
         addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
         the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
@@ -624,20 +546,17 @@
         sender. Thank you</em>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DOCUMENT FOOTER — PAGE 2
-       ═══════════════════════════════════════════ #}
-    </div>
+        </div>
     <div class="page-footer">
     <table class="doc-footer-table">
         <tr>
             <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val" colspan="3">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
+            <td class="ft-val" colspan="3">DTAL-OTUP-ODQA-F1249-V002</td>
             <td rowspan="3" class="ft-page">Page <strong>2</strong> of <strong>2</strong></td>
         </tr>
         <tr>
             <td class="ft-lbl">Issue Date</td>
-            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
+            <td class="ft-val">03-28-2026</td>
             <td class="ft-lbl">Issue Status</td>
             <td class="ft-val">3</td>
         </tr>
@@ -650,10 +569,8 @@
     </table>
     </div>
     </div>
-    {% endif %}
-
-    {# Auto-trigger print dialog #}
-    <script>
+    
+        <script>
         window.addEventListener('load', function() {
             setTimeout(function() { window.print(); }, 400);
         });

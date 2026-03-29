@@ -325,303 +325,323 @@
 {# Chart.js CDN #}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Color palette with gradients
-    const colors = {
-        primary: '#2563EB',
-        primaryDark: '#1d4ed8',
-        success: '#16A34A',
-        successDark: '#15803d',
-        warning: '#EA580C',
-        purple: '#A855F7',
-        danger: '#DC2626',
-        teal: '#059669',
-        pink: '#EC4899',
-        indigo: '#6366F1'
-    };
+(() => {
+    const chartStore = window.__adminDashboardCharts || {};
+    window.__adminDashboardCharts = chartStore;
 
-    // Create gradient function
-    const createGradient = (ctx, color1, color2, vertical = true) => {
-        const gradient = vertical
-            ? ctx.createLinearGradient(0, 0, 0, 200)
-            : ctx.createLinearGradient(0, 0, 200, 0);
-        gradient.addColorStop(0, color1);
-        gradient.addColorStop(1, color2);
-        return gradient;
-    };
-
-    // Common tooltip config
-    const tooltipConfig = {
-        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-        titleColor: '#fff',
-        bodyColor: '#e2e8f0',
-        padding: 12,
-        cornerRadius: 8,
-        displayColors: true,
-        boxPadding: 6,
-        titleFont: { size: 13, weight: '600' },
-        bodyFont: { size: 12 },
-        callbacks: {
-            labelTextColor: () => '#e2e8f0'
-        }
-    };
-
-    // 1. Evaluation Trends Line Chart with Gradient
-    const trendsCtx = document.getElementById('evaluationTrendsChart');
-    if (trendsCtx) {
-        const ctx = trendsCtx.getContext('2d');
-        const setGradient = createGradient(ctx, 'rgba(37, 99, 235, 0.3)', 'rgba(37, 99, 235, 0.02)');
-        const sefGradient = createGradient(ctx, 'rgba(22, 163, 74, 0.3)', 'rgba(22, 163, 74, 0.02)');
-
-        const setData = {{ monthlyTrends.SET|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
-        const sefData = {{ monthlyTrends.SEF|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
-
-        const trendsChart = new Chart(trendsCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'SET Evaluations',
-                    data: setData,
-                    borderColor: colors.primary,
-                    backgroundColor: setGradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: colors.primary,
-                    pointBorderWidth: 2,
-                    pointHoverBorderWidth: 3,
-                    borderWidth: 2.5
-                }, {
-                    label: 'SEF Evaluations',
-                    data: sefData,
-                    borderColor: colors.success,
-                    backgroundColor: sefGradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: colors.success,
-                    pointBorderWidth: 2,
-                    pointHoverBorderWidth: 3,
-                    borderWidth: 2.5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { intersect: false, mode: 'index' },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 10 }, color: '#64748b' },
-                        border: { display: false }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
-                        ticks: { font: { size: 10 }, color: '#64748b', maxTicksLimit: 5, padding: 8 },
-                        border: { display: false }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { ...tooltipConfig }
-                }
+    const destroyAdminDashboardCharts = () => {
+        Object.keys(chartStore).forEach((key) => {
+            if (chartStore[key]) {
+                chartStore[key].destroy();
+                delete chartStore[key];
             }
         });
+    };
 
-        // Custom legend pills
-        const legendContainer = document.getElementById('trendsLegend');
-        if (legendContainer) {
-            const items = [
-                { label: 'SET', color: colors.primary, idx: 0 },
-                { label: 'SEF', color: colors.success, idx: 1 }
+    const renderAdminDashboardCharts = () => {
+        const trendsCanvas = document.getElementById('evaluationTrendsChart');
+        const deptCanvas = document.getElementById('departmentChart');
+        const userCanvas = document.getElementById('userDistributionChart');
+
+        if (!trendsCanvas && !deptCanvas && !userCanvas) {
+            return;
+        }
+
+        if (typeof Chart === 'undefined') {
+            return;
+        }
+
+        destroyAdminDashboardCharts();
+
+        const colors = {
+            primary: '#2563EB',
+            success: '#16A34A'
+        };
+
+        const createGradient = (ctx, color1, color2, vertical = true) => {
+            const gradient = vertical
+                ? ctx.createLinearGradient(0, 0, 0, 200)
+                : ctx.createLinearGradient(0, 0, 200, 0);
+            gradient.addColorStop(0, color1);
+            gradient.addColorStop(1, color2);
+            return gradient;
+        };
+
+        const tooltipConfig = {
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleColor: '#fff',
+            bodyColor: '#e2e8f0',
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: true,
+            boxPadding: 6,
+            titleFont: { size: 13, weight: '600' },
+            bodyFont: { size: 12 },
+            callbacks: {
+                labelTextColor: () => '#e2e8f0'
+            }
+        };
+
+        if (trendsCanvas) {
+            const ctx = trendsCanvas.getContext('2d');
+            const setGradient = createGradient(ctx, 'rgba(37, 99, 235, 0.3)', 'rgba(37, 99, 235, 0.02)');
+            const sefGradient = createGradient(ctx, 'rgba(22, 163, 74, 0.3)', 'rgba(22, 163, 74, 0.02)');
+
+            const setData = {{ monthlyTrends.SET|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
+            const sefData = {{ monthlyTrends.SEF|default([0,0,0,0,0,0,0,0,0,0,0,0])|json_encode|raw }};
+
+            chartStore.trends = new Chart(trendsCanvas, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'SET Evaluations',
+                        data: setData,
+                        borderColor: colors.primary,
+                        backgroundColor: setGradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: colors.primary,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        borderWidth: 2.5
+                    }, {
+                        label: 'SEF Evaluations',
+                        data: sefData,
+                        borderColor: colors.success,
+                        backgroundColor: sefGradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: colors.success,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        borderWidth: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, color: '#64748b' },
+                            border: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                            ticks: { font: { size: 10 }, color: '#64748b', maxTicksLimit: 5, padding: 8 },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { ...tooltipConfig }
+                    }
+                }
+            });
+
+            const legendContainer = document.getElementById('trendsLegend');
+            if (legendContainer) {
+                legendContainer.innerHTML = '';
+                const items = [
+                    { label: 'SET', color: colors.primary, idx: 0 },
+                    { label: 'SEF', color: colors.success, idx: 1 }
+                ];
+                items.forEach((item) => {
+                    const pill = document.createElement('span');
+                    pill.className = 'legend-pill active';
+                    pill.innerHTML = `<span class="dot" style="background:${item.color}"></span>${item.label}`;
+                    pill.onclick = () => {
+                        const meta = chartStore.trends.getDatasetMeta(item.idx);
+                        meta.hidden = !meta.hidden;
+                        pill.classList.toggle('inactive', meta.hidden);
+                        pill.classList.toggle('active', !meta.hidden);
+                        chartStore.trends.update();
+                    };
+                    legendContainer.appendChild(pill);
+                });
+            }
+        }
+
+        if (deptCanvas) {
+            let deptRaw = [
+                {% for dept in departments %}
+                { label: '{{ dept.departmentName|e('js') }}', value: {{ dept.users|length }} }{% if not loop.last %},{% endif %}
+                {% endfor %}
             ];
-            items.forEach(item => {
-                const pill = document.createElement('span');
-                pill.className = 'legend-pill active';
-                pill.innerHTML = `<span class="dot" style="background:${item.color}"></span>${item.label}`;
-                pill.onclick = () => {
-                    const meta = trendsChart.getDatasetMeta(item.idx);
-                    meta.hidden = !meta.hidden;
-                    pill.classList.toggle('inactive', meta.hidden);
-                    pill.classList.toggle('active', !meta.hidden);
-                    trendsChart.update();
-                };
-                legendContainer.appendChild(pill);
-            });
-        }
-    }
 
-    // 2. Department Bar Chart - Vertical with values on top
-    const deptCtx = document.getElementById('departmentChart');
-    if (deptCtx) {
-        // Get department data and filter out zeros, then sort by count
-        let deptRaw = [
-            {% for dept in departments %}
-            { label: '{{ dept.departmentName }}', value: {{ dept.users|length }} }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ];
+            deptRaw = deptRaw.filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
 
-        // Filter departments with users and sort descending, take top 8
-        deptRaw = deptRaw.filter(d => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
-
-        // If no data, show placeholder
-        if (deptRaw.length === 0) {
-            deptRaw = [{ label: 'No data', value: 0 }];
-        }
-
-        const deptLabels = deptRaw.map(d => d.label.length > 8 ? d.label.slice(0, 8) + '..' : d.label);
-        const deptData = deptRaw.map(d => d.value);
-
-        new Chart(deptCtx, {
-            type: 'bar',
-            data: {
-                labels: deptLabels,
-                datasets: [{
-                    label: 'Users',
-                    data: deptData,
-                    backgroundColor: '#6366f1',
-                    borderRadius: 4,
-                    borderSkipped: false,
-                    barPercentage: 0.6,
-                    categoryPercentage: 0.8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: { padding: { top: 20 } },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            font: { size: 9 },
-                            color: '#64748b',
-                            maxRotation: 45,
-                            minRotation: 0
-                        },
-                        border: { display: false }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
-                        ticks: {
-                            font: { size: 10 },
-                            color: '#94a3b8',
-                            maxTicksLimit: 5,
-                            padding: 8
-                        },
-                        border: { display: false }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        ...tooltipConfig,
-                        callbacks: {
-                            title: (items) => deptRaw[items[0].dataIndex]?.label || items[0].label,
-                            label: (ctx) => ` ${ctx.raw} users`
-                        }
-                    }
-                },
-                onHover: (event, elements) => {
-                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                }
-            },
-            plugins: [{
-                id: 'valueLabels',
-                afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
-                    chart.data.datasets.forEach((dataset, i) => {
-                        const meta = chart.getDatasetMeta(i);
-                        meta.data.forEach((bar, index) => {
-                            const value = dataset.data[index];
-                            if (value > 0) {
-                                ctx.save();
-                                ctx.fillStyle = '#475569';
-                                ctx.font = 'bold 10px Inter, sans-serif';
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'bottom';
-                                ctx.fillText(value, bar.x, bar.y - 4);
-                                ctx.restore();
-                            }
-                        });
-                    });
-                }
-            }]
-        });
-    }
-
-    // 3. User Distribution Doughnut Chart - Redesigned
-    const userCtx = document.getElementById('userDistributionChart');
-    if (userCtx) {
-        const roleData = [
-            { label: 'Students', value: {{ studentCount|default(0) }}, color: '#3b82f6' },
-            { label: 'Faculty', value: {{ facultyCount|default(0) }}, color: '#10b981' },
-            { label: 'Staff', value: {{ staffCount|default(0) }}, color: '#f59e0b' },
-            { label: 'Admins', value: {{ adminCount|default(0) }}, color: '#8b5cf6' }
-        ];
-
-        const total = roleData.reduce((sum, r) => sum + r.value, 0);
-
-        new Chart(userCtx, {
-            type: 'doughnut',
-            data: {
-                labels: roleData.map(r => r.label),
-                datasets: [{
-                    data: roleData.map(r => r.value),
-                    backgroundColor: roleData.map(r => r.color),
-                    borderWidth: 3,
-                    borderColor: '#fff',
-                    hoverOffset: 6,
-                    hoverBorderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        ...tooltipConfig,
-                        callbacks: {
-                            label: (ctx) => {
-                                const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
-                                return ` ${ctx.raw} users (${pct}%)`;
-                            }
-                        }
-                    }
-                },
-                onHover: (event, elements) => {
-                    event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                }
+            if (deptRaw.length === 0) {
+                deptRaw = [{ label: 'No data', value: 0 }];
             }
-        });
 
-        // Create custom stats below chart
-        const statsContainer = document.getElementById('roleStats');
-        if (statsContainer) {
-            roleData.forEach(role => {
-                const pct = total > 0 ? ((role.value / total) * 100).toFixed(0) : 0;
-                const item = document.createElement('div');
-                item.className = 'role-stat-item';
-                item.innerHTML = `
-                    <span class="role-stat-dot" style="background:${role.color}"></span>
-                    <span class="role-stat-label">${role.label}</span>
-                    <span class="role-stat-value">${role.value}</span>
-                    <span class="role-stat-pct">(${pct}%)</span>
-                `;
-                statsContainer.appendChild(item);
+            const deptLabels = deptRaw.map((d) => d.label.length > 8 ? d.label.slice(0, 8) + '..' : d.label);
+            const deptData = deptRaw.map((d) => d.value);
+
+            chartStore.department = new Chart(deptCanvas, {
+                type: 'bar',
+                data: {
+                    labels: deptLabels,
+                    datasets: [{
+                        label: 'Users',
+                        data: deptData,
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 20 } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 9 },
+                                color: '#64748b',
+                                maxRotation: 45,
+                                minRotation: 0
+                            },
+                            border: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
+                            ticks: {
+                                font: { size: 10 },
+                                color: '#94a3b8',
+                                maxTicksLimit: 5,
+                                padding: 8
+                            },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            ...tooltipConfig,
+                            callbacks: {
+                                title: (items) => deptRaw[items[0].dataIndex]?.label || items[0].label,
+                                label: (ctx) => ` ${ctx.raw} users`
+                            }
+                        }
+                    },
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                    }
+                },
+                plugins: [{
+                    id: 'valueLabels',
+                    afterDatasetsDraw(chart) {
+                        const { ctx } = chart;
+                        chart.data.datasets.forEach((dataset, i) => {
+                            const meta = chart.getDatasetMeta(i);
+                            meta.data.forEach((bar, index) => {
+                                const value = dataset.data[index];
+                                if (value > 0) {
+                                    ctx.save();
+                                    ctx.fillStyle = '#475569';
+                                    ctx.font = 'bold 10px Inter, sans-serif';
+                                    ctx.textAlign = 'center';
+                                    ctx.textBaseline = 'bottom';
+                                    ctx.fillText(value, bar.x, bar.y - 4);
+                                    ctx.restore();
+                                }
+                            });
+                        });
+                    }
+                }]
             });
         }
+
+        if (userCanvas) {
+            const roleData = [
+                { label: 'Students', value: {{ studentCount|default(0) }}, color: '#3b82f6' },
+                { label: 'Faculty', value: {{ facultyCount|default(0) }}, color: '#10b981' },
+                { label: 'Staff', value: {{ staffCount|default(0) }}, color: '#f59e0b' },
+                { label: 'Admins', value: {{ adminCount|default(0) }}, color: '#8b5cf6' }
+            ];
+
+            const total = roleData.reduce((sum, r) => sum + r.value, 0);
+
+            chartStore.users = new Chart(userCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: roleData.map((r) => r.label),
+                    datasets: [{
+                        data: roleData.map((r) => r.value),
+                        backgroundColor: roleData.map((r) => r.color),
+                        borderWidth: 3,
+                        borderColor: '#fff',
+                        hoverOffset: 6,
+                        hoverBorderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            ...tooltipConfig,
+                            callbacks: {
+                                label: (ctx) => {
+                                    const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                                    return ` ${ctx.raw} users (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    onHover: (event, elements) => {
+                        event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+                    }
+                }
+            });
+
+            const statsContainer = document.getElementById('roleStats');
+            if (statsContainer) {
+                statsContainer.innerHTML = '';
+                roleData.forEach((role) => {
+                    const pct = total > 0 ? ((role.value / total) * 100).toFixed(0) : 0;
+                    const item = document.createElement('div');
+                    item.className = 'role-stat-item';
+                    item.innerHTML = `
+                        <span class="role-stat-dot" style="background:${role.color}"></span>
+                        <span class="role-stat-label">${role.label}</span>
+                        <span class="role-stat-value">${role.value}</span>
+                        <span class="role-stat-pct">(${pct}%)</span>
+                    `;
+                    statsContainer.appendChild(item);
+                });
+            }
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderAdminDashboardCharts, { once: true });
+    } else {
+        renderAdminDashboardCharts();
     }
-});
+
+    if (!window.__adminDashboardChartHandlersBound) {
+        document.addEventListener('turbo:load', renderAdminDashboardCharts);
+        document.addEventListener('turbo:before-cache', destroyAdminDashboardCharts);
+        window.__adminDashboardChartHandlersBound = true;
+    }
+})();
 </script>
 
 {% endblock %}
