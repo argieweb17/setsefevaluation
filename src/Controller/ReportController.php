@@ -436,63 +436,6 @@ class ReportController extends AbstractController
         ]);
     }
 
-    #[Route('/api/faculty/{id}/subjects', name: 'staff_api_faculty_subjects', methods: ['GET'])]
-    public function apiFacultySubjects(int $id, Request $request, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo, SubjectRepository $subjectRepo): JsonResponse
-    {
-        $currentAY = $ayRepo->findCurrent();
-        $loads = $fslRepo->findByFacultyAndAcademicYear($id, $currentAY ? $currentAY->getId() : null);
-        $strictLoad = $request->query->getBoolean('strictLoad', false);
-
-        $data = [];
-        $seen = [];
-
-        foreach ($loads as $load) {
-            $subject = $load->getSubject();
-            if (!$subject) {
-                continue;
-            }
-
-            $value = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
-            $schedule = trim((string) ($load->getSchedule() ?? ''));
-            $section = trim((string) ($load->getSection() ?? ''));
-            $key = mb_strtolower($value . '|' . $schedule . '|' . $section);
-            if (isset($seen[$key])) {
-                continue;
-            }
-
-            $seen[$key] = true;
-            $data[] = [
-                'value' => $value,
-                'schedule' => $schedule,
-                'section' => $section,
-            ];
-        }
-
-        if ($strictLoad) {
-            return $this->json($data);
-        }
-
-        // Fallback for legacy direct assignments in Subject.faculty.
-        foreach ($subjectRepo->findByFaculty($id) as $subject) {
-            $value = $subject->getSubjectCode() . ' — ' . $subject->getSubjectName();
-            $schedule = trim((string) ($subject->getSchedule() ?? ''));
-            $section = trim((string) ($subject->getSection() ?? ''));
-            $key = mb_strtolower($value . '|' . $schedule . '|' . $section);
-            if (isset($seen[$key])) {
-                continue;
-            }
-
-            $seen[$key] = true;
-            $data[] = [
-                'value' => $value,
-                'schedule' => $schedule,
-                'section' => $section,
-            ];
-        }
-
-        return $this->json($data);
-    }
-
     private function facultyHasScheduledLoad(int $facultyId, ?int $currentAyId, FacultySubjectLoadRepository $fslRepo): bool
     {
         $loads = $fslRepo->findByFacultyAndAcademicYear($facultyId, $currentAyId);
@@ -1904,13 +1847,14 @@ class ReportController extends AbstractController
 
     private function saveCorrespondencePdf(string $html, CorrespondenceRecord $record): bool
     {
+        $normalizedHtml = $this->normalizeCorrespondenceHtmlForPdf($html);
         $paths = $this->getCorrespondenceArtifactPaths($record);
         $baseDir = dirname($paths['pdfAbs']);
         if (!is_dir($baseDir) && !@mkdir($baseDir, 0775, true) && !is_dir($baseDir)) {
             return false;
         }
 
-        @file_put_contents($paths['htmlAbs'], $html, LOCK_EX);
+        @file_put_contents($paths['htmlAbs'], $normalizedHtml, LOCK_EX);
 
         try {
             $options = new Options();
@@ -1919,7 +1863,7 @@ class ReportController extends AbstractController
             $options->set('defaultFont', 'DejaVu Sans');
 
             $dompdf = new Dompdf($options);
-            $dompdf->loadHtml($html, 'UTF-8');
+            $dompdf->loadHtml($normalizedHtml, 'UTF-8');
             $dompdf->setPaper([0, 0, 612, 936], 'portrait');
             $dompdf->render();
 
@@ -1942,6 +1886,9 @@ class ReportController extends AbstractController
         // Keep saved-PDF margins consistent with the live print templates.
         $normalized = $html;
 
+        // Remove browser-only print scripts from stored snapshots.
+        $normalized = preg_replace('/<script\b[^>]*>\s*window\.addEventListener\(\s*["\']load["\'][\s\S]*?<\/script>/i', '', $normalized) ?? $normalized;
+
         $normalized = preg_replace(
             '/@page\s*\{\s*size:\s*8\.5in\s+13in;\s*margin:\s*[^;]+;\s*\}/i',
             '@page { size: 8.5in 13in; margin: 12mm 16mm 12mm 16mm; }',
@@ -1952,6 +1899,35 @@ class ReportController extends AbstractController
             '/body\s*\{([^{}]*?)margin:\s*[^;]+;([^{}]*?)padding:\s*[^;]+;([^{}]*?)\}/is',
             'body {$1margin: 0;$2padding: 0;$3}',
             $normalized
+        ) ?? $normalized;
+
+        // Dompdf handles flow layout more reliably than flex + absolute footer for long-paper snapshots.
+        $normalized = preg_replace(
+            '/\.page-sheet\s*\{[^{}]*\}/is',
+            '.page-sheet { position: static; min-height: 0; overflow: visible; page-break-inside: auto; break-inside: auto; }',
+            $normalized,
+            1
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/\.page-main\s*\{[^{}]*\}/is',
+            '.page-main { display: block; min-height: 0; padding-bottom: 0; }',
+            $normalized,
+            1
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/\.page-footer\s*\{[^{}]*\}/is',
+            '.page-footer { position: static; left: auto; right: auto; bottom: auto; margin-top: 10mm; page-break-inside: auto; break-inside: auto; }',
+            $normalized,
+            1
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/\.disclaimer\s*\{([^{}]*?)margin-top:\s*auto;([^{}]*?)\}/is',
+            '.disclaimer {$1margin-top: 8mm;$2}',
+            $normalized,
+            1
         ) ?? $normalized;
 
         // Fix legacy saved templates that always rendered a second comments page,
@@ -3368,7 +3344,7 @@ class ReportController extends AbstractController
             $options->set('defaultFont', 'DejaVu Sans');
 
             $dompdf = new Dompdf($options);
-            $dompdf->loadHtml($htmlSnapshot, 'UTF-8');
+            $dompdf->loadHtml($normalizedHtml, 'UTF-8');
             $dompdf->setPaper([0, 0, 612, 936], 'portrait');
             $dompdf->render();
 

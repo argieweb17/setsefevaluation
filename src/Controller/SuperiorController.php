@@ -20,7 +20,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -408,37 +407,6 @@ class SuperiorController extends AbstractController
             'selectedEvalId' => $selectedEvalId,
             'rankings' => $rankings,
             'departments' => $deptRepo->findAllOrdered(),
-        ]);
-    }
-
-    #[Route('/results/detail', name: 'superior_results_detail', methods: ['GET'])]
-    public function resultsDetail(
-        Request $request,
-        SuperiorEvaluationRepository $superiorEvalRepo,
-        UserRepository $userRepo,
-    ): JsonResponse {
-        /** @var User $user */
-        $user = $this->getUser();
-        $this->assertDepartmentHeadSuperior($user);
-
-        $evalId = (int) $request->query->get('evalId');
-        $evaluateeId = (int) $request->query->get('evaluateeId');
-
-        $evaluatee = $userRepo->find($evaluateeId);
-        if (!$evaluatee) {
-            return $this->json(['error' => 'Not found'], 404);
-        }
-
-        $catAvgs = $superiorEvalRepo->getCategoryAverages($evaluateeId, $evalId);
-        $comments = $superiorEvalRepo->getComments($evaluateeId, $evalId);
-        $overall = $superiorEvalRepo->getOverallAverage($evaluateeId, $evalId);
-
-        return $this->json([
-            'evaluatee' => $evaluatee->getFullName(),
-            'department' => $evaluatee->getDepartment() ? $evaluatee->getDepartment()->getDepartmentName() : '—',
-            'overall' => $overall,
-            'categories' => $catAvgs,
-            'comments' => array_column($comments, 'comment'),
         ]);
     }
 

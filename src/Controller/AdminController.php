@@ -1253,23 +1253,6 @@ class AdminController extends AbstractController
     // NOTE: Evaluation management has been moved to ReportController
     // for STAFF access only. Admins should not manage evaluations.
 
-    #[Route('/api/faculty/{id}/subjects', name: 'admin_api_faculty_subjects', methods: ['GET'])]
-    public function apiFacultySubjects(int $id, FacultySubjectLoadRepository $fslRepo, AcademicYearRepository $ayRepo): JsonResponse
-    {
-        $currentAY = $ayRepo->findCurrent();
-        $loads = $fslRepo->findByFacultyAndAcademicYear($id, $currentAY ? $currentAY->getId() : null);
-        $data = [];
-        foreach ($loads as $load) {
-            $s = $load->getSubject();
-            $data[] = [
-                'value' => $s->getSubjectCode() . ' — ' . $s->getSubjectName(),
-                'schedule' => $load->getSchedule() ?? '',
-                'section' => $load->getSection() ?? '',
-            ];
-        }
-        return $this->json($data);
-    }
-
     // ════════════════════════════════════════════════
     //  D. QUESTIONNAIRE MANAGEMENT
     // ════════════════════════════════════════════════

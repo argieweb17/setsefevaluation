@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Controller;
+namespace App\Controller\Api;
 
-use App\Entity\User;
 use App\Entity\EvaluationPeriod;
+use App\Entity\User;
+use App\Repository\AcademicYearRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
-use App\Repository\AcademicYearRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,12 +18,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api', name: 'api_')]
-class ApiController extends AbstractController
+class StudentApiController extends AbstractController
 {
-    // ════════════════════════════════════════════════
-    //  AUTH
-    // ════════════════════════════════════════════════
-
     #[Route('/login', name: 'login', methods: ['POST'])]
     public function login(
         Request $request,
@@ -48,7 +44,6 @@ class ApiController extends AbstractController
             return $this->json(['error' => 'Account is not active.'], 403);
         }
 
-        // Generate a simple token (hash of user id + secret + time)
         $token = hash('sha256', $user->getId() . $_ENV['APP_SECRET'] . date('Y-m-d'));
 
         return $this->json([
@@ -57,10 +52,6 @@ class ApiController extends AbstractController
         ]);
     }
 
-    // ════════════════════════════════════════════════
-    //  PROFILE
-    // ════════════════════════════════════════════════
-
     #[Route('/profile', name: 'profile', methods: ['GET'])]
     public function profile(Request $request): JsonResponse
     {
@@ -68,10 +59,6 @@ class ApiController extends AbstractController
 
         return $this->json(['user' => $this->serializeUser($user)]);
     }
-
-    // ════════════════════════════════════════════════
-    //  DASHBOARD
-    // ════════════════════════════════════════════════
 
     #[Route('/dashboard', name: 'dashboard', methods: ['GET'])]
     public function dashboard(
@@ -91,7 +78,9 @@ class ApiController extends AbstractController
         $openEvals = [];
 
         foreach ($activeEvals as $eval) {
-            if ($eval->getEndDate() < $now || $eval->getStartDate() > $now) continue;
+            if ($eval->getEndDate() < $now || $eval->getStartDate() > $now) {
+                continue;
+            }
 
             $hasResponded = $responseRepo->createQueryBuilder('r')
                 ->select('COUNT(r.id)')
@@ -122,10 +111,6 @@ class ApiController extends AbstractController
             'openEvaluations' => $openEvals,
         ]);
     }
-
-    // ════════════════════════════════════════════════
-    //  EVALUATIONS LIST
-    // ════════════════════════════════════════════════
 
     #[Route('/evaluations', name: 'evaluations', methods: ['GET'])]
     public function evaluations(
@@ -161,18 +146,11 @@ class ApiController extends AbstractController
         return $this->json(['evaluations' => $result]);
     }
 
-    // ════════════════════════════════════════════════
-    //  EVALUATION FORM (GET questions, POST submit)
-    // ════════════════════════════════════════════════
-
     #[Route('/evaluations/{id}/questions', name: 'evaluation_questions', methods: ['GET'])]
     public function evaluationQuestions(
         EvaluationPeriod $eval,
-        Request $request,
         QuestionRepository $questionRepo
     ): JsonResponse {
-        $user = $request->attributes->get('_api_user');
-
         $questions = $questionRepo->findBy(
             ['evaluationType' => $eval->getEvaluationType(), 'isActive' => true],
             ['category' => 'ASC', 'sortOrder' => 'ASC']
@@ -225,12 +203,14 @@ class ApiController extends AbstractController
 
         foreach ($ratings as $qId => $rating) {
             $question = $questionRepo->find($qId);
-            if (!$question) continue;
+            if (!$question) {
+                continue;
+            }
 
             $response = new \App\Entity\EvaluationResponse();
             $response->setEvaluationPeriod($eval);
             $response->setQuestion($question);
-            $response->setRating((int)$rating);
+            $response->setRating((int) $rating);
             $response->setComment($comment);
             $response->setSubmittedAt(new \DateTime());
             $response->setIsDraft(false);
@@ -253,65 +233,6 @@ class ApiController extends AbstractController
         return $this->json(['success' => true, 'message' => 'Evaluation submitted successfully.']);
     }
 
-    // ════════════════════════════════════════════════
-    //  RESULTS (for faculty viewing their own)
-    // ════════════════════════════════════════════════
-
-    #[Route('/my-results', name: 'my_results', methods: ['GET'])]
-    public function myResults(
-        Request $request,
-        EvaluationResponseRepository $responseRepo,
-        EvaluationPeriodRepository $evalRepo
-    ): JsonResponse {
-        $user = $request->attributes->get('_api_user');
-
-        $responses = $responseRepo->createQueryBuilder('r')
-            ->select('ep.id as evalId, ep.evaluationType, ep.schoolYear, ep.semester,
-                       AVG(r.rating) as avgRating, COUNT(DISTINCT r.evaluator) as evaluatorCount')
-            ->join('r.evaluationPeriod', 'ep')
-            ->where('r.faculty = :user')
-            ->setParameter('user', $user)
-            ->groupBy('ep.id, ep.evaluationType, ep.schoolYear, ep.semester')
-            ->getQuery()
-            ->getResult();
-
-        return $this->json(['results' => $responses]);
-    }
-
-    // ════════════════════════════════════════════════
-    //  SUBJECTS (faculty's assigned subjects)
-    // ════════════════════════════════════════════════
-
-    #[Route('/my-subjects', name: 'my_subjects', methods: ['GET'])]
-    public function mySubjects(
-        Request $request,
-        SubjectRepository $subjectRepo
-    ): JsonResponse {
-        $user = $request->attributes->get('_api_user');
-
-        $subjects = $subjectRepo->findBy(['faculty' => $user]);
-        $result = [];
-        foreach ($subjects as $s) {
-            $result[] = [
-                'id' => $s->getId(),
-                'code' => $s->getSubjectCode(),
-                'name' => $s->getSubjectName(),
-                'semester' => $s->getSemester(),
-                'schoolYear' => $s->getSchoolYear(),
-                'yearLevel' => $s->getYearLevel(),
-                'section' => $s->getSection(),
-                'schedule' => $s->getSchedule(),
-                'units' => $s->getUnits(),
-            ];
-        }
-
-        return $this->json(['subjects' => $result]);
-    }
-
-    // ════════════════════════════════════════════════
-    //  ACTIVE EVALUATIONS (for real-time QR updates)
-    // ════════════════════════════════════════════════
-
     #[Route('/active-evaluations', name: 'active_evaluations', methods: ['GET'])]
     public function activeEvaluations(
         EvaluationPeriodRepository $evalRepo
@@ -321,7 +242,7 @@ class ApiController extends AbstractController
         $result = [];
 
         foreach ($activeEvals as $eval) {
-            $isActive = ($eval->getStartDate() <= $now && $eval->getEndDate() >= $now);
+            $isActive = $eval->getStartDate() <= $now && $eval->getEndDate() >= $now;
             if ($isActive) {
                 $result[] = [
                     'id' => $eval->getId(),
@@ -339,10 +260,6 @@ class ApiController extends AbstractController
 
         return $this->json(['evaluations' => $result]);
     }
-
-    // ════════════════════════════════════════════════
-    //  HELPERS
-    // ════════════════════════════════════════════════
 
     private function serializeUser(User $user): array
     {
