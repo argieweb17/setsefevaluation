@@ -64,7 +64,7 @@
             </div>
             {% if categoryDescriptions[currentCategory] is defined and categoryDescriptions[currentCategory] %}
             <div class="eval-form-cat-desc">
-                <em>{{ categoryDescriptions[currentCategory] }}</em>
+                <em>{{ categoryDescriptions[currentCategory]|replace({' (': "\n\n("})|replace({') and ': ")\n\nand "})|nl2br }}</em>
             </div>
             {% endif %}
             <table class="eval-form-table">

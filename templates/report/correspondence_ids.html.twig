@@ -4,12 +4,12 @@
 
 {% block stylesheets %}
 <style>
-.cr-header{border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#0f172a 0%,#1e40af 55%,#2563eb 100%);box-shadow:0 4px 18px rgba(30,64,175,.2);margin-bottom:14px;}
-.cr-header-inner{padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.cr-title{color:#fff;font-size:1.15rem;font-weight:700;margin:0;}
-.cr-sub{color:rgba(255,255,255,.75);font-size:.78rem;}
-.cr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:5px 10px;font-size:.75rem;font-weight:600;}
-.cr-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 2px 12px rgba(2,6,23,.04);overflow:hidden;}
+.cr-header{border:1px solid #e5e7eb;border-bottom:0;border-radius:12px 12px 0 0;overflow:hidden;background:linear-gradient(135deg,#eff6ff,#f8fafc);margin-bottom:0;}
+.cr-header-inner{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.cr-title{color:#1e3a8a;font-size:1rem;font-weight:700;margin:0;}
+.cr-sub{font-size:.78rem;color:#64748b;}
+.cr-badge{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:999px;background:#dbeafe;color:#1e3a8a;}
+.cr-card{background:#fff;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 12px 12px;box-shadow:0 1px 5px rgba(15,23,42,.05);overflow:hidden;}
 .cr-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid #e5e7eb;background:#fbfdff;}
 .cr-search-wrap{position:relative;min-width:170px;flex:0 1 280px;max-width:280px;}
 .cr-search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.82rem;pointer-events:none;}
@@ -20,10 +20,11 @@
 .cr-table{width:100%;border-collapse:collapse;}
 .cr-table thead{background:#f8fafc;border-bottom:1px solid #e5e7eb;}
 .cr-table th{padding:11px 12px;color:#475569;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.35px;}
+.cr-th-wrap{display:inline-flex;align-items:center;gap:4px;}
+.cr-th-sort{font-size:.66rem;color:#cbd5e1;line-height:1;}
 .cr-table td{padding:11px 12px;border-bottom:1px solid #f1f5f9;font-size:.84rem;color:#0f172a;vertical-align:middle;}
 .cr-table tr:last-child td{border-bottom:0;}
 .cr-table tbody tr:hover{background:#f8fbff;}
-.cr-id{font-weight:700;color:#1e40af;}
 .cr-pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:700;letter-spacing:.25px;}
 .cr-pill-set{background:#dbeafe;color:#1e3a8a;}
 .cr-pill-sef{background:#dcfce7;color:#166534;}
@@ -33,8 +34,16 @@
 .cr-file-link{display:inline-flex;align-items:center;gap:5px;border:1px solid #cbd5e1;background:#fff;color:#1e3a8a;text-decoration:none;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;}
 .cr-file-link:hover{background:#eff6ff;color:#1e3a8a;border-color:#93c5fd;}
 .cr-action-cell{white-space:nowrap;}
-.cr-delete-btn{display:inline-flex;align-items:center;gap:5px;border:1px solid #fecaca;background:#fff1f2;color:#b91c1c;border-radius:8px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer;}
-.cr-delete-btn:hover{background:#ffe4e6;color:#991b1b;border-color:#fca5a5;}
+.cr-action-wrap{display:flex;align-items:center;gap:8px;}
+.cr-action-wrap form{margin:0;}
+.cr-icon-btn{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid transparent;background:#fff;cursor:pointer;transition:all .18s ease;box-shadow:0 1px 2px rgba(15,23,42,.06);}
+.cr-icon-btn i{font-size:.94rem;line-height:1;}
+.cr-icon-btn-release{border-color:#bbf7d0;background:#ecfdf5;color:#166534;}
+.cr-icon-btn-release:hover{background:#dcfce7;color:#14532d;border-color:#86efac;box-shadow:0 3px 10px rgba(22,101,52,.12);}
+.cr-icon-btn-delete{border-color:#fecaca;background:#fff1f2;color:#b91c1c;}
+.cr-icon-btn-delete:hover{background:#ffe4e6;color:#991b1b;border-color:#fca5a5;box-shadow:0 3px 10px rgba(153,27,27,.12);}
+.cr-icon-state{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;box-shadow:0 1px 2px rgba(15,23,42,.05);}
+.cr-icon-state i{font-size:.94rem;line-height:1;}
 .cr-no-match td{text-align:center;color:#64748b;font-style:italic;padding:16px 12px;}
 @media(max-width:768px){
     .cr-toolbar{padding:10px;}
@@ -94,27 +103,25 @@
         <table class="cr-table">
             <thead>
                 <tr>
-                    <th style="width:90px;">Record ID</th>
-                    <th>Correspondence ID</th>
-                    <th style="width:120px;">Type</th>
-                    <th style="width:130px;">Print Scope</th>
-                    <th style="width:190px;">Saved By</th>
-                    <th style="width:180px;">Saved At</th>
-                    <th style="width:120px;">PDF File</th>
-                    <th style="width:130px;">Action</th>
+                    <th><span class="cr-th-wrap">Document ID <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="cr-th-wrap">Type <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:220px;"><span class="cr-th-wrap">Faculty Name <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:190px;"><span class="cr-th-wrap">Record By <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:180px;"><span class="cr-th-wrap">Record Date <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="cr-th-wrap">File <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:110px;"><span class="cr-th-wrap">Action <i class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in records %}
                 <tr class="cr-row"
                     data-academic-year="{{ row.createdAt ? (row.createdAt|date('Y') ~ '-' ~ ((row.createdAt|date('Y')) + 1)) : '' }}"
-                    data-search="#{{ row.id }} {{ row.correspondenceId }} {{ row.printScope ?: 'print' }} {% if row.createdBy %}{{ row.createdBy.fullName }}{% else %}System{% endif %} {{ row.createdAt ? row.createdAt|date('M d, Y h:i A') : '' }} {{ row.evaluationType }}">
-                    <td class="cr-id">#{{ row.id }}</td>
+                    data-search="{{ row.correspondenceId }} {{ row.facultyName ?: 'N/A' }} {% if row.createdBy %}{{ row.createdBy.fullName }}{% else %}System{% endif %} {{ row.createdAt ? row.createdAt|date('M d, Y h:i A') : '' }} {{ row.evaluationType }}">
                     <td>{{ row.correspondenceId }}</td>
                     <td>
                         <span class="cr-pill {{ row.evaluationType == 'SEF' ? 'cr-pill-sef' : 'cr-pill-set' }}">{{ row.evaluationType }}</span>
                     </td>
-                    <td>{{ row.printScope ?: 'print' }}</td>
+                    <td>{{ row.facultyName ?: 'N/A' }}</td>
                     <td>
                         {% if row.createdBy %}
                             {{ row.createdBy.fullName }}
@@ -129,22 +136,80 @@
                         </a>
                     </td>
                     <td class="cr-action-cell">
-                        <form method="post" action="{{ path('staff_correspondence_delete', {id: row.id}) }}" onsubmit="return confirm('Delete this correspondence record?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('delete_correspondence' ~ row.id) }}">
-                            <button type="submit" class="cr-delete-btn">
-                                <i class="bi bi-trash"></i> Delete
-                            </button>
-                        </form>
+                        <div class="cr-action-wrap">
+                            {% if not row.isReleased %}
+                                <button type="button"
+                                        class="cr-icon-btn cr-icon-btn-release js-open-release-modal"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#releaseModal"
+                                        data-release-url="{{ path('staff_correspondence_release', {id: row.id}) }}"
+                                        data-release-token="{{ csrf_token('release_correspondence' ~ row.id) }}"
+                                        data-release-label="{{ row.correspondenceId }}"
+                                        title="Release">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <span class="visually-hidden">Release</span>
+                                </button>
+                            {% else %}
+                                <span class="cr-icon-state" title="Released">
+                                    <i class="bi bi-check2-circle"></i>
+                                    <span class="visually-hidden">Released</span>
+                                </span>
+                            {% endif %}
+
+                            <form method="post" action="{{ path('staff_correspondence_delete', {id: row.id}) }}" onsubmit="return confirm('Delete this correspondence record?');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_correspondence' ~ row.id) }}">
+                                <button type="submit" class="cr-icon-btn cr-icon-btn-delete" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                    <span class="visually-hidden">Delete</span>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
                 <tr id="crNoMatchRow" class="cr-no-match" style="display:none;">
-                    <td colspan="8">No records match your filter.</td>
+                    <td colspan="7">No records match your filter.</td>
                 </tr>
             </tbody>
         </table>
     </div>
     {% endif %}
+</div>
+
+<div class="modal fade" id="releaseModal" tabindex="-1" aria-labelledby="releaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" id="crReleaseForm" action="">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="releaseModalLabel">Release</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="_token" id="crReleaseToken" value="">
+
+                    <div class="mb-2">
+                        <label class="form-label form-label-sm">Name Received</label>
+                        <input type="text" name="received_by_name" id="crReleaseName" class="form-control form-control-sm" maxlength="120" required>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label form-label-sm">Release Date</label>
+                        <input type="date" name="release_date" id="crReleaseDate" class="form-control form-control-sm" value="{{ 'now'|date('Y-m-d') }}" required>
+                    </div>
+
+                    <div>
+                        <label class="form-label form-label-sm">Automatic Time</label>
+                        <input type="text" id="crReleaseTime" class="form-control form-control-sm" value="{{ 'now'|date('h:i A') }}" readonly>
+                        <div class="form-text">Current time is applied automatically when you submit release.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="bi bi-check2-circle"></i> Confirm Release</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -157,10 +222,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const rows = Array.from(document.querySelectorAll('.cr-row'));
     const noMatchRow = document.getElementById('crNoMatchRow');
     const meta = document.getElementById('crFilterMeta');
-
-    if (!searchInput || !yearFilter || rows.length === 0) {
-        return;
-    }
 
     const total = rows.length;
 
@@ -191,8 +252,60 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    searchInput.addEventListener('input', applyFilters);
-    yearFilter.addEventListener('change', applyFilters);
+    if (searchInput && yearFilter && rows.length > 0) {
+        searchInput.addEventListener('input', applyFilters);
+        yearFilter.addEventListener('change', applyFilters);
+    }
+
+    var pad = function (num) {
+        return String(num).padStart(2, '0');
+    };
+
+    var formatDate = function (now) {
+        return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    };
+
+    var formatTime = function (now) {
+        var hour = now.getHours();
+        var minute = pad(now.getMinutes());
+        var period = hour >= 12 ? 'PM' : 'AM';
+        var hour12 = hour % 12 || 12;
+        return hour12 + ':' + minute + ' ' + period;
+    };
+
+    var releaseButtons = Array.from(document.querySelectorAll('.js-open-release-modal'));
+    var releaseModal = document.getElementById('releaseModal');
+    var releaseForm = document.getElementById('crReleaseForm');
+    var releaseToken = document.getElementById('crReleaseToken');
+    var releaseName = document.getElementById('crReleaseName');
+    var releaseDate = document.getElementById('crReleaseDate');
+    var releaseTime = document.getElementById('crReleaseTime');
+    var releaseTitle = document.getElementById('releaseModalLabel');
+
+    if (releaseButtons.length > 0 && releaseModal && releaseForm && releaseToken && releaseDate && releaseTime) {
+        releaseButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                var url = button.getAttribute('data-release-url') || '';
+                var token = button.getAttribute('data-release-token') || '';
+                var label = button.getAttribute('data-release-label') || '';
+
+                releaseForm.setAttribute('action', url);
+                releaseToken.value = token;
+                if (releaseTitle) {
+                    releaseTitle.textContent = label ? ('Release ' + label) : 'Release';
+                }
+                if (releaseName) {
+                    releaseName.value = '';
+                }
+            });
+        });
+
+        releaseModal.addEventListener('show.bs.modal', function () {
+            var now = new Date();
+            releaseDate.value = formatDate(now);
+            releaseTime.value = formatTime(now);
+        });
+    }
 });
 </script>
 {% endblock %}

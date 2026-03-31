@@ -2377,6 +2377,9 @@ a.rg-contact-item:hover {
     /* ── Success modal ── */
     {% if registrationSuccess|default(false) %}
     if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        if (typeof window.playSuccessModalSound === 'function') {
+            window.playSuccessModalSound();
+        }
         var successModal = new bootstrap.Modal(document.getElementById('registrationSuccessModal'));
         successModal.show();
     }

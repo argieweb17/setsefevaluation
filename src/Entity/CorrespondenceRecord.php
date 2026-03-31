@@ -25,12 +25,28 @@ class CorrespondenceRecord
     #[ORM\Column(length: 30, nullable: true)]
     private ?string $printScope = null;
 
+    #[ORM\Column(length: 160, nullable: true)]
+    private ?string $facultyName = null;
+
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?User $createdBy = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column]
+    private bool $isReleased = false;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?User $releasedBy = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $releasedAt = null;
+
+    #[ORM\Column(length: 120, nullable: true)]
+    private ?string $receivedByName = null;
 
     public function __construct()
     {
@@ -78,6 +94,18 @@ class CorrespondenceRecord
         return $this;
     }
 
+    public function getFacultyName(): ?string
+    {
+        return $this->facultyName;
+    }
+
+    public function setFacultyName(?string $facultyName): static
+    {
+        $this->facultyName = $facultyName;
+
+        return $this;
+    }
+
     public function getCreatedBy(): ?User
     {
         return $this->createdBy;
@@ -98,6 +126,54 @@ class CorrespondenceRecord
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function isReleased(): bool
+    {
+        return $this->isReleased;
+    }
+
+    public function setIsReleased(bool $isReleased): static
+    {
+        $this->isReleased = $isReleased;
+
+        return $this;
+    }
+
+    public function getReleasedBy(): ?User
+    {
+        return $this->releasedBy;
+    }
+
+    public function setReleasedBy(?User $releasedBy): static
+    {
+        $this->releasedBy = $releasedBy;
+
+        return $this;
+    }
+
+    public function getReleasedAt(): ?\DateTimeImmutable
+    {
+        return $this->releasedAt;
+    }
+
+    public function setReleasedAt(?\DateTimeImmutable $releasedAt): static
+    {
+        $this->releasedAt = $releasedAt;
+
+        return $this;
+    }
+
+    public function getReceivedByName(): ?string
+    {
+        return $this->receivedByName;
+    }
+
+    public function setReceivedByName(?string $receivedByName): static
+    {
+        $this->receivedByName = $receivedByName;
 
         return $this;
     }

@@ -1049,6 +1049,8 @@ class AdminController extends AbstractController
     #[Route('/academic-years', name: 'admin_academic_years', methods: ['GET'])]
     public function academicYears(AcademicYearRepository $repo): Response
     {
+        $repo->syncCurrentToCalendar();
+
         return $this->render('admin/academic_years.html.twig', [
             'academicYears' => $repo->findAllOrdered(),
             'currentAY' => $repo->findCurrent(),
@@ -1068,26 +1070,51 @@ class AdminController extends AbstractController
                     return $this->redirectToRoute('admin_academic_years');
                 }
 
+                $termDateRanges = $repo->getSemesterDateRangesForYearLabel($yearLabel);
+
                 $termInputs = [
-                    ['semester' => '1st Semester', 'start' => $request->request->get('firstStartDate'), 'end' => $request->request->get('firstEndDate')],
-                    ['semester' => '2nd Semester', 'start' => $request->request->get('secondStartDate'), 'end' => $request->request->get('secondEndDate')],
-                    ['semester' => 'Summer', 'start' => $request->request->get('summerStartDate'), 'end' => $request->request->get('summerEndDate')],
+                    [
+                        'semester' => '1st Semester',
+                        'start' => $request->request->get('firstStartDate') ?: $termDateRanges['1st Semester']['start']->format('Y-m-d'),
+                        'end' => $request->request->get('firstEndDate') ?: $termDateRanges['1st Semester']['end']->format('Y-m-d'),
+                    ],
+                    [
+                        'semester' => '2nd Semester',
+                        'start' => $request->request->get('secondStartDate') ?: $termDateRanges['2nd Semester']['start']->format('Y-m-d'),
+                        'end' => $request->request->get('secondEndDate') ?: $termDateRanges['2nd Semester']['end']->format('Y-m-d'),
+                    ],
+                    [
+                        'semester' => 'Summer',
+                        'start' => $request->request->get('summerStartDate') ?: $termDateRanges['Summer']['start']->format('Y-m-d'),
+                        'end' => $request->request->get('summerEndDate') ?: $termDateRanges['Summer']['end']->format('Y-m-d'),
+                    ],
                 ];
 
-                $isCurrent = (bool) $request->request->get('isCurrent', false);
-                if ($isCurrent) {
+                $manualCurrent = (bool) $request->request->get('isCurrent', false);
+                $calendarTerm = $repo->getCalendarTermForDate();
+                $autoCurrentSemester = $calendarTerm['yearLabel'] === $yearLabel ? $calendarTerm['semester'] : null;
+                $targetCurrentSemester = $autoCurrentSemester ?? ($manualCurrent ? '1st Semester' : null);
+
+                if ($targetCurrentSemester !== null) {
                     $repo->clearCurrent();
                 }
 
                 $createdLabels = [];
                 $skippedLabels = [];
+                $activatedLabel = null;
 
-                foreach ($termInputs as $idx => $term) {
+                foreach ($termInputs as $term) {
                     $existing = $repo->findOneBy([
                         'yearLabel' => $yearLabel,
                         'semester' => $term['semester'],
                     ]);
                     if ($existing) {
+                        if ($targetCurrentSemester !== null && $term['semester'] === $targetCurrentSemester) {
+                            $existing->setIsCurrent(true);
+                            $em->persist($existing);
+                            $activatedLabel = $existing->getLabel();
+                        }
+
                         $skippedLabels[] = $existing->getLabel();
                         continue;
                     }
@@ -1095,7 +1122,7 @@ class AdminController extends AbstractController
                     $ay = new AcademicYear();
                     $ay->setYearLabel($yearLabel);
                     $ay->setSemester($term['semester']);
-                    $ay->setIsCurrent($isCurrent && $idx === 0);
+                    $ay->setIsCurrent($targetCurrentSemester !== null && $term['semester'] === $targetCurrentSemester);
 
                     if (!empty($term['start'])) {
                         $ay->setStartDate(new \DateTime((string) $term['start']));
@@ -1106,13 +1133,26 @@ class AdminController extends AbstractController
 
                     $em->persist($ay);
                     $createdLabels[] = $ay->getLabel();
+                    if ($targetCurrentSemester !== null && $term['semester'] === $targetCurrentSemester) {
+                        $activatedLabel = $ay->getLabel();
+                    }
                 }
 
-                if (!empty($createdLabels)) {
+                if (!empty($createdLabels) || $activatedLabel !== null) {
+                    $auditDetails = !empty($createdLabels)
+                        ? 'Created academic year terms: ' . implode(', ', $createdLabels)
+                        : 'Set active academic year term to ' . $activatedLabel;
+
                     $em->flush();
-                    $this->audit->log('create_academic_year', 'AcademicYear', null,
-                        'Created academic year terms: ' . implode(', ', $createdLabels));
-                    $this->addFlash('success', 'Created ' . count($createdLabels) . ' term(s): ' . implode(', ', $createdLabels) . '.');
+                    $this->audit->log('create_academic_year', 'AcademicYear', null, $auditDetails);
+
+                    if (!empty($createdLabels)) {
+                        $this->addFlash('success', 'Created ' . count($createdLabels) . ' term(s): ' . implode(', ', $createdLabels) . '.');
+                    }
+
+                    if ($activatedLabel !== null) {
+                        $this->addFlash('success', 'Single active term set to: ' . $activatedLabel . '.');
+                    }
                 }
 
                 if (!empty($skippedLabels)) {
@@ -1126,8 +1166,15 @@ class AdminController extends AbstractController
                 return $this->redirectToRoute('admin_academic_years');
             }
 
+            $calendarNow = $request->request->getBoolean('autoCalendarNow', false);
             $autoGenerate = $request->request->getBoolean('autoGenerateNext', false);
-            if ($autoGenerate) {
+
+            $calendarTerm = null;
+            if ($calendarNow) {
+                $calendarTerm = $repo->getCalendarTermForDate();
+                $yearLabel = $calendarTerm['yearLabel'];
+                $semester = $calendarTerm['semester'];
+            } elseif ($autoGenerate) {
                 $next = $repo->getNextAcademicTerm();
                 $yearLabel = $next['yearLabel'];
                 $semester = $next['semester'];
@@ -1155,12 +1202,17 @@ class AdminController extends AbstractController
             $ay->setYearLabel($yearLabel);
             $ay->setSemester($semester);
 
-            $startDate = $request->request->get('startDate');
-            $endDate = $request->request->get('endDate');
-            if ($startDate) $ay->setStartDate(new \DateTime($startDate));
-            if ($endDate) $ay->setEndDate(new \DateTime($endDate));
+            if ($calendarTerm !== null) {
+                $ay->setStartDate(\DateTime::createFromInterface($calendarTerm['startDate']));
+                $ay->setEndDate(\DateTime::createFromInterface($calendarTerm['endDate']));
+            } else {
+                $startDate = $request->request->get('startDate');
+                $endDate = $request->request->get('endDate');
+                if ($startDate) $ay->setStartDate(new \DateTime($startDate));
+                if ($endDate) $ay->setEndDate(new \DateTime($endDate));
+            }
 
-            $isCurrent = (bool) $request->request->get('isCurrent', false);
+            $isCurrent = $calendarNow || (bool) $request->request->get('isCurrent', false);
             if ($isCurrent) {
                 $repo->clearCurrent();
             }
@@ -1172,7 +1224,11 @@ class AdminController extends AbstractController
             $this->audit->log('create_academic_year', 'AcademicYear', $ay->getId(),
                 'Created academic year ' . $ay->getLabel());
 
-            $this->addFlash('success', ($autoGenerate ? 'Auto-generated a new term: ' : 'Academic year "') . $ay->getLabel() . ($autoGenerate ? '.' : '" created.'));
+            $successPrefix = $calendarNow
+                ? 'Auto-created current calendar term: '
+                : ($autoGenerate ? 'Auto-generated a new term: ' : 'Academic year "');
+            $successSuffix = ($calendarNow || $autoGenerate) ? '.' : '" created.';
+            $this->addFlash('success', $successPrefix . $ay->getLabel() . $successSuffix);
         }
         return $this->redirectToRoute('admin_academic_years');
     }
@@ -1434,15 +1490,9 @@ class AdminController extends AbstractController
             if ($count > 0) {
                 // Get subject+section details
                 $subjectDetails = [];
-                $isTargetFaculty = mb_strtolower(trim((string) $faculty->getFullName())) === 'ryan escorial';
                 $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
                 foreach ($allSubjects as $subj) {
                     if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
-                        continue;
-                    }
-
-                    $subjectName = mb_strtolower(trim((string) ($subj['subjectName'] ?? '')));
-                    if ($isTargetFaculty && $subjectName === 'capstone project 2') {
                         continue;
                     }
 

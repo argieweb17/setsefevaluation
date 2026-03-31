@@ -288,7 +288,7 @@
         </div>
         {% if categoryDescriptions[category] is defined and categoryDescriptions[category] %}
         <div class="qq-category-description">
-            <em>{{ categoryDescriptions[category] }}</em>
+            <em>{{ categoryDescriptions[category]|replace({' (': "\n\n("})|replace({') and ': ")\n\nand "})|nl2br }}</em>
         </div>
         {% endif %}
         <table class="qq-table">

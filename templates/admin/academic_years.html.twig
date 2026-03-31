@@ -438,6 +438,13 @@
                         </div>
                         <div class="col-12">
                             <div class="form-check">
+                                <input type="checkbox" name="autoCalendarNow" value="1" class="form-check-input" id="addAutoCalendarNow">
+                                <label class="form-check-label ay-form-label" for="addAutoCalendarNow">Auto-create current calendar term (now)</label>
+                                <div class="form-text" style="font-size:.72rem;">Uses today to auto-fill year, semester, and date range.</div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
                                 <input type="checkbox" name="createSemesterDates" value="1" class="form-check-input" id="addCreateSemesterDates">
                                 <label class="form-check-label ay-form-label" for="addCreateSemesterDates">Add semester dates (1st, 2nd, Summer)</label>
                                 <div class="form-text" style="font-size:.72rem;">Creates three records for the same year label using the date ranges below.</div>
@@ -524,6 +531,7 @@
 (function () {
     var form = document.getElementById('addAYForm');
     var auto = document.getElementById('addAutoGenerateNext');
+    var calendarNow = document.getElementById('addAutoCalendarNow');
     var semesterDates = document.getElementById('addCreateSemesterDates');
     var yearInput = document.getElementById('addYearLabelInput');
     var semSelect = document.getElementById('addSemesterSelect');
@@ -536,16 +544,91 @@
     var secondEnd = document.getElementById('secondEndDate');
     var summerStart = document.getElementById('summerStartDate');
     var summerEnd = document.getElementById('summerEndDate');
+    var isCurrentToggle = document.getElementById('addIsCurrent');
 
-    if (!form || !auto || !semesterDates || !yearInput || !semSelect || !singleStart || !singleEnd || !dateGrid) {
+    if (!form || !auto || !calendarNow || !semesterDates || !yearInput || !semSelect || !singleStart || !singleEnd || !dateGrid || !isCurrentToggle) {
         return;
+    }
+
+    function calendarTermForToday() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = now.getMonth() + 1;
+
+        if (month >= 8) {
+            return {
+                yearLabel: year + '-' + (year + 1),
+                semester: '1st Semester',
+                startDate: year + '-08-01',
+                endDate: year + '-12-31'
+            };
+        }
+
+        if (month >= 6) {
+            return {
+                yearLabel: (year - 1) + '-' + year,
+                semester: 'Summer',
+                startDate: year + '-06-01',
+                endDate: year + '-07-31'
+            };
+        }
+
+        return {
+            yearLabel: (year - 1) + '-' + year,
+            semester: '2nd Semester',
+            startDate: year + '-01-01',
+            endDate: year + '-05-31'
+        };
+    }
+
+    function semesterRangesForYearLabel(label) {
+        var m = String(label || '').trim().match(/^(\d{4})\s*-\s*(\d{4})$/);
+        if (!m) {
+            return null;
+        }
+
+        var startYear = Number(m[1]);
+        var endYear = Number(m[2]);
+
+        return {
+            firstStartDate: startYear + '-08-01',
+            firstEndDate: startYear + '-12-31',
+            secondStartDate: endYear + '-01-01',
+            secondEndDate: endYear + '-05-31',
+            summerStartDate: endYear + '-06-01',
+            summerEndDate: endYear + '-07-31'
+        };
+    }
+
+    function autoFillSemesterDateGrid() {
+        if (!semesterDates.checked) {
+            return;
+        }
+
+        if (!yearInput.value.trim()) {
+            var nowTerm = calendarTermForToday();
+            yearInput.value = nowTerm.yearLabel;
+        }
+
+        var ranges = semesterRangesForYearLabel(yearInput.value);
+        if (!ranges) {
+            return;
+        }
+
+        firstStart.value = ranges.firstStartDate;
+        firstEnd.value = ranges.firstEndDate;
+        secondStart.value = ranges.secondStartDate;
+        secondEnd.value = ranges.secondEndDate;
+        summerStart.value = ranges.summerStartDate;
+        summerEnd.value = ranges.summerEndDate;
     }
 
     function syncAutoMode() {
         var autoEnabled = auto.checked;
+        var calendarEnabled = calendarNow.checked;
         var multiEnabled = semesterDates.checked;
 
-        if (autoEnabled) {
+        if (autoEnabled || calendarEnabled) {
             semesterDates.checked = false;
             semesterDates.disabled = true;
             multiEnabled = false;
@@ -553,29 +636,55 @@
             semesterDates.disabled = false;
         }
 
-        if (multiEnabled) {
+        if (autoEnabled || multiEnabled) {
+            calendarNow.checked = false;
+            calendarNow.disabled = true;
+            calendarEnabled = false;
+        } else {
+            calendarNow.disabled = false;
+        }
+
+        if (calendarEnabled || multiEnabled) {
             auto.checked = false;
             auto.disabled = true;
+            autoEnabled = false;
         } else {
             auto.disabled = false;
         }
 
-        yearInput.readOnly = autoEnabled;
-        yearInput.required = !autoEnabled;
+        yearInput.readOnly = autoEnabled || calendarEnabled;
+        yearInput.required = !(autoEnabled || calendarEnabled);
         if (autoEnabled) {
             yearInput.value = '';
         }
 
-        semSelect.disabled = autoEnabled || multiEnabled;
+        semSelect.disabled = autoEnabled || calendarEnabled || multiEnabled;
         if (autoEnabled || multiEnabled) {
             semSelect.value = '';
         }
 
-        singleStart.disabled = multiEnabled;
-        singleEnd.disabled = multiEnabled;
-        if (multiEnabled) {
+        singleStart.disabled = multiEnabled || autoEnabled || calendarEnabled;
+        singleEnd.disabled = multiEnabled || autoEnabled || calendarEnabled;
+        if (multiEnabled || autoEnabled) {
             singleStart.value = '';
             singleEnd.value = '';
+        }
+
+        if (calendarEnabled) {
+            var term = calendarTermForToday();
+            yearInput.value = term.yearLabel;
+            semSelect.value = term.semester;
+            singleStart.value = term.startDate;
+            singleEnd.value = term.endDate;
+        }
+
+        isCurrentToggle.disabled = calendarEnabled;
+        if (calendarEnabled) {
+            isCurrentToggle.checked = true;
+        }
+
+        if (multiEnabled) {
+            autoFillSemesterDateGrid();
         }
 
         dateGrid.classList.toggle('d-none', !multiEnabled);
@@ -591,7 +700,9 @@
     }
 
     auto.addEventListener('change', syncAutoMode);
+    calendarNow.addEventListener('change', syncAutoMode);
     semesterDates.addEventListener('change', syncAutoMode);
+    yearInput.addEventListener('change', autoFillSemesterDateGrid);
     syncAutoMode();
 })();
 </script>

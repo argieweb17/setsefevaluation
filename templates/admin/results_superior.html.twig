@@ -243,6 +243,15 @@
     padding: 10px 12px;
     white-space: nowrap;
 }
+.rs-th-with-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.rs-th-with-sort i {
+    font-size: .62rem;
+    opacity: .45;
+}
 .rs-table tbody tr {
     transition: background .15s;
     border-bottom: 1px solid #f1f5f9;
@@ -518,11 +527,11 @@
             <thead>
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
-                    <th>Superior</th>
-                    <th class="text-center">Rating</th>
+                    <th><span class="rs-th-with-sort">Superior <i class="bi bi-arrow-down-up"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Rating <i class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center">Personnel Evaluated</th>
-                    <th class="text-center">Performance</th>
+                    <th class="text-center"><span class="rs-th-with-sort">Personnel Evaluated <i class="bi bi-arrow-down-up"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Performance <i class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:80px">Actions</th>
                 </tr>
             </thead>

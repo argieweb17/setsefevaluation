@@ -116,6 +116,13 @@
 .ev-detail-table thead{background:#eff6ff;}
 .ev-detail-table th{padding:8px 10px;font-size:.66rem;text-transform:uppercase;letter-spacing:.4px;color:#1e3a8a;font-weight:700;}
 .ev-detail-table td{padding:8px 10px;border-top:1px solid #eef2ff;vertical-align:middle;}
+.ev-position-disclosure summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;font-weight:600;color:#1e3a8a;}
+.ev-position-disclosure summary::-webkit-details-marker{display:none;}
+.ev-position-disclosure summary::before{content:'+';display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#dbeafe;color:#1e40af;font-size:.72rem;font-weight:700;}
+.ev-position-disclosure[open] summary::before{content:'−';}
+.ev-position-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:#e2e8f0;color:#334155;font-size:.64rem;font-weight:700;}
+.ev-position-names{margin-top:8px;padding-left:24px;display:grid;gap:4px;}
+.ev-position-name-item{font-size:.76rem;color:#334155;}
 
 /* ──── Modal ──── */
 .ev-modal{border:0;border-radius:16px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.15);}
@@ -341,6 +348,8 @@
                 {% for item in row.items %}
                     {% set mergedIdsCsv = mergedIdsCsv ~ (mergedIdsCsv ? ',' : '') ~ item.eval.id %}
                 {% endfor %}
+                {% set isSpecificTargetSef = eval.evaluationType == 'SUPERIOR' and eval.faculty is not empty %}
+                {% set canExpandDetails = not isSpecificTargetSef %}
                 <tr class="ev-row" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-detail-id="{{ eval.evaluationType == 'SET' and row.mergedCount > 1 ? 'evDetailActive' ~ eval.id : '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }} {{ row.searchText }}">
                     <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
@@ -411,7 +420,9 @@
                     </td>
                     <td>
                         <div class="ev-actions-cell">
+                            {% if canExpandDetails %}
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailActive{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% endif %}
                             {% if not staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-faculty-id="{{ firstItem.eval.faculty.id ?? '' }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
@@ -434,11 +445,13 @@
                         </div>
                     </td>
                 </tr>
+                {% if canExpandDetails %}
                 <tr class="ev-detail-row" id="evDetailActive{{ eval.id }}" style="display:none;">
                     <td colspan="{{ staffMode ? 8 : 10 }}">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
+                                    {% if eval.evaluationType == 'SET' %}
                                     <tr>
                                         <th>Subject</th>
                                         <th>Section</th>
@@ -446,8 +459,16 @@
                                         <th class="text-center">Evaluators</th>
                                         <th class="text-center">QR</th>
                                     </tr>
+                                    {% else %}
+                                    <tr>
+                                        <th>Position</th>
+                                        <th class="text-center">Evaluators</th>
+                                        <th class="text-center">QR</th>
+                                    </tr>
+                                    {% endif %}
                                 </thead>
                                 <tbody>
+                                    {% if eval.evaluationType == 'SET' %}
                                     {% for item in row.items %}
                                     <tr>
                                         <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
@@ -459,11 +480,73 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+                                    {% else %}
+                                    {% set firstItem = row.items|first %}
+                                    {% set positionRows = [] %}
+                                    {% for rank in superiorHierarchy|default([]) %}
+                                        {% set rankMembers = [] %}
+                                        {% for member in rank.members %}
+                                            {% set isDeptScopedRank = rank.rankKey in ['dean', 'department_head'] %}
+                                            {% set includeMember = (not isDeptScopedRank) or (eval.department is null) or (member.departmentId and member.departmentId == eval.department.id) %}
+                                            {% if includeMember %}
+                                                {% set rankMembers = rankMembers|merge([member]) %}
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% if rankMembers is not empty %}
+                                            {% set departmentNames = [] %}
+                                            {% for rankedMember in rankMembers %}
+                                                {% if rankedMember.department not in departmentNames %}
+                                                    {% set departmentNames = departmentNames|merge([rankedMember.department]) %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% set departmentLabel = departmentNames|length == 1 ? departmentNames|first : (departmentNames|length > 1 ? 'Multiple' : '—') %}
+                                            {% set positionRows = positionRows|merge([{
+                                                rankLabel: rank.rankLabel,
+                                                members: rankMembers,
+                                                department: departmentLabel
+                                            }]) %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if positionRows is empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No superior hierarchy names configured.</td>
+                                    </tr>
+                                    {% else %}
+                                        {% for positionRow in positionRows %}
+                                        <tr>
+                                            <td>
+                                                <details class="ev-position-disclosure">
+                                                    <summary>
+                                                        {{ positionRow.rankLabel }}
+                                                        <span class="ev-position-count">{{ positionRow.members|length }}</span>
+                                                    </summary>
+                                                    <div class="ev-position-names">
+                                                        {% for rankedMember in positionRow.members %}
+                                                        <div class="ev-position-name-item">{{ rankedMember.fullName }}</div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            </td>
+                                            <td class="text-center"><span class="fw-semibold">{{ row.evaluatorCount }}</span></td>
+                                            <td class="text-center">
+                                                {% if firstItem %}
+                                                <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                                {% else %}
+                                                <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
                     </td>
                 </tr>
+                {% endif %}
                 {% else %}
                 <tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No active evaluation periods</td></tr>
                 {% endfor %}
@@ -522,6 +605,8 @@
                 {% for item in row.items %}
                     {% set mergedIdsCsv = mergedIdsCsv ~ (mergedIdsCsv ? ',' : '') ~ item.eval.id %}
                 {% endfor %}
+                {% set isSpecificTargetSef = eval.evaluationType == 'SUPERIOR' and eval.faculty is not empty %}
+                {% set canExpandDetails = not isSpecificTargetSef %}
                 <tr class="ev-row ev-row-expired" data-type="{{ eval.evaluationType }}" data-college="{{ eval.college ?? '' }}" data-dept="{{ eval.department ? eval.department.departmentName : '' }}" data-faculty="{{ eval.faculty ?? '' }}" data-year="{{ eval.yearLevel ?? '' }}" data-school-year="{{ eval.schoolYear ?? '' }}" data-semester="{{ eval.semester ?? '' }}" data-detail-id="{{ eval.evaluationType == 'SET' and row.mergedCount > 1 ? 'evDetailPrev' ~ eval.id : '' }}" data-search="{{ eval.evaluationType }} {{ eval.schoolYear }} {{ eval.faculty }} {{ eval.subject }} {{ eval.college }} {{ eval.department ? eval.department.departmentName : '' }} {{ eval.section }} {{ row.searchText }}">
                     <td><span class="ev-type-badge {{ eval.evaluationType == 'SET' ? 'ev-type-set' : 'ev-type-sef' }}">{{ eval.evaluationType == 'SUPERIOR' ? 'SEF' : eval.evaluationType }}</span></td>
                     <td>
@@ -600,7 +685,9 @@
                     </td>
                     <td>
                         <div class="ev-actions-cell">
+                            {% if canExpandDetails %}
                             <button type="button" class="ev-action-btn ev-action-expand" title="Show details" onclick="toggleMergedRow('evDetailPrev{{ eval.id }}', this)"><i class="bi bi-plus-lg"></i></button>
+                            {% endif %}
                             {% if not staffMode and row.items|length > 0 %}
                             {% set firstItem = row.items[0] %}
                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
@@ -629,11 +716,13 @@
                         </div>
                     </td>
                 </tr>
+                {% if canExpandDetails %}
                 <tr class="ev-detail-row" id="evDetailPrev{{ eval.id }}" style="display:none;">
                     <td colspan="{{ staffMode ? 8 : 11 }}">
                         <div class="ev-detail-box">
                             <table class="ev-detail-table">
                                 <thead>
+                                    {% if eval.evaluationType == 'SET' %}
                                     <tr>
                                         <th>Subject</th>
                                         <th>Section</th>
@@ -641,8 +730,16 @@
                                         <th class="text-center">Evaluators</th>
                                         <th class="text-center">QR</th>
                                     </tr>
+                                    {% else %}
+                                    <tr>
+                                        <th>Position</th>
+                                        <th class="text-center">Evaluators</th>
+                                        <th class="text-center">QR</th>
+                                    </tr>
+                                    {% endif %}
                                 </thead>
                                 <tbody>
+                                    {% if eval.evaluationType == 'SET' %}
                                     {% for item in row.items %}
                                     <tr>
                                         <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
@@ -654,11 +751,73 @@
                                         </td>
                                     </tr>
                                     {% endfor %}
+                                    {% else %}
+                                    {% set firstItem = row.items|first %}
+                                    {% set positionRows = [] %}
+                                    {% for rank in superiorHierarchy|default([]) %}
+                                        {% set rankMembers = [] %}
+                                        {% for member in rank.members %}
+                                            {% set isDeptScopedRank = rank.rankKey in ['dean', 'department_head'] %}
+                                            {% set includeMember = (not isDeptScopedRank) or (eval.department is null) or (member.departmentId and member.departmentId == eval.department.id) %}
+                                            {% if includeMember %}
+                                                {% set rankMembers = rankMembers|merge([member]) %}
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {% if rankMembers is not empty %}
+                                            {% set departmentNames = [] %}
+                                            {% for rankedMember in rankMembers %}
+                                                {% if rankedMember.department not in departmentNames %}
+                                                    {% set departmentNames = departmentNames|merge([rankedMember.department]) %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% set departmentLabel = departmentNames|length == 1 ? departmentNames|first : (departmentNames|length > 1 ? 'Multiple' : '—') %}
+                                            {% set positionRows = positionRows|merge([{
+                                                rankLabel: rank.rankLabel,
+                                                members: rankMembers,
+                                                department: departmentLabel
+                                            }]) %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if positionRows is empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No superior hierarchy names configured.</td>
+                                    </tr>
+                                    {% else %}
+                                        {% for positionRow in positionRows %}
+                                        <tr>
+                                            <td>
+                                                <details class="ev-position-disclosure">
+                                                    <summary>
+                                                        {{ positionRow.rankLabel }}
+                                                        <span class="ev-position-count">{{ positionRow.members|length }}</span>
+                                                    </summary>
+                                                    <div class="ev-position-names">
+                                                        {% for rankedMember in positionRow.members %}
+                                                        <div class="ev-position-name-item">{{ rankedMember.fullName }}</div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            </td>
+                                            <td class="text-center"><span class="fw-semibold">{{ row.evaluatorCount }}</span></td>
+                                            <td class="text-center">
+                                                {% if firstItem %}
+                                                <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                                {% else %}
+                                                <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
                     </td>
                 </tr>
+                {% endif %}
                 {% else %}
                 <tr><td colspan="10" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No previous evaluation periods</td></tr>
                 {% endfor %}
@@ -693,7 +852,7 @@
                                 {# ── Superior: simplified fields ── #}
                                 <input type="hidden" name="evaluationType" value="SUPERIOR">
                                 <div class="col-md-6">
-                                    <label class="form-label ev-form-label">School Year</label>
+                                    <label class="form-label ev-form-label">Academic Year</label>
                                     <select name="schoolYear" class="form-select ev-form-control">
                                         <option value="">— Select —</option>
                                         {% for ay in academicYears|default([]) %}
@@ -731,7 +890,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label ev-form-label">School Year</label>
+                                    <label class="form-label ev-form-label">Academic Year</label>
                                     <select name="schoolYear" class="form-select ev-form-control">
                                         <option value="">— Select —</option>
                                         {% for ay in academicYears|default([]) %}
@@ -885,7 +1044,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">School Year</label>
+                            <label class="form-label ev-form-label">Academic Year</label>
                             <select name="schoolYear" class="form-select ev-form-control">
                                 <option value="">— Select —</option>
                                 {% for ay in academicYears|default([]) %}
@@ -978,7 +1137,7 @@
                 <div class="modal-body p-4">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label class="form-label ev-form-label">School Year</label>
+                            <label class="form-label ev-form-label">Academic Year</label>
                             <select name="schoolYear" class="form-select ev-form-control">
                                 <option value="">— Select —</option>
                                 {% for ay in academicYears|default([]) %}

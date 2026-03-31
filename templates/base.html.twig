@@ -238,6 +238,24 @@
                         </a>
                     </div>
                 </div>
+                {% set _staff_release_routes = ['staff_release_files','staff_release_files_faculty','staff_release_files_superior'] %}
+                {% set _staff_release_route = app.request.attributes.get('_route')|default('') %}
+                <div class="sidebar-dropdown {% if _staff_release_route in _staff_release_routes %}open{% endif %}">
+                    <a class="nav-link sidebar-dropdown-toggle {% if _staff_release_route in _staff_release_routes %}active{% endif %}" href="#">
+                        <i class="bi bi-folder-check sidebar-icon"></i> Release
+                        <i class="bi bi-chevron-down sidebar-dropdown-arrow"></i>
+                    </a>
+                    <div class="sidebar-dropdown-menu" style="max-height:0;overflow:hidden;">
+                        <a class="sidebar-sub-link {% if 'staff_release_files_faculty' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                           href="{{ path('staff_release_files_faculty') }}">
+                            <i class="bi bi-mortarboard me-1"></i> Faculty
+                        </a>
+                        <a class="sidebar-sub-link {% if 'staff_release_files_superior' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                           href="{{ path('staff_release_files_superior') }}">
+                            <i class="bi bi-person-up me-1"></i> Superior
+                        </a>
+                    </div>
+                </div>
                 <div class="sidebar-header">Navigation</div>
                 <a class="nav-link {% if 'staff_faculty_message' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_faculty_messages') }}">
@@ -609,6 +627,25 @@
             {% block body %}{% endblock %}
         </div>
 
+        <audio id="successModalSound" preload="auto">
+            <source src="{{ asset('sounds/successed-295058.mp3') }}" type="audio/mpeg">
+        </audio>
+        <script>
+        (function() {
+            window.playSuccessModalSound = function() {
+                var audio = document.getElementById('successModalSound');
+                if (!audio) return;
+                try {
+                    audio.currentTime = 0;
+                    var playPromise = audio.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(function() {});
+                    }
+                } catch (e) {}
+            };
+        })();
+        </script>
+
         {# ── Global Success Modal ── #}
         {% set successMessages = app.flashes('success') %}
         {% if successMessages|length > 0 %}
@@ -658,6 +695,9 @@
                 var m = document.getElementById('globalSuccessModal');
                 if (!m) return;
                 var modal = bootstrap.Modal.getOrCreateInstance(m);
+                if (typeof window.playSuccessModalSound === 'function') {
+                    window.playSuccessModalSound();
+                }
                 m.addEventListener('hidden.bs.modal', function() {
                     // Full cleanup: remove backdrop, body class, and modal element
                     modal.dispose();

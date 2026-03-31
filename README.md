@@ -2,7 +2,7 @@
 
 ## System Overview
 
-This project is a web-based Quality Assurance and faculty evaluation system for NORSU.
+This project is a web-based SET - SEF evaluation system for NORSU.
 It supports SET (Student Evaluation for Teacher) and SET (Superior Evaluation for Faculty) evaluation workflows,
 including evaluation scheduling, questionnaire management, result analytics, print-ready
 reports, and correspondence ID tracking with saved PDF artifacts.

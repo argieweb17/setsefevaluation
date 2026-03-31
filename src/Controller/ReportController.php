@@ -179,6 +179,7 @@ class ReportController extends AbstractController
     #[IsGranted('ROLE_STAFF')]
     public function evaluations(EvaluationPeriodRepository $repo, DepartmentRepository $deptRepo, AcademicYearRepository $ayRepo, UserRepository $userRepo, SubjectRepository $subjectRepo, EvaluationResponseRepository $responseRepo, SuperiorEvaluationRepository $superiorEvalRepo, FacultySubjectLoadRepository $fslRepo): Response
     {
+        $currentAY = $ayRepo->syncCurrentToCalendar() ?? $ayRepo->findCurrent();
         $evaluations = $repo->findAllOrdered();
 
         $departments = $deptRepo->findAllOrdered();
@@ -214,6 +215,53 @@ class ReportController extends AbstractController
             ->getQuery()
             ->getResult();
 
+        $rankLabels = [
+            'president' => 'President',
+            'vice_president' => 'Vice President',
+            'campus_director' => 'Campus Director',
+            'dean' => 'Dean',
+            'department_head' => 'Department Head',
+        ];
+
+        $superiorHierarchy = [];
+        foreach ($rankLabels as $rankKey => $rankLabel) {
+            $superiorHierarchy[$rankKey] = [
+                'rankKey' => $rankKey,
+                'rankLabel' => $rankLabel,
+                'members' => [],
+            ];
+        }
+
+        foreach ($sefEvaluatorUsers as $user) {
+            if (!$user instanceof User) {
+                continue;
+            }
+
+            $rank = $this->resolveSuperiorHierarchyRank($user);
+            if ($rank === null || !isset($superiorHierarchy[$rank])) {
+                continue;
+            }
+
+            $position = trim((string) ($user->getPosition() ?? ''));
+            if ($position === '') {
+                $position = trim((string) ($user->getEmploymentStatus() ?? ''));
+            }
+
+            $superiorHierarchy[$rank]['members'][] = [
+                'id' => $user->getId(),
+                'fullName' => $user->getFullName(),
+                'position' => $position !== '' ? $position : '—',
+                'department' => $user->getDepartment()?->getDepartmentName() ?? '—',
+                'departmentId' => $user->getDepartment()?->getId(),
+            ];
+        }
+
+        foreach ($superiorHierarchy as $rankKey => $rankData) {
+            usort($superiorHierarchy[$rankKey]['members'], static function (array $a, array $b): int {
+                return strnatcasecmp((string) $a['fullName'], (string) $b['fullName']);
+            });
+        }
+
         $facultyPositionMap = [];
         foreach ($facultyUsers as $fu) {
             $facultyPositionMap[$fu->getFullName()] = $fu->getEmploymentStatus() ?? '';
@@ -239,12 +287,13 @@ class ReportController extends AbstractController
             'evaluations' => $evaluations,
             'departments' => $departments,
             'colleges' => $colleges,
-            'currentAY' => $ayRepo->findCurrent(),
+            'currentAY' => $currentAY,
             'academicYears' => $ayRepo->findAllOrdered(),
             'facultyUsers' => $facultyUsers,
             'sefEvaluatorUsers' => $sefEvaluatorUsers,
             'evaluatorCounts' => $evaluatorCounts,
             'facultyPositionMap' => $facultyPositionMap,
+            'superiorHierarchy' => array_values($superiorHierarchy),
             'activeScheduleRows' => $activeScheduleRows,
             'expiredScheduleRows' => $expiredScheduleRows,
             'staffMode' => true,
@@ -472,10 +521,20 @@ class ReportController extends AbstractController
             $faculty = $request->request->get('faculty');
             $facultyId = (int) $request->request->get('facultyId', 0);
             $subject = $request->request->get('subject');
-            $schoolYear = $request->request->get('schoolYear');
+            $schoolYear = trim((string) $request->request->get('schoolYear'));
             $section = $request->request->get('section');
             $sem = $request->request->get('semester');
             $deptId = $request->request->get('department');
+            $currentAY = $ayRepo->syncCurrentToCalendar() ?? $ayRepo->findCurrent();
+
+            if ($schoolYear === '' && $currentAY) {
+                $schoolYear = (string) $currentAY->getYearLabel();
+            }
+
+            if ($schoolYear === '') {
+                $this->addFlash('danger', 'Please select a valid academic year.');
+                return $this->redirectToRoute('staff_evaluations');
+            }
 
             if ($evaluationType === 'SET') {
                 $facultyUser = $facultyId > 0 ? $userRepo->find($facultyId) : null;
@@ -488,7 +547,6 @@ class ReportController extends AbstractController
                     return $this->redirectToRoute('staff_evaluations');
                 }
 
-                $currentAY = $ayRepo->findCurrent();
                 $hasScheduledLoad = $this->facultyHasScheduledLoad(
                     $facultyUser->getId(),
                     $currentAY ? $currentAY->getId() : null,
@@ -609,14 +667,22 @@ class ReportController extends AbstractController
 
     #[Route('/evaluations/{id}/edit', name: 'staff_evaluation_edit', methods: ['POST'])]
     #[IsGranted('ROLE_STAFF')]
-    public function editEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em): Response
+    public function editEvaluation(EvaluationPeriod $eval, Request $request, EntityManagerInterface $em, AcademicYearRepository $ayRepo): Response
     {
         if ($this->isCsrfTokenValid('edit_eval' . $eval->getId(), $request->request->get('_token'))) {
             $evaluationType = strtoupper(trim((string) $request->request->get('evaluationType', 'SET')));
             if ($evaluationType === 'SEF') {
                 $evaluationType = 'SUPERIOR';
             }
-            $schoolYear = $request->request->get('schoolYear');
+            $schoolYear = trim((string) $request->request->get('schoolYear'));
+            if ($schoolYear === '') {
+                $currentAY = $ayRepo->syncCurrentToCalendar() ?? $ayRepo->findCurrent();
+                $schoolYear = (string) ($currentAY?->getYearLabel() ?? '');
+            }
+            if ($schoolYear === '') {
+                $this->addFlash('danger', 'Please select a valid academic year.');
+                return $this->redirectToRoute('staff_evaluations');
+            }
             $sem = $request->request->get('semester');
             $faculty = $request->request->get('faculty');
             $subject = $request->request->get('subject');
@@ -981,15 +1047,9 @@ class ReportController extends AbstractController
                 if ($count > 0) {
                     // Get subject+section details
                     $subjectDetails = [];
-                    $isTargetFaculty = mb_strtolower(trim((string) $faculty->getFullName())) === 'ryan escorial';
                     $allSubjects = $responseRepo->getEvaluatedSubjectsWithRating($faculty->getId());
                     foreach ($allSubjects as $subj) {
                         if ($evalId && (int) $subj['evaluationPeriodId'] !== (int) $evalId) {
-                            continue;
-                        }
-
-                        $subjectName = mb_strtolower(trim((string) ($subj['subjectName'] ?? '')));
-                        if ($isTargetFaculty && $subjectName === 'capstone project 2') {
                             continue;
                         }
 
@@ -1793,6 +1853,7 @@ class ReportController extends AbstractController
         ?string $correspondenceId,
         string $evaluationType,
         string $printScope,
+        ?string $facultyName = null,
     ): ?CorrespondenceRecord {
         $value = trim((string) $correspondenceId);
         if ($value === '') {
@@ -1802,7 +1863,8 @@ class ReportController extends AbstractController
         $record = (new CorrespondenceRecord())
             ->setCorrespondenceId($value)
             ->setEvaluationType($evaluationType)
-            ->setPrintScope($printScope);
+            ->setPrintScope($printScope)
+            ->setFacultyName($facultyName !== null ? trim($facultyName) : null);
 
         $currentUser = $this->getUser();
         if ($currentUser instanceof User) {
@@ -1886,6 +1948,8 @@ class ReportController extends AbstractController
         // Keep saved-PDF margins consistent with the live print templates.
         $normalized = $html;
 
+        $normalized = $this->embedCorrespondenceLetterheadImage($normalized);
+
         // Remove browser-only print scripts from stored snapshots.
         $normalized = preg_replace('/<script\b[^>]*>\s*window\.addEventListener\(\s*["\']load["\'][\s\S]*?<\/script>/i', '', $normalized) ?? $normalized;
 
@@ -1959,6 +2023,31 @@ class ReportController extends AbstractController
         }
 
         return $normalized;
+    }
+
+    private function embedCorrespondenceLetterheadImage(string $html): string
+    {
+        $projectDir = rtrim((string) $this->getParameter('kernel.project_dir'), '/\\');
+        $imagePath = $projectDir . '/public/images/header.jpg';
+
+        if (!is_file($imagePath) || !is_readable($imagePath)) {
+            return $html;
+        }
+
+        $raw = @file_get_contents($imagePath);
+        if (!is_string($raw) || $raw === '') {
+            return $html;
+        }
+
+        $dataUri = 'data:image/jpeg;base64,' . base64_encode($raw);
+
+        return preg_replace_callback(
+            '/<img\b([^>]*?)\bsrc\s*=\s*(["\'])([^"\']*header\.(?:jpg|jpeg))\2([^>]*)>/i',
+            static function (array $match) use ($dataUri): string {
+                return '<img' . $match[1] . 'src="' . $dataUri . '"' . $match[4] . '>';
+            },
+            $html
+        ) ?? $html;
     }
 
     // ════════════════════════════════════════════════
@@ -2540,7 +2629,8 @@ class ReportController extends AbstractController
             $em,
             $correspondenceId,
             (string) $evaluation->getEvaluationType(),
-            'set-print'
+            'set-print',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
         );
         if ($record instanceof CorrespondenceRecord) {
             $this->saveCorrespondencePdf($html, $record);
@@ -2935,7 +3025,8 @@ class ReportController extends AbstractController
             $em,
             $correspondenceId,
             (string) $evaluationType,
-            'set-print-all'
+            'set-print-all',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
         );
         if ($record instanceof CorrespondenceRecord) {
             $this->saveCorrespondencePdf($html, $record);
@@ -3072,7 +3163,8 @@ class ReportController extends AbstractController
             $em,
             $correspondenceId,
             'SEF',
-            'sef-print'
+            'sef-print',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
         );
         if ($record instanceof CorrespondenceRecord) {
             $this->saveCorrespondencePdf($html, $record);
@@ -3263,13 +3355,44 @@ class ReportController extends AbstractController
             $em,
             $correspondenceId,
             'SEF',
-            'sef-print-all'
+            'sef-print-all',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
         );
         if ($record instanceof CorrespondenceRecord) {
             $this->saveCorrespondencePdf($html, $record);
         }
 
         return new Response($html);
+    }
+
+    #[Route('/release', name: 'staff_release_files', methods: ['GET'])]
+    public function releaseFiles(CorrespondenceRecordRepository $correspondenceRepo): Response
+    {
+        return $this->render('report/release_files.html.twig', [
+            'title' => 'Release Files',
+            'subtitle' => 'Released PDF files and release dates.',
+            'records' => $correspondenceRepo->findReleased(),
+        ]);
+    }
+
+    #[Route('/release/faculty', name: 'staff_release_files_faculty', methods: ['GET'])]
+    public function releaseFilesFaculty(CorrespondenceRecordRepository $correspondenceRepo): Response
+    {
+        return $this->render('report/release_files.html.twig', [
+            'title' => 'Release Files - Faculty',
+            'subtitle' => 'Released SET faculty files and release dates.',
+            'records' => $correspondenceRepo->findReleasedByEvaluationType('SET'),
+        ]);
+    }
+
+    #[Route('/release/superior', name: 'staff_release_files_superior', methods: ['GET'])]
+    public function releaseFilesSuperior(CorrespondenceRecordRepository $correspondenceRepo): Response
+    {
+        return $this->render('report/release_files.html.twig', [
+            'title' => 'Release Files - Superior',
+            'subtitle' => 'Released SEF superior files and release dates.',
+            'records' => $correspondenceRepo->findReleasedByEvaluationType('SEF'),
+        ]);
     }
 
     #[Route('/correspondence/set-id', name: 'staff_correspondence_set_ids', methods: ['GET'])]
@@ -3316,6 +3439,66 @@ class ReportController extends AbstractController
         $em->flush();
 
         $this->addFlash('success', 'Correspondence record deleted.');
+
+        return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+    }
+
+    #[Route('/correspondence/release/{id}', name: 'staff_correspondence_release', methods: ['POST'])]
+    public function correspondenceRelease(Request $request, CorrespondenceRecord $record, EntityManagerInterface $em): Response
+    {
+        $id = $record->getId() ?? 0;
+        $evaluationType = strtoupper((string) $record->getEvaluationType()) === 'SEF' ? 'SEF' : 'SET';
+
+        if (!$this->isCsrfTokenValid('release_correspondence' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid release request token.');
+
+            return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+        }
+
+        if ($record->isReleased()) {
+            $this->addFlash('info', 'This correspondence record is already released.');
+
+            return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+        }
+
+        $receivedByName = trim((string) $request->request->get('received_by_name'));
+        $releaseDateInput = trim((string) $request->request->get('release_date'));
+
+        if ($receivedByName === '') {
+            $this->addFlash('danger', 'Received by name is required.');
+
+            return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+        }
+
+        $now = new \DateTimeImmutable();
+        $releasedAt = $now;
+        if ($releaseDateInput !== '') {
+            $releaseDate = \DateTimeImmutable::createFromFormat('!Y-m-d', $releaseDateInput);
+            if (!$releaseDate instanceof \DateTimeImmutable) {
+                $this->addFlash('danger', 'Invalid release date format.');
+
+                return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
+            }
+
+            $releasedAt = $releaseDate->setTime(
+                (int) $now->format('H'),
+                (int) $now->format('i'),
+                (int) $now->format('s')
+            );
+        }
+
+        $record->setIsReleased(true);
+        $record->setReceivedByName($receivedByName);
+        $record->setReleasedAt($releasedAt);
+
+        $user = $this->getUser();
+        if ($user instanceof User) {
+            $record->setReleasedBy($user);
+        }
+
+        $em->flush();
+
+        $this->addFlash('success', 'Correspondence record released.');
 
         return $this->redirectToRoute($evaluationType === 'SEF' ? 'staff_correspondence_sef_ids' : 'staff_correspondence_set_ids');
     }
