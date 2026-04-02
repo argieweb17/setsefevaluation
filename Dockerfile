@@ -59,8 +59,11 @@ COPY . .
 RUN mkdir -p var/cache var/log var/share
 
 # Run Symfony scripts (force dummy DATABASE_URL at build — real DB is only available at runtime)
+# APP_RUNTIME_ENV skips Dotenv boot (so .env file is not required in container builds).
 ENV APP_ENV=prod
-RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy?serverVersion=8.0.32&charset=utf8mb4" \
+ENV APP_RUNTIME_ENV=prod
+ENV APP_SECRET=build-secret-change-in-runtime
+RUN DATABASE_URL="mysql://root:fmcSBZZOdAqDMhoAZZQKSbGqtoKSCOrN@interchange.proxy.rlwy.net:43287/railway" \
     composer run-script post-install-cmd
 
 # Compile assets for production (AssetMapper)
