@@ -77,7 +77,7 @@
     </div>
     <div>
         <span class="al-count-badge">
-            <i  class="me-1" data-lucide="history"></i>{{ totalLogs }} total entries
+            <i  class="bi bi-clock-history me-1"></i>{{ totalLogs }} total entries
         </span>
     </div>
 </div>
@@ -101,7 +101,7 @@
                 <tr>
                     <td class="al-td-num">{{ (currentPage - 1) * 20 + loop.index }}</td>
                     <td class="al-td-time">
-                        <i  class="text-muted me-1" data-lucide="clock-3"></i>{{ log.createdAt|date('M d, Y h:i A') }}
+                        <i  class="bi bi-clock text-muted me-1"></i>{{ log.createdAt|date('M d, Y h:i A') }}
                     </td>
                     <td>
                         {% set actionClass = 'al-badge-default' %}
@@ -139,7 +139,7 @@
                 <tr>
                     <td colspan="6" class="al-empty">
                         <div class="al-empty-inner">
-                            <i  data-lucide="notebook-pen"></i>
+                            <i  class="bi bi-journal-plus"></i>
                             <strong>No activity log entries found</strong>
                             <span>Your activities will appear here once actions are performed.</span>
                         </div>
@@ -155,7 +155,7 @@
 {% if totalPages > 1 %}
 <div class="al-pagination">
     <a href="{{ path('staff_audit_log', {page: currentPage - 1}) }}" class="al-page-link {% if currentPage == 1 %}disabled{% endif %}">
-        <i  data-lucide="chevron-left"></i> Prev
+        <i  class="bi bi-chevron-left"></i> Prev
     </a>
     {% for p in 1..totalPages %}
         {% if p <= 3 or p > totalPages - 3 or (p >= currentPage - 1 and p <= currentPage + 1) %}
@@ -165,7 +165,7 @@
         {% endif %}
     {% endfor %}
     <a href="{{ path('staff_audit_log', {page: currentPage + 1}) }}" class="al-page-link {% if currentPage == totalPages %}disabled{% endif %}">
-        Next <i  data-lucide="chevron-right"></i>
+        Next <i  class="bi bi-chevron-right"></i>
     </a>
 </div>
 {% endif %}

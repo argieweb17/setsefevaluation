@@ -4,10 +4,10 @@
 
 {% block body %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold mb-0"><i  class="me-2" data-lucide="pencil-line"></i>Edit Profile</h4>
+    <h4 class="fw-bold mb-0"><i  class="bi bi-pencil-square me-2"></i>Edit Profile</h4>
     <div class="page-header-actions">
         <a href="{{ path('app_profile') }}" class="btn btn-outline-secondary btn-sm">
-            <i  data-lucide="arrow-left"></i> Back
+            <i  class="bi bi-arrow-left"></i> Back
         </a>
     </div>
 </div>
@@ -16,7 +16,7 @@
     <div class="col-md-8">
         <form method="post" action="{{ path('app_profile_edit') }}">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white fw-semibold"><i  class="me-1" data-lucide="user"></i> Personal Information</div>
+                <div class="card-header bg-white fw-semibold"><i  class="bi bi-person me-1"></i> Personal Information</div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -28,11 +28,11 @@
                             <input type="text" name="lastName" class="form-control" value="{{ user.lastName }}" required>
                         </div>
                     </div>
-                    <div class="form-text mt-2"><i  class="me-1" data-lucide="info"></i>Your email address can only be changed by an administrator.</div>
+                    <div class="form-text mt-2"><i  class="bi bi-info-circle me-1"></i>Your email address can only be changed by an administrator.</div>
 
                     {% if user.isStudent %}
                     <hr class="my-3">
-                    <h6 class="fw-semibold mb-3"><i  class="me-1" data-lucide="graduation-cap"></i> Student Information</h6>
+                    <h6 class="fw-semibold mb-3"><i  class="bi bi-mortarboard me-1"></i> Student Information</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Student ID</label>
@@ -62,7 +62,7 @@
             </div>
 
             <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-norsu"><i  class="me-1" data-lucide="circle-check"></i>Save Changes</button>
+                <button type="submit" class="btn btn-norsu"><i  class="bi bi-check-circle-fill me-1"></i>Save Changes</button>
                 <a href="{{ path('app_profile') }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>
@@ -90,11 +90,11 @@
 
         <div class="card border-0 shadow-sm mt-3">
             <div class="card-body">
-                <h6 class="fw-semibold mb-3"><i  class="me-1" data-lucide="lightbulb"></i> Tips</h6>
+                <h6 class="fw-semibold mb-3"><i  class="bi bi-lightbulb me-1"></i> Tips</h6>
                 <ul class="list-unstyled small text-muted mb-0">
-                    <li class="mb-2"><i  class="text-success me-1" data-lucide="check"></i> Keep your name accurate</li>
-                    <li class="mb-2"><i  class="text-success me-1" data-lucide="check"></i> Never share your login credentials</li>
-                    <li class="mb-2"><i  class="text-success me-1" data-lucide="check"></i> <a href="{{ path('app_profile_change_password') }}">Change your password</a> regularly</li>
+                    <li class="mb-2"><i  class="bi bi-check text-success me-1"></i> Keep your name accurate</li>
+                    <li class="mb-2"><i  class="bi bi-check text-success me-1"></i> Never share your login credentials</li>
+                    <li class="mb-2"><i  class="bi bi-check text-success me-1"></i> <a href="{{ path('app_profile_change_password') }}">Change your password</a> regularly</li>
                 </ul>
             </div>
         </div>

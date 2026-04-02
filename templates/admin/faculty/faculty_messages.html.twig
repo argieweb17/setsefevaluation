@@ -870,7 +870,7 @@
 
         <div class="fm-search-section">
             <div class="fm-search-wrap">
-                <i  class="fm-search-icon" data-lucide="search"></i>
+                <i  class="bi bi-search fm-search-icon"></i>
                 <input type="text" class="fm-search-input" id="searchInput" placeholder="Search..." oninput="searchMessages()">
             </div>
         </div>
@@ -929,7 +929,7 @@
             {% else %}
             <div class="fm-empty-state" style="padding:40px 20px;">
                 <div class="fm-empty-icon" style="width:60px;height:60px;font-size:1.5rem;margin-bottom:14px;">
-                    <i  data-lucide="inbox"></i>
+                    <i  class="bi bi-inbox"></i>
                 </div>
                 <h5 class="fm-empty-title" style="font-size:.95rem;">No messages</h5>
                 <p class="fm-empty-text" style="font-size:.8rem;margin-bottom:0;">Messages will appear here</p>
@@ -973,10 +973,10 @@
                     </h5>
                     <div class="fm-chat-meta">
                         {% if firstMsg.sender.department %}
-                        <span id="chatDept"><i  data-lucide="building-2"></i>{{ firstMsg.sender.department.departmentName }}</span>
+                        <span id="chatDept"><i  class="bi bi-buildings"></i>{{ firstMsg.sender.department.departmentName }}</span>
                         {% endif %}
                         {% if firstMsg.evaluationPeriod %}
-                        <span id="chatEval"><i  data-lucide="clipboard-check"></i>{{ firstMsg.evaluationPeriod.evaluationType }}</span>
+                        <span id="chatEval"><i  class="bi bi-clipboard-check"></i>{{ firstMsg.evaluationPeriod.evaluationType }}</span>
                         {% endif %}
                     </div>
                 </div>
@@ -986,7 +986,7 @@
                     {{ firstMsg.status|capitalize }}
                 </span>
                 <button type="button" class="fm-action-btn" title="Delete" data-bs-toggle="modal" data-bs-target="#deleteCurrentMsg">
-                    <i  data-lucide="trash-2"></i>
+                    <i  class="bi bi-trash"></i>
                 </button>
             </div>
         </header>
@@ -1001,17 +1001,17 @@
                 {# Faculty's message (incoming - white) #}
                 <div class="fm-message incoming">
                     <div class="fm-message-sender">
-                        <i  data-lucide="circle"></i> {{ msg.sender.fullName }}
+                        <i  class="bi bi-circle-fill"></i> {{ msg.sender.fullName }}
                     </div>
                     <div class="fm-bubble">{{- msg.message|trim -}}</div>
                     {%- if msg.attachment %}
                     <div class="fm-attachment">
-                        <div class="fm-attachment-icon"><i  data-lucide="file-text"></i></div>
+                        <div class="fm-attachment-icon"><i  class="bi bi-file-earmark-text"></i></div>
                         <div class="fm-attachment-info">
                             <div class="fm-attachment-name">{{ msg.attachmentOriginalName }}</div>
                             <div class="fm-attachment-size">Click to download</div>
                         </div>
-                        <a href="{{ asset('uploads/attachments/' ~ msg.attachment) }}" download="{{ msg.attachmentOriginalName }}" class="fm-attachment-download"><i  data-lucide="download"></i></a>
+                        <a href="{{ asset('uploads/attachments/' ~ msg.attachment) }}" download="{{ msg.attachmentOriginalName }}" class="fm-attachment-download"><i  class="bi bi-download"></i></a>
                     </div>
                     {%- endif %}
                     <div class="fm-message-time">{{ msg.createdAt|date('h:i A') }}</div>
@@ -1023,7 +1023,7 @@
                     <div class="fm-bubble">{{- msg.adminReply|trim -}}</div>
                     <div class="fm-message-time">
                         {{ msg.repliedAt|date('h:i A') }}
-                        <i  class="read-icon" data-lucide="check-check"></i>
+                        <i  class="bi bi-check2-all read-icon"></i>
                     </div>
                 </div>
                 {% endif %}
@@ -1035,17 +1035,17 @@
                 {# Faculty's reply (incoming - white) #}
                 <div class="fm-message incoming">
                     <div class="fm-message-sender">
-                        <i  data-lucide="circle"></i> {{ reply.sender.fullName }}
+                        <i  class="bi bi-circle-fill"></i> {{ reply.sender.fullName }}
                     </div>
                     <div class="fm-bubble">{{- reply.message|trim -}}</div>
                     {%- if reply.attachment %}
                     <div class="fm-attachment">
-                        <div class="fm-attachment-icon"><i  data-lucide="file-text"></i></div>
+                        <div class="fm-attachment-icon"><i  class="bi bi-file-earmark-text"></i></div>
                         <div class="fm-attachment-info">
                             <div class="fm-attachment-name">{{ reply.attachmentOriginalName }}</div>
                             <div class="fm-attachment-size">Click to download</div>
                         </div>
-                        <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" download="{{ reply.attachmentOriginalName }}" class="fm-attachment-download"><i  data-lucide="download"></i></a>
+                        <a href="{{ asset('uploads/attachments/' ~ reply.attachment) }}" download="{{ reply.attachmentOriginalName }}" class="fm-attachment-download"><i  class="bi bi-download"></i></a>
                     </div>
                     {%- endif %}
                     <div class="fm-message-time">{{ reply.createdAt|date('h:i A') }}</div>
@@ -1056,7 +1056,7 @@
                     <div class="fm-bubble">{{- reply.message|trim -}}</div>
                     {%- if reply.attachment %}
                     <div class="fm-attachment">
-                        <div class="fm-attachment-icon"><i  data-lucide="file-text"></i></div>
+                        <div class="fm-attachment-icon"><i  class="bi bi-file-earmark-text"></i></div>
                         <div class="fm-attachment-info">
                             <div class="fm-attachment-name">{{ reply.attachmentOriginalName }}</div>
                             <div class="fm-attachment-size">Click to download</div>
@@ -1065,7 +1065,7 @@
                     {%- endif %}
                     <div class="fm-message-time">
                         {{ reply.createdAt|date('h:i A') }}
-                        <i  class="read-icon" data-lucide="check-check"></i>
+                        <i  class="bi bi-check2-all read-icon"></i>
                     </div>
                 </div>
                 {% endif %}
@@ -1084,7 +1084,7 @@
                         <textarea name="reply" class="fm-textarea" placeholder="Type a message..." required></textarea>
                         <div class="fm-compose-tools">
                             <label class="fm-tool-btn" title="Attach file">
-                                <i  data-lucide="paperclip"></i>
+                                <i  class="bi bi-paperclip"></i>
                                 <input type="file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png" class="d-none" onchange="updateFileName(this, {{ msg.id }})">
                             </label>
                             <select name="status" class="fm-status-select">
@@ -1096,7 +1096,7 @@
                         </div>
                     </div>
                     <button type="submit" class="fm-send-btn">
-                        <i  data-lucide="send"></i>
+                        <i  class="bi bi-send"></i>
                     </button>
                 </div>
             </form>
@@ -1106,7 +1106,7 @@
         {% else %}
         <div class="fm-empty-state">
             <div class="fm-empty-icon">
-                <i  data-lucide="mail-open"></i>
+                <i  class="bi bi-envelope-open"></i>
             </div>
             <h5 class="fm-empty-title">No messages yet</h5>
             <p class="fm-empty-text">Faculty messages will appear here when they reach out.</p>
@@ -1123,7 +1123,7 @@
                 <input type="hidden" name="_token" id="deleteCurrentToken" value="{% if messages|length > 0 %}{{ csrf_token('admin_delete_msg' ~ messages|first.id) }}{% endif %}">
                 <div class="fm-modal-danger-header">
                     <div class="fm-modal-icon">
-                        <i  data-lucide="triangle-alert"></i>
+                        <i  class="bi bi-exclamation-triangle-fill"></i>
                     </div>
                     <div>
                         <h6 class="text-white fw-bold mb-0">Delete Message</h6>
@@ -1143,7 +1143,7 @@
                 <div class="modal-footer" style="background:var(--chat-bg);border-top:1px solid var(--chat-border);padding:14px 18px;">
                     <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="font-weight:600;border-radius:20px;">Cancel</button>
                     <button type="submit" class="btn fm-delete-confirm-btn">
-                        <i  class="me-1" data-lucide="trash-2"></i> Delete
+                        <i  class="bi bi-trash me-1"></i> Delete
                     </button>
                 </div>
             </form>
@@ -1267,6 +1267,12 @@ function getSuperiorLabel(rank, department) {
     return 'FACULTY';
 }
 
+function refreshLucideIcons() {
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
+}
+
 function selectConversation(el, msgId) {
     currentMsgId = msgId;
 
@@ -1307,7 +1313,7 @@ function selectConversation(el, msgId) {
         const deptEl = document.getElementById('chatDept');
         if (deptEl) {
             if (msg.department) {
-                deptEl.innerHTML = '<i  data-lucide="building-2"></i>' + msg.department;
+                deptEl.innerHTML = '<i  class="bi bi-buildings"></i>' + msg.department;
                 deptEl.style.display = '';
             } else {
                 deptEl.style.display = 'none';
@@ -1317,7 +1323,7 @@ function selectConversation(el, msgId) {
         const evalEl = document.getElementById('chatEval');
         if (evalEl) {
             if (msg.evalLabel) {
-                evalEl.innerHTML = '<i  data-lucide="clipboard-check"></i>' + msg.evalLabel;
+                evalEl.innerHTML = '<i  class="bi bi-clipboard-check"></i>' + msg.evalLabel;
                 evalEl.style.display = '';
             } else {
                 evalEl.style.display = 'none';
@@ -1337,6 +1343,7 @@ function selectConversation(el, msgId) {
 
     const chatBody = document.getElementById('chatBody');
     chatBody.scrollTop = chatBody.scrollHeight;
+    refreshLucideIcons();
 }
 
 function filterMessages(status, btn) {
@@ -1360,10 +1367,11 @@ function searchMessages() {
 function updateFileName(input, msgId) {
     const nameEl = document.getElementById('fileName-' + msgId);
     if (input.files[0]) {
-        nameEl.innerHTML = '<i  data-lucide="paperclip"></i> ' + input.files[0].name;
+        nameEl.innerHTML = '<i  class="bi bi-paperclip"></i> ' + input.files[0].name;
     } else {
         nameEl.innerHTML = '';
     }
+    refreshLucideIcons();
 }
 
 document.querySelectorAll('.fm-textarea').forEach(textarea => {
@@ -1412,6 +1420,8 @@ function initFacultyMessagesPage() {
             setTimeout(() => toast.remove(), 350);
         }, 3000);
     });
+
+    refreshLucideIcons();
 }
 
 document.addEventListener('DOMContentLoaded', initFacultyMessagesPage);

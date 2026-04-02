@@ -184,21 +184,21 @@
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="ev-header-icon">
-                    <i  data-lucide="clipboard-check"></i>
+                    <i  class="bi bi-clipboard-check"></i>
                 </div>
                 <div>
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Evaluation Period Management</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="ev-meta-pill"><i  class="me-1" data-lucide="database"></i>{{ totalEvals }} Period{{ totalEvals != 1 ? 's' : '' }}</span>
+                        <span class="ev-meta-pill"><i  class="bi bi-database me-1"></i>{{ totalEvals }} Period{{ totalEvals != 1 ? 's' : '' }}</span>
                         {% if currentAY %}
-                            <span class="ev-meta-pill ev-meta-active"><i  class="me-1" data-lucide="circle-check"></i>{{ currentAY.label }}</span>
+                            <span class="ev-meta-pill ev-meta-active"><i  class="bi bi-check-circle-fill me-1"></i>{{ currentAY.label }}</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-1">
                 <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#createEvalModal">
-                    <i  class="me-1" data-lucide="plus"></i>New Period
+                    <i  class="bi bi-plus me-1"></i>New Period
                 </button>
             </div>
         </div>
@@ -237,10 +237,10 @@
                     All <span class="ev-filter-count">{{ totalEvals }}</span>
                 </button>
                 <button class="ev-filter-btn" data-filter="open" onclick="filterEvals('open', this)">
-                    <i  class="me-1" data-lucide="circle-play"></i>Open <span class="ev-filter-count">{{ openEvals }}</span>
+                    <i  class="bi bi-play-circle-fill me-1"></i>Open <span class="ev-filter-count">{{ openEvals }}</span>
                 </button>
                 <button class="ev-filter-btn" data-filter="closed" onclick="filterEvals('closed', this)">
-                    <i  class="me-1" data-lucide="circle-pause"></i>Closed <span class="ev-filter-count">{{ closedEvals }}</span>
+                    <i  class="bi bi-pause-circle-fill me-1"></i>Closed <span class="ev-filter-count">{{ closedEvals }}</span>
                 </button>
             </div>
             <div class="ev-filter-group" id="evTypeFilter">
@@ -256,7 +256,7 @@
             </div>
         </div>
         <div class="ev-search-box">
-            <i  class="ev-search-icon" data-lucide="search"></i>
+            <i  class="bi bi-search ev-search-icon"></i>
             <input type="text" class="ev-search-input" id="evSearchInput" placeholder="Search periods..." oninput="searchEvals(this.value)">
         </div>
     </div>
@@ -304,10 +304,10 @@
                     </div>
                     <div class="ev-card-actions">
                         <button class="ev-action-btn ev-action-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#editEvalModal{{ eval.id }}">
-                            <i  data-lucide="pencil-line"></i>
+                            <i  class="bi bi-pencil-square"></i>
                         </button>
                         <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ eval.id }}" data-eval-type="{{ eval.evaluationType }}" data-eval-faculty="{{ eval.faculty ?? '' }}" data-eval-subject="{{ eval.subject ?? '' }}" data-eval-section="{{ eval.section ?? '' }}" data-eval-school-year="{{ eval.schoolYear ?? '' }}">
-                            <i  data-lucide="qr-code"></i>
+                            <i  class="bi bi-qr-code"></i>
                         </button>
                         <form method="post" action="{{ path('staff_evaluation_toggle', {id: eval.id}) }}" class="d-inline">
                             <input type="hidden" name="_token" value="{{ csrf_token('toggle_eval' ~ eval.id) }}">
@@ -325,7 +325,7 @@
                               onsubmit="return confirm('Delete this evaluation period and all its responses?')">
                             <input type="hidden" name="_token" value="{{ csrf_token('delete_eval' ~ eval.id) }}">
                             <button class="ev-action-btn ev-action-delete" title="Delete">
-                                <i  data-lucide="trash-2"></i>
+                                <i  class="bi bi-trash"></i>
                             </button>
                         </form>
                     </div>
@@ -333,9 +333,9 @@
 
                 {# ── Date Range ── #}
                 <div class="ev-date-range">
-                    <i  data-lucide="calendar-days"></i>
+                    <i  class="bi bi-calendar3"></i>
                     <span>{{ eval.startDate|date('M d, Y g:i A') }}</span>
-                    <i  style="font-size:.7rem" data-lucide="arrow-right"></i>
+                    <i  style="font-size:.7rem" class="bi bi-arrow-right"></i>
                     <span>{{ eval.endDate|date('M d, Y g:i A') }}</span>
                 </div>
 
@@ -359,25 +359,25 @@
                 <div class="ev-badges">
                     <div class="ev-badge-row">
                         {% if eval.faculty %}
-                            <span class="ev-badge ev-badge-primary"><i  class="me-1" data-lucide="id-card"></i>{{ eval.faculty }}</span>
+                            <span class="ev-badge ev-badge-primary"><i  class="bi bi-person-vcard me-1"></i>{{ eval.faculty }}</span>
                         {% endif %}
                         {% if eval.subject %}
-                            <span class="ev-badge ev-badge-success"><i  class="me-1" data-lucide="notebook-text"></i>{{ eval.subject }}</span>
+                            <span class="ev-badge ev-badge-success"><i  class="bi bi-journal-text me-1"></i>{{ eval.subject }}</span>
                         {% endif %}
                         {% if eval.yearLevel %}
-                            <span class="ev-badge ev-badge-info"><i  class="me-1" data-lucide="graduation-cap"></i>{{ eval.yearLevel }}</span>
+                            <span class="ev-badge ev-badge-info"><i  class="bi bi-mortarboard me-1"></i>{{ eval.yearLevel }}</span>
                         {% endif %}
                         {% if eval.department %}
-                            <span class="ev-badge ev-badge-dark"><i  class="me-1" data-lucide="building-2"></i>{{ eval.department.departmentName }}</span>
+                            <span class="ev-badge ev-badge-dark"><i  class="bi bi-buildings me-1"></i>{{ eval.department.departmentName }}</span>
                         {% endif %}
                         {% if eval.time %}
-                            <span class="ev-badge ev-badge-secondary"><i  class="me-1" data-lucide="clock-3"></i>{{ eval.time }}</span>
+                            <span class="ev-badge ev-badge-secondary"><i  class="bi bi-clock me-1"></i>{{ eval.time }}</span>
                         {% endif %}
                         {% if eval.section %}
-                            <span class="ev-badge ev-badge-info"><i  class="me-1" data-lucide="network"></i>{{ eval.section }}</span>
+                            <span class="ev-badge ev-badge-info"><i  class="bi bi-diagram-3 me-1"></i>{{ eval.section }}</span>
                         {% endif %}
                         {% if not eval.faculty and not eval.subject and not eval.yearLevel and not eval.department %}
-                            <span class="ev-badge ev-badge-muted"><i  class="me-1" data-lucide="globe"></i>All students / faculty</span>
+                            <span class="ev-badge ev-badge-muted"><i  class="bi bi-globe2 me-1"></i>All students / faculty</span>
                         {% endif %}
                     </div>
                 </div>
@@ -385,19 +385,19 @@
                 {# ── Card Footer Stats ── #}
                 <div class="ev-card-footer">
                     <div class="ev-footer-stat">
-                        <i  data-lucide="message-square-text"></i>
+                        <i  class="bi bi-chat-square-text"></i>
                         <span class="fw-semibold">{{ responseCount }}</span> evaluator{{ responseCount != 1 ? 's' : '' }}
                     </div>
                     <div class="ev-footer-badges">
                         {% if eval.anonymousMode %}
-                            <span class="ev-mini-badge ev-mini-success"><i  class="me-1" data-lucide="eye-off"></i>Anonymous</span>
+                            <span class="ev-mini-badge ev-mini-success"><i  class="bi bi-eye-slash me-1"></i>Anonymous</span>
                         {% else %}
-                            <span class="ev-mini-badge ev-mini-warning"><i  class="me-1" data-lucide="eye"></i>Named</span>
+                            <span class="ev-mini-badge ev-mini-warning"><i  class="bi bi-eye me-1"></i>Named</span>
                         {% endif %}
                         {% if eval.resultsLocked %}
-                            <span class="ev-mini-badge ev-mini-danger"><i  class="me-1" data-lucide="lock"></i>Locked</span>
+                            <span class="ev-mini-badge ev-mini-danger"><i  class="bi bi-lock me-1"></i>Locked</span>
                         {% else %}
-                            <span class="ev-mini-badge ev-mini-success"><i  class="me-1" data-lucide="lock-open"></i>Unlocked</span>
+                            <span class="ev-mini-badge ev-mini-success"><i  class="bi bi-unlock me-1"></i>Unlocked</span>
                         {% endif %}
                     </div>
                 </div>
@@ -413,7 +413,7 @@
             <div class="modal-content ev-modal">
                 <div class="ev-modal-header">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="ev-modal-icon"><i  data-lucide="pencil-line"></i></div>
+                        <div class="ev-modal-icon"><i  class="bi bi-pencil-square"></i></div>
                         <div>
                             <h5 class="mb-0 fw-bold text-white">Edit Evaluation Period</h5>
                             <small class="text-white-50">{{ eval.evaluationType }} — {{ eval.schoolYear ?? 'N/A' }}</small>
@@ -515,7 +515,7 @@
                     </div>
                     <div class="modal-footer border-0 bg-light rounded-bottom-4 px-4 py-3">
                         <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-sm btn-primary px-3 fw-semibold"><i  class="me-1" data-lucide="circle-check"></i>Save Changes</button>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 fw-semibold"><i  class="bi bi-check-circle-fill me-1"></i>Save Changes</button>
                     </div>
                 </form>
             </div>
@@ -523,11 +523,11 @@
     </div>
     {% else %}
     <div class="ev-empty-state">
-        <div class="ev-empty-icon"><i  data-lucide="clipboard-x"></i></div>
+        <div class="ev-empty-icon"><i  class="bi bi-clipboard-x"></i></div>
         <h6 class="fw-bold text-dark mb-1">No Evaluation Periods</h6>
         <p class="text-muted small mb-3">Create your first evaluation period to get started.</p>
         <button class="btn btn-sm btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#createEvalModal">
-            <i  class="me-1" data-lucide="plus"></i>New Period
+            <i  class="bi bi-plus me-1"></i>New Period
         </button>
     </div>
     {% endfor %}
@@ -539,10 +539,10 @@
 <div class="modal fade" id="qrCodeModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered" style="max-width:600px;">
         <div class="modal-content qr-modal">
-            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i  data-lucide="x"></i></button>
+            <button type="button" class="qr-modal-close" data-bs-dismiss="modal"><i  class="bi bi-x-lg"></i></button>
             <div class="qr-modal-layout">
                 <div class="qr-modal-left">
-                    <div class="qr-modal-icon"><i  data-lucide="scan-qr-code"></i></div>
+                    <div class="qr-modal-icon"><i  class="bi bi-qr-code-scan"></i></div>
                     <h5 class="qr-modal-title">Evaluation QR Code</h5>
                     <p class="qr-modal-subtitle" id="qrModalSubtitle">Scan to open the evaluation form</p>
 
@@ -565,23 +565,23 @@
                         </div>
                     </div>
 
-                    <div class="qr-url-label"><i  class="me-1" data-lucide="link"></i>Evaluation Link</div>
+                    <div class="qr-url-label"><i  class="bi bi-link-45deg me-1"></i>Evaluation Link</div>
                     <div class="qr-url-box" id="qrUrl"></div>
                     <div class="qr-actions">
                         <button type="button" class="qr-action-btn qr-btn-download" onclick="downloadQR()">
-                            <i  data-lucide="download"></i> Download
+                            <i  class="bi bi-download"></i> Download
                         </button>
                         <button type="button" class="qr-action-btn qr-btn-copy" onclick="copyQRLink()">
-                            <i  data-lucide="clipboard"></i> Copy Link
+                            <i  class="bi bi-clipboard"></i> Copy Link
                         </button>
                     </div>
                 </div>
                 <div class="qr-modal-right">
-                    <div class="qr-preview-label"><i  class="me-1" data-lucide="eye"></i>Live Preview</div>
+                    <div class="qr-preview-label"><i  class="bi bi-eye me-1"></i>Live Preview</div>
                     <div class="qr-code-frame">
                         <img id="qrImage" src="" alt="QR Code">
                     </div>
-                    <div class="qr-scan-hint"><i  class="me-1" data-lucide="smartphone"></i>Scan with any camera app</div>
+                    <div class="qr-scan-hint"><i  class="bi bi-phone me-1"></i>Scan with any camera app</div>
                 </div>
             </div>
         </div>
@@ -596,7 +596,7 @@
         <div class="modal-content ev-modal">
             <div class="ev-modal-header">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="ev-modal-icon"><i  data-lucide="circle-plus"></i></div>
+                    <div class="ev-modal-icon"><i  class="bi bi-plus-circle-fill"></i></div>
                     <div>
                         <h5 class="mb-0 fw-bold text-white">New Evaluation Period</h5>
                         <small class="text-white-50">Define evaluation parameters and schedule</small>
@@ -700,7 +700,7 @@
                 </div>
                 <div class="modal-footer border-0 bg-light rounded-bottom-4 px-4 py-3">
                     <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-primary px-3 fw-semibold"><i  class="me-1" data-lucide="plus"></i>Create Period</button>
+                    <button type="submit" class="btn btn-sm btn-primary px-3 fw-semibold"><i  class="bi bi-plus me-1"></i>Create Period</button>
                 </div>
             </form>
         </div>
@@ -864,7 +864,7 @@ document.querySelectorAll('.faculty-select').forEach(function(sel) {
         navigator.clipboard.writeText(currentQrUrl).then(function() {
             var btn = document.querySelector('#qrCodeModal .qr-btn-copy');
             var orig = btn.innerHTML;
-            btn.innerHTML = '<i  class="me-1" data-lucide="check"></i>Copied!';
+            btn.innerHTML = '<i  class="bi bi-check me-1"></i>Copied!';
             setTimeout(function() { btn.innerHTML = orig; }, 1500);
         });
     };

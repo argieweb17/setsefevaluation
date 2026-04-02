@@ -46,7 +46,7 @@
 {% set backButtonLabel = backButtonLabel|default('Back to Personnel List') %}
 <div class="mb-3">
     <a href="{{ path(backRouteName, backRouteParams) }}" class="text-decoration-none small">
-        <i  class="me-1" data-lucide="arrow-left"></i>{{ backLinkLabel }}
+        <i  class="bi bi-arrow-left me-1"></i>{{ backLinkLabel }}
     </a>
 </div>
 
@@ -54,7 +54,7 @@
 {% if isReadOnly %}
 <div class="alert alert-success border-0 shadow-sm mb-3" style="background:#ecfdf3;color:#14532d;">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <span><i  class="me-2" data-lucide="circle-check"></i>This evaluation has been submitted and is now in view-only mode.</span>
+        <span><i  class="bi bi-check-circle-fill me-2"></i>This evaluation has been submitted and is now in view-only mode.</span>
         {% if submittedAt is defined and submittedAt %}
             <small class="fw-semibold">Submitted: {{ submittedAt|date('M d, Y h:i A') }}</small>
         {% endif %}
@@ -217,15 +217,15 @@
 <div class="eval-form-actions-bar">
     {% if isReadOnly %}
     <a href="{{ path(backRouteName, backRouteParams) }}" class="btn btn-norsu">
-        <i  class="me-1" data-lucide="arrow-left"></i>{{ backButtonLabel }}
+        <i  class="bi bi-arrow-left me-1"></i>{{ backButtonLabel }}
     </a>
     {% else %}
     <button type="submit" name="_action" value="submit" class="btn btn-norsu"
             onclick="return confirm('Once submitted, you cannot edit this evaluation. Continue?')">
-        <i  class="me-1" data-lucide="send"></i>Submit Evaluation
+        <i  class="bi bi-send me-1"></i>Submit Evaluation
     </button>
     <button type="submit" name="_action" value="save_draft" class="btn btn-outline-secondary">
-        <i  class="me-1" data-lucide="save"></i>Save as Draft
+        <i  class="bi bi-save me-1"></i>Save as Draft
     </button>
     <a href="{{ path('superior_evaluate_index') }}" class="btn btn-light">Cancel</a>
     {% endif %}

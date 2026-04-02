@@ -253,11 +253,11 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ staffMode|default(false) ? path('staff_results', {view: 'sef'}) : path(prefix ~ '_results_superior') }}" class="btn btn-sm fe-btn-back">
-                    <i  class="me-1" data-lucide="arrow-left"></i>Back
+                    <i  class="bi bi-arrow-left me-1"></i>Back
                 </a>
                 {% if evaluations|length > 0 %}
                 <a href="{{ path(prefix ~ '_results_superior_print_all', {faculty: faculty.id}) }}" target="_blank" class="btn btn-sm fe-btn-print">
-                    <i  class="me-1" data-lucide="printer"></i>Print Result
+                    <i  class="bi bi-printer me-1"></i>Print Result
                 </a>
                 {% endif %}
             </div>
@@ -267,21 +267,21 @@
 
 <div class="fe-stats">
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-blue"><i  data-lucide="clipboard-list"></i></div>
+        <div class="fe-stat-icon stat-blue"><i  class="bi bi-card-checklist"></i></div>
         <div>
             <div class="fe-stat-num">{{ evaluations|length }}</div>
             <div class="fe-stat-label">Evaluations</div>
         </div>
     </div>
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-green"><i  data-lucide="chart-line"></i></div>
+        <div class="fe-stat-icon stat-green"><i  class="bi bi-graph-up-arrow"></i></div>
         <div>
             <div class="fe-stat-num">{{ overallAvg|number_format(2) }}</div>
             <div class="fe-stat-label">Overall Average</div>
         </div>
     </div>
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-purple"><i  data-lucide="users"></i></div>
+        <div class="fe-stat-icon stat-purple"><i  class="bi bi-people"></i></div>
         <div>
             <div class="fe-stat-num">{{ totalPersonnel|default(0) }}</div>
             <div class="fe-stat-label">Total Personnel Evaluated</div>
@@ -324,7 +324,7 @@
                         <td><span class="fw-semibold">{{ row.period }}</span></td>
                         <td>{{ row.name }}</td>
                         <td>
-                            <span class="fe-info-badge"><i  data-lucide="building-2"></i>{{ row.department }}</span>
+                            <span class="fe-info-badge"><i  class="bi bi-buildings"></i>{{ row.department }}</span>
                         </td>
                         <td class="text-center">
                             <span class="fe-rating-num">{{ row.average|number_format(2) }}</span>
@@ -339,7 +339,7 @@
                                         title="View SEF Result Form"
                                         aria-label="View SEF Result Form"
                                     >
-                                        <i  data-lucide="eye"></i>
+                                        <i  class="bi bi-eye"></i>
                                     </a>
                                     <a
                                         href="{{ path(staffMode|default(false) ? 'staff_results_superior_print_setup' : 'admin_results_superior_print_setup', {evaluation: row.evaluationId, faculty: row.facultyId}) }}"
@@ -348,7 +348,7 @@
                                         title="Print Result"
                                         aria-label="Print Result"
                                     >
-                                        <i  data-lucide="printer"></i>
+                                        <i  class="bi bi-printer"></i>
                                     </a>
                                 </div>
                             {% else %}
@@ -367,7 +367,7 @@
 </div>
 {% else %}
 <div class="fe-empty">
-    <i  class="fs-3 d-block mb-2 text-muted" data-lucide="clipboard-x"></i>
+    <i  class="bi bi-clipboard-x fs-3 d-block mb-2 text-muted"></i>
     No SEF evaluator activity found for this department head.
 </div>
 {% endif %}

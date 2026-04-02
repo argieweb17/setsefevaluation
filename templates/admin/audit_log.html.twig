@@ -100,7 +100,7 @@
 <div class="al-header">
     <div class="al-header-left">
         <div class="al-header-icon">
-            <i  data-lucide="notebook-text"></i>
+            <i  class="bi bi-journal-text"></i>
         </div>
         <div>
             <h4 class="al-title">Audit Log</h4>
@@ -109,11 +109,11 @@
     </div>
     <div class="al-header-right">
         <span class="al-count-badge">
-            <i  class="me-1" data-lucide="list"></i>{{ logs|length }} entr{{ logs|length != 1 ? 'ies' : 'y' }}
+            <i  class="bi bi-list me-1"></i>{{ logs|length }} entr{{ logs|length != 1 ? 'ies' : 'y' }}
         </span>
         {% if logs|length > 0 %}
         <button type="button" class="al-delete-all-btn" data-bs-toggle="modal" data-bs-target="#deleteAllModal">
-            <i  class="me-1" data-lucide="trash-2"></i>Delete All
+            <i  class="bi bi-trash me-1"></i>Delete All
         </button>
         {% endif %}
     </div>
@@ -122,7 +122,7 @@
 {# ═══════ FLASH MESSAGES ═══════ #}
 {% for message in app.flashes('success') %}
 <div class="al-flash-success">
-    <i  class="me-2" data-lucide="circle-check"></i>{{ message }}
+    <i  class="bi bi-check-circle-fill me-2"></i>{{ message }}
 </div>
 {% endfor %}
 
@@ -130,7 +130,7 @@
 <div class="al-filter-card">
     <form method="get" action="{{ path('admin_audit_log') }}" class="al-filter-form">
         <div class="al-filter-group">
-            <label class="al-filter-label"><i  class="me-1" data-lucide="filter"></i>Action</label>
+            <label class="al-filter-label"><i  class="bi bi-funnel me-1"></i>Action</label>
             <select name="action" class="al-filter-select">
                 <option value="">All Actions</option>
                 <option value="create_user" {{ filterAction == 'create_user' ? 'selected' }}>Create User</option>
@@ -160,7 +160,7 @@
             </select>
         </div>
         <div class="al-filter-group">
-            <label class="al-filter-label"><i  class="me-1" data-lucide="user"></i>User</label>
+            <label class="al-filter-label"><i  class="bi bi-person me-1"></i>User</label>
             <select name="user" class="al-filter-select">
                 <option value="">All Users</option>
                 {% for u in staffUsers %}
@@ -171,8 +171,8 @@
             </select>
         </div>
         <div class="al-filter-actions">
-            <button type="submit" class="al-btn-filter"><i  class="me-1" data-lucide="search"></i>Filter</button>
-            <a href="{{ path('admin_audit_log') }}" class="al-btn-clear"><i  class="me-1" data-lucide="x"></i>Clear</a>
+            <button type="submit" class="al-btn-filter"><i  class="bi bi-search me-1"></i>Filter</button>
+            <a href="{{ path('admin_audit_log') }}" class="al-btn-clear"><i  class="bi bi-x-lg me-1"></i>Clear</a>
         </div>
     </form>
 </div>
@@ -197,14 +197,14 @@
                 <tr class="al-row">
                     <td class="al-td-num">{{ loop.index }}</td>
                     <td class="al-td-time">
-                        <i  class="text-muted me-1" data-lucide="clock-3"></i>{{ log.createdAt|date('M d, Y h:i A') }}
+                        <i  class="bi bi-clock text-muted me-1"></i>{{ log.createdAt|date('M d, Y h:i A') }}
                     </td>
                     <td class="al-td-user">
                         {% if log.performedBy %}
                             <div class="al-user-avatar">{{ log.performedBy.firstName|first }}{{ log.performedBy.lastName|first }}</div>
                             <span>{{ log.performedBy.fullName }}</span>
                         {% else %}
-                            <div class="al-user-avatar al-user-system"><i  data-lucide="settings"></i></div>
+                            <div class="al-user-avatar al-user-system"><i  class="bi bi-gear"></i></div>
                             <span class="text-muted">Deleted User</span>
                         {% endif %}
                     </td>
@@ -244,7 +244,7 @@
                 <tr>
                     <td colspan="7" class="al-empty">
                         <div class="al-empty-inner">
-                            <i  data-lucide="notebook-pen"></i>
+                            <i  class="bi bi-journal-plus"></i>
                             <strong>No audit log entries found</strong>
                             <span>System activities will appear here once actions are performed.</span>
                         </div>
@@ -262,7 +262,7 @@
         <div class="modal-content al-modal">
             <div class="modal-body text-center px-4 py-4">
                 <div class="al-modal-icon">
-                    <i  data-lucide="triangle-alert"></i>
+                    <i  class="bi bi-exclamation-triangle-fill"></i>
                 </div>
                 <h5 class="fw-bold mb-2" style="color:#1E293B">Delete All Logs?</h5>
                 <p class="text-muted mb-3" style="font-size:.88rem">
@@ -273,7 +273,7 @@
                     <form method="post" action="{{ path('admin_audit_log_delete_all') }}" class="d-inline">
                         <input type="hidden" name="_token" value="{{ csrf_token('delete_all_audit_logs') }}">
                         <button type="submit" class="al-modal-btn-delete">
-                            <i  class="me-1" data-lucide="trash-2"></i>Delete All
+                            <i  class="bi bi-trash me-1"></i>Delete All
                         </button>
                     </form>
                 </div>

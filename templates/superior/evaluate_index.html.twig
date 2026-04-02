@@ -283,7 +283,7 @@
     {% if hasOpenRecords or hasHistoryRecords %}
     <div class="sp-toolbar">
         <div class="sp-search-box">
-            <i  data-lucide="search"></i>
+            <i  class="bi bi-search"></i>
             <input type="search" id="spSearch" placeholder="Search personnel, role, department, or period...">
         </div>
 
@@ -339,10 +339,10 @@
                 <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Period <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Faculty <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Position <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Department <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
+                        <th>Period <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Faculty <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Position <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Department <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -378,23 +378,23 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="sp-role {{ item.type == 'dean' ? 'sp-role-dean' : (item.type == 'department_head' ? 'sp-role-head' : 'sp-role-lead') }}"><i  data-lucide="id-card"></i> {{ item.label }}</span>
+                                    <span class="sp-role {{ item.type == 'dean' ? 'sp-role-dean' : (item.type == 'department_head' ? 'sp-role-head' : 'sp-role-lead') }}"><i  class="bi bi-person-vcard"></i> {{ item.label }}</span>
                                 </td>
                                 <td>
-                                    <span class="sp-department-chip"><i  data-lucide="building-2"></i> {{ item.user.department ? item.user.department.departmentName : 'N/A' }}</span>
+                                    <span class="sp-department-chip"><i  class="bi bi-buildings"></i> {{ item.user.department ? item.user.department.departmentName : 'N/A' }}</span>
                                 </td>
                                 <td>
                                     {% if isSubmitted %}
-                                        <span class="sp-status sp-status-submitted"><i  data-lucide="circle-check"></i> Submitted</span>
+                                        <span class="sp-status sp-status-submitted"><i  class="bi bi-check-circle-fill"></i> Submitted</span>
                                     {% else %}
-                                        <span class="sp-status sp-status-pending"><i  data-lucide="clock-3"></i> Pending</span>
+                                        <span class="sp-status sp-status-pending"><i  class="bi bi-clock"></i> Pending</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if isSubmitted %}
-                                        <a href="{{ path('superior_evaluate_view', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="View evaluation"><i  data-lucide="eye"></i></a>
+                                        <a href="{{ path('superior_evaluate_view', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="View evaluation"><i  class="bi bi-eye"></i></a>
                                     {% else %}
-                                        <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="Evaluate"><i  data-lucide="pencil-line"></i></a>
+                                        <a href="{{ path('superior_evaluate_form', {evalId: eval.id, evaluateeId: item.user.id}) }}" class="sp-action-icon" title="Evaluate"><i  class="bi bi-pencil-square"></i></a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -414,7 +414,7 @@
     {% if historyYears|length > 0 or historyItems|length > 0 %}
     <div class="sp-panel {{ defaultRecordType != 'previous' ? 'is-hidden' : '' }}" id="spHistoryPanel">
         <div class="sp-panel-head">
-            <h2 class="sp-panel-title"><i  data-lucide="history"></i> Previous Submitted Evaluations</h2>
+            <h2 class="sp-panel-title"><i  class="bi bi-clock-history"></i> Previous Submitted Evaluations</h2>
             <div class="sp-panel-note">Completed submissions archive.</div>
         </div>
 
@@ -424,10 +424,10 @@
                 <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Period <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Faculty <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Position <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
-                        <th>Department <i  class="sp-th-sort" data-lucide="arrow-up-down"></i></th>
+                        <th>Period <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Faculty <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Position <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
+                        <th>Department <i  class="bi bi-arrow-down-up sp-th-sort"></i></th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -459,14 +459,14 @@
                             <span class="sp-role {{ item.evaluateeLabel == 'Dean' ? 'sp-role-dean' : (item.evaluateeLabel == 'Department Head' ? 'sp-role-head' : 'sp-role-lead') }}">{{ item.evaluateeLabel }}</span>
                         </td>
                         <td>
-                            <span class="sp-department-chip"><i  data-lucide="building-2"></i> {{ item.evaluatee.department ? item.evaluatee.department.departmentName : 'N/A' }}</span>
+                            <span class="sp-department-chip"><i  class="bi bi-buildings"></i> {{ item.evaluatee.department ? item.evaluatee.department.departmentName : 'N/A' }}</span>
                         </td>
                         <td>
-                            <span class="sp-status sp-status-submitted"><i  data-lucide="circle-check"></i> Submitted</span>
+                            <span class="sp-status sp-status-submitted"><i  class="bi bi-check-circle-fill"></i> Submitted</span>
                             <div class="sp-status-note">Avg: {{ item.averageRating|number_format(2) }}/5</div>
                         </td>
                         <td>
-                            <a href="{{ path('superior_evaluate_view', {evalId: item.evaluation.id, evaluateeId: item.evaluatee.id}) }}" class="sp-action-icon" title="View evaluation"><i  data-lucide="eye"></i></a>
+                            <a href="{{ path('superior_evaluate_view', {evalId: item.evaluation.id, evaluateeId: item.evaluatee.id}) }}" class="sp-action-icon" title="View evaluation"><i  class="bi bi-eye"></i></a>
                         </td>
                     </tr>
                     {% endfor %}

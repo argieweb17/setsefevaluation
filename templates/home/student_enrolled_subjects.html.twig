@@ -452,7 +452,7 @@
 
 {# ── Breadcrumb ── #}
 <div class="ses-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i  data-lucide="house"></i> Dashboard</a>
+    <a href="{{ path('app_dashboard') }}"><i  class="bi bi-house"></i> Dashboard</a>
     <span class="sep">/</span>
     <span class="current">Enrolled Subjects</span>
 </div>
@@ -467,7 +467,7 @@
     </div>
     <div class="ses-header-actions">
         <button type="button" class="ses-btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-            <i  data-lucide="plus"></i> Add Subject
+            <i  class="bi bi-plus"></i> Add Subject
         </button>
     </div>
 </div>
@@ -476,26 +476,26 @@
 <div class="ses-chips">
     <div class="ses-chip">
         <span class="ses-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">
-            <i  data-lucide="book-open"></i>
+            <i  class="bi bi-book"></i>
         </span>
         <span><span class="ses-chip-val">{{ enrollments|length }}</span> Enrolled</span>
     </div>
     <div class="ses-chip">
         <span class="ses-chip-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
-            <i  data-lucide="graduation-cap"></i>
+            <i  class="bi bi-mortarboard"></i>
         </span>
         <span><span class="ses-chip-val">{{ totalUnits }}</span> Units</span>
     </div>
     <div class="ses-chip">
         <span class="ses-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
-            <i  data-lucide="circle-check"></i>
+            <i  class="bi bi-check-circle-fill"></i>
         </span>
         <span><span class="ses-chip-val">{{ approvedCount }}</span> Approved</span>
     </div>
     {% if pendingCount > 0 %}
     <div class="ses-chip">
         <span class="ses-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
-            <i  data-lucide="clock-3"></i>
+            <i  class="bi bi-clock"></i>
         </span>
         <span><span class="ses-chip-val">{{ pendingCount }}</span> Pending</span>
     </div>
@@ -506,7 +506,7 @@
 <div class="ses-panel mb-4">
     <div class="ses-panel-head">
         <div class="ses-panel-title">
-            <i  data-lucide="bookmark-check"></i>
+            <i  class="bi bi-bookmark-check"></i>
             Subjects
             {% if enrollments|length > 0 %}
                 <span style="font-weight:400;color:#94a3b8;font-size:.78rem;margin-left:.15rem;">({{ enrollments|length }})</span>
@@ -515,12 +515,12 @@
         <div class="ses-panel-tools">
             {% if enrollments|length > 0 %}
             <div class="ses-search-wrap">
-                <i  data-lucide="search"></i>
+                <i  class="bi bi-search"></i>
                 <input type="search" id="enrolledSubjectSearch" placeholder="Search...">
             </div>
             <div class="ses-view-toggle">
-                <button type="button" class="ses-view-btn active" data-view="table" title="Table view"><i  data-lucide="list"></i></button>
-                <button type="button" class="ses-view-btn" data-view="cards" title="Card view"><i  data-lucide="grid-3x3"></i></button>
+                <button type="button" class="ses-view-btn active" data-view="table" title="Table view"><i  class="bi bi-list"></i></button>
+                <button type="button" class="ses-view-btn" data-view="cards" title="Card view"><i  class="bi bi-grid-3x3-gap"></i></button>
             </div>
             {% endif %}
         </div>
@@ -552,18 +552,18 @@
                             <td class="text-center fw-semibold">{{ subject.units ?: '&mdash;' }}</td>
                             <td>
                                 {% if enrollment.status == 'approved' %}
-                                    <span class="ses-badge ses-badge-approved"><i  data-lucide="circle-check"></i> Approved</span>
+                                    <span class="ses-badge ses-badge-approved"><i  class="bi bi-check-circle-fill"></i> Approved</span>
                                 {% elseif enrollment.status == 'rejected' %}
-                                    <span class="ses-badge ses-badge-rejected"><i  data-lucide="circle-x"></i> Rejected</span>
+                                    <span class="ses-badge ses-badge-rejected"><i  class="bi bi-x-circle-fill"></i> Rejected</span>
                                 {% else %}
-                                    <span class="ses-badge ses-badge-pending"><i  data-lucide="clock-3"></i> Pending</span>
+                                    <span class="ses-badge ses-badge-pending"><i  class="bi bi-clock"></i> Pending</span>
                                 {% endif %}
                             </td>
                             <td class="text-end">
                                 <form method="post" action="{{ path('student_enrolled_subject_remove', {id: enrollment.id}) }}" class="d-inline" onsubmit="return confirm('Remove {{ subject.subjectCode }} from your enrolled subjects?')">
                                     <input type="hidden" name="_token" value="{{ csrf_token('student_remove_subject_' ~ enrollment.id) }}">
                                     <button type="submit" class="ses-btn-remove" title="Remove">
-                                        <i  data-lucide="trash-2"></i>
+                                        <i  class="bi bi-trash"></i>
                                     </button>
                                 </form>
                             </td>
@@ -587,25 +587,25 @@
                         <div class="ses-subject-card-top">
                             <span class="ses-subject-card-code">{{ subject.subjectCode }}</span>
                             {% if enrollment.status == 'approved' %}
-                                <span class="ses-badge ses-badge-approved"><i  data-lucide="circle-check"></i> Approved</span>
+                                <span class="ses-badge ses-badge-approved"><i  class="bi bi-check-circle-fill"></i> Approved</span>
                             {% elseif enrollment.status == 'rejected' %}
-                                <span class="ses-badge ses-badge-rejected"><i  data-lucide="circle-x"></i> Rejected</span>
+                                <span class="ses-badge ses-badge-rejected"><i  class="bi bi-x-circle-fill"></i> Rejected</span>
                             {% else %}
-                                <span class="ses-badge ses-badge-pending"><i  data-lucide="clock-3"></i> Pending</span>
+                                <span class="ses-badge ses-badge-pending"><i  class="bi bi-clock"></i> Pending</span>
                             {% endif %}
                         </div>
                         <div class="ses-subject-card-name">{{ subject.subjectName }}</div>
                         <div class="ses-subject-card-meta">
-                            {% if subject.units %}<span><i  data-lucide="bookmark"></i> {{ subject.units }} units</span>{% endif %}
-                            {% if enrollment.section ?: subject.section %}<span><i  data-lucide="grid-3x3"></i> Sec {{ enrollment.section ?: subject.section }}</span>{% endif %}
-                            {% if enrollment.schedule ?: subject.schedule %}<span><i  data-lucide="clock-3"></i> {{ enrollment.schedule ?: subject.schedule }}</span>{% endif %}
+                            {% if subject.units %}<span><i  class="bi bi-bookmark"></i> {{ subject.units }} units</span>{% endif %}
+                            {% if enrollment.section ?: subject.section %}<span><i  class="bi bi-grid-3x3-gap"></i> Sec {{ enrollment.section ?: subject.section }}</span>{% endif %}
+                            {% if enrollment.schedule ?: subject.schedule %}<span><i  class="bi bi-clock"></i> {{ enrollment.schedule ?: subject.schedule }}</span>{% endif %}
                         </div>
                     </div>
                     <div class="ses-subject-card-actions">
                         <form method="post" action="{{ path('student_enrolled_subject_remove', {id: enrollment.id}) }}" class="d-inline" onsubmit="return confirm('Remove {{ subject.subjectCode }} from your enrolled subjects?')">
                             <input type="hidden" name="_token" value="{{ csrf_token('student_remove_subject_' ~ enrollment.id) }}">
                             <button type="submit" class="ses-btn-remove" title="Remove">
-                                <i  data-lucide="trash-2"></i>
+                                <i  class="bi bi-trash"></i>
                             </button>
                         </form>
                     </div>
@@ -616,20 +616,20 @@
         {# ── Empty State ── #}
         <div class="ses-empty-state">
             <div class="ses-empty-illustration">
-                <i  data-lucide="book-marked"></i>
+                <i  class="bi bi-bookmark-check"></i>
             </div>
             <div class="ses-empty-title">No subjects enrolled yet</div>
             <div class="ses-empty-desc">Start building your schedule by adding subjects from the available catalog for this semester.</div>
             <div class="ses-empty-hint">You can enroll subjects one by one or import them all at once.</div>
             <div class="ses-empty-actions">
                 <button type="button" class="ses-btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-                    <i  data-lucide="plus"></i> Browse Subjects
+                    <i  class="bi bi-plus"></i> Browse Subjects
                 </button>
                 {% if availableSubjects|length > 0 %}
                 <form method="post" action="{{ path('student_enrolled_subject_import') }}" class="d-inline" onsubmit="return confirm('Enroll in all {{ availableSubjects|length }} available subject(s)?')">
                     <input type="hidden" name="_token" value="{{ csrf_token('student_import_subjects') }}">
                     <button type="submit" class="ses-btn-outline">
-                        <i  data-lucide="download"></i> Enroll All ({{ availableSubjects|length }})
+                        <i  class="bi bi-download"></i> Enroll All ({{ availableSubjects|length }})
                     </button>
                 </form>
                 {% endif %}
@@ -638,7 +638,7 @@
 
         <div style="padding: 0 1.25rem 1.25rem;">
             <div class="ses-tip">
-                <i  data-lucide="lightbulb"></i>
+                <i  class="bi bi-lightbulb"></i>
                 <div>
                     <strong>Quick Tip:</strong> Use the <strong>Enroll All</strong> option to quickly add all available subjects for your program, then remove any you don't need.
                 </div>
@@ -655,7 +655,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title fw-bold"><i  class="me-2" style="color:#2563eb;" data-lucide="circle-plus"></i>Add Subject</h5>
+                    <h5 class="modal-title fw-bold"><i  class="bi bi-plus-circle-fill me-2" style="color:#2563eb;"></i>Add Subject</h5>
                     <div class="modal-subtitle">Browse and enroll in available subjects</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -685,34 +685,34 @@
                         {% for subject in availableSubjects %}
                             <div class="ses-avail-card" data-code="{{ subject.subjectCode|lower }}" data-name="{{ subject.subjectName|lower }}" data-year="{{ subject.yearLevel ?: '' }}" data-faculty="{{ subject.faculty ? subject.faculty.id : '' }}">
                                 <div class="ses-avail-icon">
-                                    <i  data-lucide="book-open"></i>
+                                    <i  class="bi bi-book"></i>
                                 </div>
                                 <div class="ses-avail-info">
                                     <div class="ses-avail-code">{{ subject.subjectCode }}</div>
                                     <div class="ses-avail-name">{{ subject.subjectName }}</div>
                                     <div class="ses-avail-meta">
-                                        {% if subject.units %}<span><i  data-lucide="bookmark"></i> {{ subject.units }} units</span>{% endif %}
-                                        {% if subject.section %}<span><i  data-lucide="grid-3x3"></i> Sec {{ subject.section }}</span>{% endif %}
-                                        {% if subject.schedule %}<span><i  data-lucide="clock-3"></i> {{ subject.schedule }}</span>{% endif %}
-                                        {% if subject.faculty %}<span><i  data-lucide="user"></i> {{ subject.faculty.fullName }}</span>{% endif %}
-                                        {% if subject.yearLevel %}<span><i  data-lucide="graduation-cap"></i> {{ subject.yearLevel }}</span>{% endif %}
+                                        {% if subject.units %}<span><i  class="bi bi-bookmark"></i> {{ subject.units }} units</span>{% endif %}
+                                        {% if subject.section %}<span><i  class="bi bi-grid-3x3-gap"></i> Sec {{ subject.section }}</span>{% endif %}
+                                        {% if subject.schedule %}<span><i  class="bi bi-clock"></i> {{ subject.schedule }}</span>{% endif %}
+                                        {% if subject.faculty %}<span><i  class="bi bi-person"></i> {{ subject.faculty.fullName }}</span>{% endif %}
+                                        {% if subject.yearLevel %}<span><i  class="bi bi-mortarboard"></i> {{ subject.yearLevel }}</span>{% endif %}
                                     </div>
                                 </div>
                                 <form method="post" action="{{ path('student_enrolled_subject_add') }}" class="d-inline">
                                     <input type="hidden" name="_token" value="{{ csrf_token('student_add_subject') }}">
                                     <input type="hidden" name="subject_id" value="{{ subject.id }}">
-                                    <button type="submit" class="ses-avail-btn"><i  class="me-1" data-lucide="plus"></i>Enroll</button>
+                                    <button type="submit" class="ses-avail-btn"><i  class="bi bi-plus me-1"></i>Enroll</button>
                                 </form>
                             </div>
                         {% endfor %}
                     </div>
                     <div class="ses-avail-empty d-none" id="addSubjEmpty">
-                        <i  style="font-size:1.5rem;opacity:.4;" data-lucide="search"></i>
+                        <i  style="font-size:1.5rem;opacity:.4;" class="bi bi-search"></i>
                         <div class="mt-1">No subjects match your filters.</div>
                     </div>
                 {% else %}
                     <div class="ses-avail-empty">
-                        <i  style="font-size:2rem;opacity:.4;" data-lucide="inbox"></i>
+                        <i  style="font-size:2rem;opacity:.4;" class="bi bi-inbox"></i>
                         <div class="fw-semibold text-dark mt-2">No available subjects</div>
                         <div class="small text-muted mt-1">All subjects for your department have already been enrolled, or none are loaded yet.</div>
                     </div>
@@ -723,7 +723,7 @@
                     <form method="post" action="{{ path('student_enrolled_subject_import') }}" onsubmit="return confirm('Enroll in all {{ availableSubjects|length }} available subject(s)?')">
                         <input type="hidden" name="_token" value="{{ csrf_token('student_import_subjects') }}">
                         <button type="submit" class="ses-btn-outline">
-                            <i  data-lucide="download"></i> Enroll All ({{ availableSubjects|length }})
+                            <i  class="bi bi-download"></i> Enroll All ({{ availableSubjects|length }})
                         </button>
                     </form>
                     <button type="button" class="btn btn-light btn-sm fw-bold" data-bs-dismiss="modal" style="border-radius:10px;">Close</button>

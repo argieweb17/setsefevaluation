@@ -95,22 +95,22 @@
     <div class="mu-header-inner">
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="mu-header-icon"><i  data-lucide="users"></i></div>
+                <div class="mu-header-icon"><i  class="bi bi-people"></i></div>
                 <div>
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Manage Users</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="mu-meta-pill"><i  class="me-1" data-lucide="user-check"></i>{{ activeCount }} Active</span>
-                        <span class="mu-meta-pill"><i  class="me-1" data-lucide="hourglass"></i>{{ pendingUsers|length }} Pending</span>
-                        <span class="mu-meta-pill"><i  class="me-1" data-lucide="database"></i>{{ totalUsers }} Total</span>
+                        <span class="mu-meta-pill"><i  class="bi bi-person-check me-1"></i>{{ activeCount }} Active</span>
+                        <span class="mu-meta-pill"><i  class="bi bi-hourglass-split me-1"></i>{{ pendingUsers|length }} Pending</span>
+                        <span class="mu-meta-pill"><i  class="bi bi-database me-1"></i>{{ totalUsers }} Total</span>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-1">
                 <button type="button" class="btn btn-sm btn-outline-light fw-semibold" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
-                    <i  class="me-1" data-lucide="cloud-upload"></i>Bulk Upload
+                    <i  class="bi bi-cloud-upload me-1"></i>Bulk Upload
                 </button>
                 <a href="{{ path('admin_user_create') }}" class="btn btn-sm btn-light fw-semibold shadow-sm">
-                    <i  class="me-1" data-lucide="user-plus"></i>Add User
+                    <i  class="bi bi-person-plus me-1"></i>Add User
                 </a>
             </div>
         </div>
@@ -146,12 +146,12 @@
 {# ── Filter / Search Toolbar ── #}
 <div class="mu-toolbar">
     <div class="mu-search-wrap">
-        <i  data-lucide="search"></i>
+        <i  class="bi bi-search"></i>
         <input type="text" class="mu-search" id="userSearch" placeholder="Search by name or email..." autocomplete="off">
     </div>
     <div class="mu-filter-form">
         <div class="mu-filter-group">
-            <i  class="mu-filter-icon" data-lucide="shield"></i>
+            <i  class="bi bi-shield mu-filter-icon"></i>
             <select class="mu-filter-select" id="roleFilter" style="min-width:150px;">
                 <option value="">All Roles</option>
                 <option value="Admin">Admin</option>
@@ -161,7 +161,7 @@
             </select>
         </div>
         <div class="mu-filter-group">
-            <i  class="mu-filter-icon" data-lucide="circle"></i>
+            <i  class="bi bi-circle-fill mu-filter-icon"></i>
             <select class="mu-filter-select" id="statusFilter" style="min-width:150px;">
                 <option value="">All Statuses</option>
                 <option value="Active">Active</option>
@@ -170,7 +170,7 @@
             </select>
         </div>
         <div class="mu-filter-group">
-            <i  class="mu-filter-icon" data-lucide="arrow-down"></i>
+            <i  class="bi bi-arrow-down mu-filter-icon"></i>
             <select class="mu-filter-select" id="sortFilter" style="min-width:150px;">
                 <option value="name-asc">Name (A–Z)</option>
                 <option value="name-desc">Name (Z–A)</option>
@@ -179,7 +179,7 @@
             </select>
         </div>
         <button type="button" class="mu-clear-btn" id="resetFilters" title="Reset all filters">
-            <i  data-lucide="x"></i>
+            <i  class="bi bi-x-lg"></i>
         </button>
     </div>
     <div class="mu-toolbar-info">
@@ -190,7 +190,7 @@
 {# ── Pending Approvals Section ── #}
 <div class="mu-table-card mb-3" id="pending-approvals">
     <div class="mu-table-header" style="background:linear-gradient(135deg,#1e3a8a,#1e40af 60%,#059669);">
-        <span><i  class="me-2" data-lucide="hourglass"></i>Pending Approvals</span>
+        <span><i  class="bi bi-hourglass-split me-2"></i>Pending Approvals</span>
         <span class="mu-table-badge">{{ pendingUsers|length }} pending</span>
     </div>
     <div class="table-responsive">
@@ -216,13 +216,13 @@
                     <td><span class="small text-muted">{{ u.email }}</span></td>
                     <td>
                         {% if 'ROLE_SUPERIOR' in u.roles %}
-                            <span class="mu-role-badge role-superior"><i  class="me-1" data-lucide="award"></i>Superior</span>
+                            <span class="mu-role-badge role-superior"><i  class="bi bi-award me-1"></i>Superior</span>
                         {% elseif 'ROLE_FACULTY' in u.roles %}
-                            <span class="mu-role-badge role-faculty"><i  class="me-1" data-lucide="graduation-cap"></i>Faculty</span>
+                            <span class="mu-role-badge role-faculty"><i  class="bi bi-mortarboard me-1"></i>Faculty</span>
                         {% elseif 'ROLE_STAFF' in u.roles %}
-                            <span class="mu-role-badge role-staff"><i  class="me-1" data-lucide="clipboard-list"></i>Staff</span>
+                            <span class="mu-role-badge role-staff"><i  class="bi bi-card-checklist me-1"></i>Staff</span>
                         {% else %}
-                            <span class="mu-role-badge role-student"><i  class="me-1" data-lucide="backpack"></i>Student</span>
+                            <span class="mu-role-badge role-student"><i  class="bi bi-backpack me-1"></i>Student</span>
                         {% endif %}
                     </td>
                     <td><span class="small text-muted">{{ u.createdAt|date('M d, Y h:i A') }}</span></td>
@@ -230,11 +230,11 @@
                         <div class="d-flex gap-1 justify-content-end">
                             <form method="post" action="{{ path('admin_user_approve', {id: u.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('approve' ~ u.id) }}">
-                                <button class="btn btn-sm btn-outline-success mu-action-btn" title="Approve"><i  data-lucide="check"></i></button>
+                                <button class="btn btn-sm btn-outline-success mu-action-btn" title="Approve"><i  class="bi bi-check"></i></button>
                             </form>
                             <form method="post" action="{{ path('admin_user_reject', {id: u.id}) }}" class="d-inline" onsubmit="return confirm('Reject and remove this user?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('reject' ~ u.id) }}">
-                                <button class="btn btn-sm btn-outline-danger mu-action-btn" title="Reject"><i  data-lucide="x"></i></button>
+                                <button class="btn btn-sm btn-outline-danger mu-action-btn" title="Reject"><i  class="bi bi-x-lg"></i></button>
                             </form>
                         </div>
                     </td>
@@ -242,7 +242,7 @@
                 {% else %}
                 <tr>
                     <td colspan="5" class="text-center py-4 text-muted">
-                        <i  class="me-1" data-lucide="circle-check"></i>No pending approvals.
+                        <i  class="bi bi-check-circle-fill me-1"></i>No pending approvals.
                     </td>
                 </tr>
                 {% endfor %}
@@ -262,7 +262,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('reset' ~ user.id) }}">
                 <div class="modal-header mu-modal-header">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="mu-modal-icon"><i  data-lucide="key"></i></div>
+                        <div class="mu-modal-icon"><i  class="bi bi-key"></i></div>
                         <h6 class="modal-title text-white fw-bold mb-0">Reset Password</h6>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -274,7 +274,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-warning"><i  class="me-1" data-lucide="key"></i>Reset</button>
+                    <button type="submit" class="btn btn-sm btn-warning"><i  class="bi bi-key me-1"></i>Reset</button>
                 </div>
             </form>
         </div>
@@ -289,7 +289,7 @@
             <form method="post" action="{{ path('admin_users_bulk_upload') }}" enctype="multipart/form-data">
                 <div class="modal-header mu-modal-header">
                     <div class="d-flex align-items-center gap-2">
-                        <div class="mu-modal-icon"><i  data-lucide="cloud-upload"></i></div>
+                        <div class="mu-modal-icon"><i  class="bi bi-cloud-upload"></i></div>
                         <h5 class="modal-title text-white fw-bold mb-0">Bulk Upload Users</h5>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -301,7 +301,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-sm btn-norsu"><i  class="me-1" data-lucide="cloud-upload"></i>Import</button>
+                    <button type="submit" class="btn btn-sm btn-norsu"><i  class="bi bi-cloud-upload me-1"></i>Import</button>
                 </div>
             </form>
         </div>

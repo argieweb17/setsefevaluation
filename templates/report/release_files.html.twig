@@ -40,18 +40,18 @@
             <h1 class="rl-title">Release Files</h1>
             <div class="rl-sub">{{ subtitle|default('Released PDF files and release dates.') }}</div>
         </div>
-        <span class="rl-badge"><i  data-lucide="folder-check"></i> {{ records|length }} release{{ records|length != 1 ? 's' : '' }}</span>
+        <span class="rl-badge"><i  class="bi bi-folder-check"></i> {{ records|length }} release{{ records|length != 1 ? 's' : '' }}</span>
     </div>
 
     {% if records is empty %}
     <div class="rl-empty">
-        <i  data-lucide="inbox"></i>
+        <i  class="bi bi-inbox"></i>
         No released files yet.
     </div>
     {% else %}
     <div class="rl-toolbar">
         <div class="rl-search-wrap">
-            <i  data-lucide="search"></i>
+            <i  class="bi bi-search"></i>
             <input type="search" id="rlSearch" class="rl-search" placeholder="Search release, received by, type, date...">
         </div>
         <div class="rl-meta" id="rlMeta">Showing {{ records|length }} of {{ records|length }}</div>
@@ -61,12 +61,12 @@
         <table class="rl-table">
             <thead>
                 <tr>
-                    <th><span class="rl-th-wrap">Release <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:120px;"><span class="rl-th-wrap">Type <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:220px;"><span class="rl-th-wrap">Faculty Name <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:190px;"><span class="rl-th-wrap">Received By <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:180px;"><span class="rl-th-wrap">Release Date <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:120px;"><span class="rl-th-wrap">File <i  class="rl-th-sort" data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="rl-th-wrap">Release <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="rl-th-wrap">Type <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
+                    <th style="width:220px;"><span class="rl-th-wrap">Faculty Name <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
+                    <th style="width:190px;"><span class="rl-th-wrap">Received By <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
+                    <th style="width:180px;"><span class="rl-th-wrap">Release Date <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="rl-th-wrap">File <i  class="bi bi-arrow-down-up rl-th-sort"></i></span></th>
                 </tr>
             </thead>
             <tbody>
@@ -81,7 +81,7 @@
                     <td>{{ row.releasedAt ? row.releasedAt|date('M d, Y h:i A') : '' }}</td>
                     <td>
                         <a href="{{ path('staff_correspondence_file', {id: row.id}) }}" class="rl-file-link" target="_blank" rel="noopener noreferrer">
-                            <i  data-lucide="file-down"></i> PDF
+                            <i  class="bi bi-file-earmark-arrow-down"></i> PDF
                         </a>
                     </td>
                 </tr>

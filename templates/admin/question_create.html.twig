@@ -58,19 +58,19 @@
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="qc-header-icon">
-                    <i  data-lucide="circle-plus"></i>
+                    <i  class="bi bi-plus-circle-fill"></i>
                 </div>
                 <div>
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Create New Question</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="qc-meta-pill"><i  class="me-1" data-lucide="tag"></i>{{ selectedType }}</span>
-                        <span class="qc-meta-pill"><i  class="me-1" data-lucide="clipboard-check"></i>{{ selectedType == 'SET' ? 'Student Evaluation for Teacher' : 'Superior Evaluation for Faculty' }}</span>
+                        <span class="qc-meta-pill"><i  class="bi bi-tag me-1"></i>{{ selectedType }}</span>
+                        <span class="qc-meta-pill"><i  class="bi bi-clipboard-check me-1"></i>{{ selectedType == 'SET' ? 'Student Evaluation for Teacher' : 'Superior Evaluation for Faculty' }}</span>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-1">
                 <a href="{{ path(prefix ~ '_questions', {type: selectedType}) }}" class="btn btn-sm btn-outline-light fw-semibold">
-                    <i  class="me-1" data-lucide="arrow-left"></i>Back to List
+                    <i  class="bi bi-arrow-left me-1"></i>Back to List
                 </a>
             </div>
         </div>
@@ -85,7 +85,7 @@
         <div class="qc-card">
             <div class="qc-card-header">
                 <div class="d-flex align-items-center gap-2">
-                    <div class="qc-card-icon"><i  data-lucide="pencil-line"></i></div>
+                    <div class="qc-card-icon"><i  class="bi bi-pencil-square"></i></div>
                     <h6 class="fw-bold mb-0">Question Details</h6>
                 </div>
             </div>
@@ -106,7 +106,7 @@
                     {% if selectedType == 'SEF' %}
                     <div class="mb-4">
                         <label for="evidenceItemsText" class="qc-label">
-                            <i  class="me-1 text-muted" data-lucide="layout-grid"></i>Means of Verification (optional)
+                            <i  class="bi bi-grid me-1 text-muted"></i>Means of Verification (optional)
                         </label>
                         <textarea name="evidenceItemsText" id="evidenceItemsText" class="form-control qc-input" rows="4"
                                   placeholder="Daily time record&#10;Faculty schedule and timetable&#10;Informal interview with students"></textarea>
@@ -120,7 +120,7 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label for="category" class="qc-label">
-                                <i  class="me-1 text-muted" data-lucide="tag"></i>Category
+                                <i  class="bi bi-tag me-1 text-muted"></i>Category
                             </label>
                             <input type="text" name="category" id="category" class="form-control qc-input"
                                    list="categoryList"
@@ -134,7 +134,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="evaluationType" class="qc-label">
-                                <i  class="me-1 text-muted" data-lucide="layout-grid"></i>Evaluation Type <span class="text-danger">*</span>
+                                <i  class="bi bi-grid me-1 text-muted"></i>Evaluation Type <span class="text-danger">*</span>
                             </label>
                             <select name="evaluationType" id="evaluationType" class="form-select qc-input">
                                 <option value="SET" {{ selectedType == 'SET' ? 'selected' }}>SET — Student Evaluation for Teacher</option>
@@ -147,7 +147,7 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label for="weight" class="qc-label">
-                                <i  class="me-1 text-muted" data-lucide="gauge"></i>Weight
+                                <i  class="bi bi-speedometer2 me-1 text-muted"></i>Weight
                             </label>
                             <input type="number" name="weight" id="weight" class="form-control qc-input"
                                    value="1.0" step="0.1" min="0" max="10">
@@ -155,7 +155,7 @@
                         </div>
                         <div class="col-md-4">
                             <label for="sortOrder" class="qc-label">
-                                <i  class="me-1 text-muted" data-lucide="arrow-down-0-1"></i>Sort Order
+                                <i  class="bi bi-sort-numeric-down me-1 text-muted"></i>Sort Order
                             </label>
                             <input type="number" name="sortOrder" id="sortOrder" class="form-control qc-input"
                                    value="0" min="0">
@@ -163,7 +163,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="qc-label d-block">
-                                <i  class="me-1 text-muted" data-lucide="settings"></i>Options
+                                <i  class="bi bi-gear me-1 text-muted"></i>Options
                             </label>
                             <div class="mt-2">
                                 <div class="form-check form-switch mb-2">
@@ -180,7 +180,7 @@
                     {# ── Live Preview ── #}
                     <div class="mb-4">
                         <label class="qc-label text-muted">
-                            <i  class="me-1" data-lucide="eye"></i>Live Preview
+                            <i  class="bi bi-eye me-1"></i>Live Preview
                         </label>
                         <div class="qc-preview" id="questionPreview">
                             <div class="qc-preview-header">
@@ -213,10 +213,10 @@
                     {# ── Submit ── #}
                     <div class="d-flex justify-content-end gap-2 pt-2">
                         <a href="{{ path(prefix ~ '_questions', {type: selectedType}) }}" class="btn btn-outline-secondary">
-                            <i  class="me-1" data-lucide="circle-x"></i>Cancel
+                            <i  class="bi bi-x-circle-fill me-1"></i>Cancel
                         </a>
                         <button type="submit" class="btn btn-primary px-4">
-                            <i  class="me-1" data-lucide="circle-check"></i>Create Question
+                            <i  class="bi bi-check-circle-fill me-1"></i>Create Question
                         </button>
                     </div>
                 </form>

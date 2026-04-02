@@ -4,7 +4,7 @@
 
 {% block body %}
 <div class="mb-3">
-    <h4 class="fw-bold"><i  class="me-2" data-lucide="chart-line"></i>Superior Evaluation Results</h4>
+    <h4 class="fw-bold"><i  class="bi bi-graph-up-arrow me-2"></i>Superior Evaluation Results</h4>
     <p class="text-muted mb-0">Performance results of Deans and Department Heads.</p>
 </div>
 
@@ -42,7 +42,7 @@
                         <td class="text-end pe-3">
                             <button class="btn btn-sm btn-outline-primary" type="button"
                                     onclick="loadDetail({{ selectedEvalId }}, {{ item.evaluatee.id }})">
-                                <i  class="me-1" data-lucide="eye"></i>View
+                                <i  class="bi bi-eye me-1"></i>View
                             </button>
                         </td>
                     </tr>
@@ -52,7 +52,7 @@
         </div>
         {% else %}
         <div class="text-center text-muted py-5">
-            <i  class="display-4 d-block mb-3" data-lucide="clipboard-x"></i>
+            <i  class="bi bi-clipboard-x display-4 d-block mb-3"></i>
             <p>No evaluation results yet for this period.</p>
         </div>
         {% endif %}
@@ -60,7 +60,7 @@
 </div>
 {% else %}
 <div class="alert alert-info">
-    <i  class="me-2" data-lucide="info"></i>No evaluation periods found.
+    <i  class="bi bi-info-circle me-2"></i>No evaluation periods found.
 </div>
 {% endif %}
 

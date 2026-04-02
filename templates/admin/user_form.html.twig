@@ -42,18 +42,18 @@
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">{{ title }}</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
                         {% if isEdit %}
-                        <span class="uf-meta-pill"><i  class="me-1" data-lucide="user"></i>{{ user.fullName }}</span>
+                        <span class="uf-meta-pill"><i  class="bi bi-person me-1"></i>{{ user.fullName }}</span>
                         {% if realEmail %}
-                        <span class="uf-meta-pill"><i  class="me-1" data-lucide="mail"></i>{{ realEmail }}</span>
+                        <span class="uf-meta-pill"><i  class="bi bi-envelope me-1"></i>{{ realEmail }}</span>
                         {% endif %}
                         {% else %}
-                        <span class="uf-meta-pill"><i  class="me-1" data-lucide="info"></i>Fill in the details below</span>
+                        <span class="uf-meta-pill"><i  class="bi bi-info-circle me-1"></i>Fill in the details below</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
             <a href="{{ path('admin_users') }}" class="btn btn-sm btn-outline-light fw-semibold">
-                <i  class="me-1" data-lucide="arrow-left"></i>Back to Users
+                <i  class="bi bi-arrow-left me-1"></i>Back to Users
             </a>
         </div>
     </div>
@@ -62,28 +62,28 @@
 {# ── Form Card ── #}
 <div class="uf-form-card">
     <div class="uf-form-header">
-        <span><i  class="me-2" data-lucide="list-check"></i>{{ isEdit ? 'Edit User Details' : 'New User Details' }}</span>
+        <span><i  class="bi bi-list-check me-2"></i>{{ isEdit ? 'Edit User Details' : 'New User Details' }}</span>
     </div>
     <div class="p-4">
         <form method="post">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="user"></i>First Name</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-person me-1"></i>First Name</label>
                     <input type="text" name="firstName" class="form-control"
                            value="{{ isEdit ? user.firstName : '' }}" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="user"></i>Last Name</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-person me-1"></i>Last Name</label>
                     <input type="text" name="lastName" class="form-control"
                            value="{{ isEdit ? user.lastName : '' }}" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="mail"></i>Email</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-envelope me-1"></i>Email</label>
                     <input type="email" name="email" class="form-control"
                            value="{{ realEmail }}">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="shield"></i>Roles</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-shield me-1"></i>Roles</label>
                     <div class="uf-role-checkboxes">
                         {% set userRoles = isEdit ? user.roles : [] %}
                         {% set roleOptions = [
@@ -106,7 +106,7 @@
                     <div class="form-text mt-1" style="font-size:.72rem;">You can assign multiple roles to this user. Superior access is automatic for faculty with Department Head or Chair employment status.</div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="building-2"></i>Department</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-buildings me-1"></i>Department</label>
                     <select name="department" class="form-select">
                         <option value="">— None —</option>
                         {% for dept in departments %}
@@ -118,7 +118,7 @@
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="id-card"></i>Employment Status / Designation</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-person-vcard me-1"></i>Employment Status / Designation</label>
                     <select name="employmentStatus" class="form-select">
                         {% set empStatus = isEdit ? user.employmentStatus : '' %}
                         <option value="" {{ empStatus is empty ? 'selected' }}>— None —</option>
@@ -134,7 +134,7 @@
                 </div>
                 {% if not isEdit %}
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold small text-muted"><i  class="me-1" data-lucide="key"></i>Password</label>
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-key me-1"></i>Password</label>
                     <input type="password" name="password" class="form-control"
                            placeholder="Default: password123" value="password123">
                 </div>
@@ -144,7 +144,7 @@
             <hr class="my-4" style="border-color:#e5e7eb;">
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-norsu">
-                    <i  class="me-1" data-lucide="circle-check"></i>{{ isEdit ? 'Update User' : 'Create User' }}
+                    <i  class="bi bi-check-circle-fill me-1"></i>{{ isEdit ? 'Update User' : 'Create User' }}
                 </button>
                 <a href="{{ path('admin_users') }}" class="btn btn-light">Cancel</a>
             </div>

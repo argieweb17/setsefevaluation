@@ -63,14 +63,14 @@
             <h1 class="cr-title">{{ title }}</h1>
             <div class="cr-sub">Saved correspondence IDs from generated print files.</div>
         </div>
-        <span class="cr-badge"><i  data-lucide="archive"></i> {{ records|length }} record{{ records|length != 1 ? 's' : '' }}</span>
+        <span class="cr-badge"><i  class="bi bi-archive"></i> {{ records|length }} record{{ records|length != 1 ? 's' : '' }}</span>
     </div>
 </div>
 
 <div class="cr-card">
     {% if records is empty %}
     <div class="cr-empty">
-        <i  data-lucide="inbox"></i>
+        <i  class="bi bi-inbox"></i>
         No correspondence IDs saved yet for {{ idType }}.
     </div>
     {% else %}
@@ -88,7 +88,7 @@
 
     <div class="cr-toolbar">
         <div class="cr-search-wrap">
-            <i  data-lucide="search"></i>
+            <i  class="bi bi-search"></i>
             <input type="search" id="crSearchInput" class="cr-search" placeholder="Search correspondence ID, scope, saved by, or date...">
         </div>
         <select id="crYearFilter" class="cr-filter-select" aria-label="Filter by academic year">
@@ -103,13 +103,13 @@
         <table class="cr-table">
             <thead>
                 <tr>
-                    <th><span class="cr-th-wrap">Document ID <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:120px;"><span class="cr-th-wrap">Type <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:220px;"><span class="cr-th-wrap">Faculty Name <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:190px;"><span class="cr-th-wrap">Record By <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:180px;"><span class="cr-th-wrap">Record Date <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:120px;"><span class="cr-th-wrap">File <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
-                    <th style="width:110px;"><span class="cr-th-wrap">Action <i  class="cr-th-sort" data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="cr-th-wrap">Document ID <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="cr-th-wrap">Type <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:220px;"><span class="cr-th-wrap">Faculty Name <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:190px;"><span class="cr-th-wrap">Record By <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:180px;"><span class="cr-th-wrap">Record Date <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:120px;"><span class="cr-th-wrap">File <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
+                    <th style="width:110px;"><span class="cr-th-wrap">Action <i  class="bi bi-arrow-down-up cr-th-sort"></i></span></th>
                 </tr>
             </thead>
             <tbody>
@@ -132,7 +132,7 @@
                     <td>{{ row.createdAt ? row.createdAt|date('M d, Y h:i A') : '' }}</td>
                     <td>
                         <a href="{{ path('staff_correspondence_file', {id: row.id}) }}" class="cr-file-link" target="_blank" rel="noopener noreferrer">
-                            <i  data-lucide="file-down"></i> PDF
+                            <i  class="bi bi-file-earmark-arrow-down"></i> PDF
                         </a>
                     </td>
                     <td class="cr-action-cell">
@@ -143,12 +143,12 @@
                                         data-bs-toggle="modal"
                                         data-bs-target="#releaseModal{{ row.id }}"
                                         title="Release">
-                                    <i  data-lucide="circle-check"></i>
+                                    <i  class="bi bi-check-circle-fill"></i>
                                     <span class="visually-hidden">Release</span>
                                 </button>
                             {% else %}
                                 <span class="cr-icon-state" title="Released">
-                                    <i  data-lucide="circle-check"></i>
+                                    <i  class="bi bi-check-circle-fill"></i>
                                     <span class="visually-hidden">Released</span>
                                 </span>
                             {% endif %}
@@ -156,7 +156,7 @@
                             <form method="post" action="{{ path('staff_correspondence_delete', {id: row.id}) }}" onsubmit="return confirm('Delete this correspondence record?');">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete_correspondence' ~ row.id) }}">
                                 <button type="submit" class="cr-icon-btn cr-icon-btn-delete" title="Delete">
-                                    <i  data-lucide="trash-2"></i>
+                                    <i  class="bi bi-trash"></i>
                                     <span class="visually-hidden">Delete</span>
                                 </button>
                             </form>
@@ -205,7 +205,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-sm"><i  data-lucide="circle-check"></i> Confirm Release</button>
+                        <button type="submit" class="btn btn-success btn-sm"><i  class="bi bi-check-circle-fill"></i> Confirm Release</button>
                     </div>
                 </form>
             </div>

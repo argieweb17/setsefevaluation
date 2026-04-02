@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Contact Us | Faculty Evaluation System{% endblock %}
+
+{% block body_class %}no-navbar{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+{% include 'home/_fes_styles.html.twig' %}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="fes-page">
+    {% include 'home/_fes_header.html.twig' with {active: 'contact'} %}
+
+    {# ── Contact Section ── #}
+    <section class="fes-contact" id="contact">
+        <div class="container">
+            <div class="fes-section-title">
+                <h2>Contact Us</h2>
+            </div>
+            <div class="fes-contact-grid">
+                <div class="fes-contact-item">
+                    <h4>Location</h4>
+                    <p class="text-primary">Main Campus</p>
+                </div>
+                <div class="fes-contact-item">
+                    <h4>Email</h4>
+                    <p><a href="mailto:support@example.edu.ph" class="text-primary">support@example.edu.ph</a></p>
+                </div>
+                <div class="fes-contact-item">
+                    <h4>Phone</h4>
+                    <p class="text-primary">(000) 000-0000</p>
+                </div>
+                <div class="fes-contact-item">
+                    <h4>Office Hours</h4>
+                    <p class="text-primary">Mon–Fri, 8 AM – 5 PM</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% include 'home/_fes_footer.html.twig' %}
+</div>
+{% endblock %}

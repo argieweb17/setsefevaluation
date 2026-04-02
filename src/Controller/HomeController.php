@@ -170,12 +170,65 @@ class HomeController extends AbstractController
     }
 
     #[Route('/', name: 'app_home')]
-    public function index(): Response
+    public function index(Request $request, UserRepository $userRepo, EvaluationResponseRepository $responseRepo): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_dashboard');
         }
-        return $this->render('home/welcome.html.twig');
+
+        $requestedView = (string) $request->query->get('view', 'home');
+        $allowedViews = ['home', 'about', 'faq', 'contact'];
+        $heroView = in_array($requestedView, $allowedViews, true) ? $requestedView : 'home';
+        
+        // Get counts for stats using LIKE query for JSON array roles
+        $studentCount = $userRepo->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_STUDENT%')
+            ->getQuery()
+            ->getSingleScalarResult();
+            
+        $facultyCount = $userRepo->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_FACULTY%')
+            ->getQuery()
+            ->getSingleScalarResult();
+            
+        $staffCount = $userRepo->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_STAFF%')
+            ->getQuery()
+            ->getSingleScalarResult();
+            
+        $evaluationCount = $responseRepo->count([]);
+        
+        return $this->render('home/welcome.html.twig', [
+            'studentCount' => $studentCount,
+            'facultyCount' => $facultyCount,
+            'staffCount' => $staffCount,
+            'evaluationCount' => $evaluationCount,
+            'heroView' => $heroView,
+        ]);
+    }
+
+    #[Route('/about', name: 'app_about')]
+    public function about(): Response
+    {
+        return $this->render('home/about.html.twig');
+    }
+
+    #[Route('/faq', name: 'app_faq')]
+    public function faq(): Response
+    {
+        return $this->render('home/faq.html.twig');
+    }
+
+    #[Route('/contact', name: 'app_contact')]
+    public function contact(): Response
+    {
+        return $this->render('home/contact.html.twig');
     }
 
     #[Route('/dashboard', name: 'app_dashboard')]

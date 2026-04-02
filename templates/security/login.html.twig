@@ -779,21 +779,21 @@
 
             <div class="lg-brand-features">
                 <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i  data-lucide="shield-check"></i></div>
+                    <div class="lg-feature-icon"><i  class="bi bi-shield-check"></i></div>
                     <div>
                         <strong>Secure Access</strong>
                         <span>Your data is protected with enterprise-grade security</span>
                     </div>
                 </div>
                 <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i  data-lucide="gauge"></i></div>
+                    <div class="lg-feature-icon"><i  class="bi bi-speedometer2"></i></div>
                     <div>
                         <strong>Real-time Dashboard</strong>
                         <span>Instant access to evaluations and analytics</span>
                     </div>
                 </div>
                 <div class="lg-feature-item">
-                    <div class="lg-feature-icon"><i  data-lucide="users"></i></div>
+                    <div class="lg-feature-icon"><i  class="bi bi-people"></i></div>
                     <div>
                         <strong>Multi-role Support</strong>
                         <span>Students, faculty, and staff — all in one system</span>
@@ -827,7 +827,7 @@
                 {% for message in app.flashes('registration_success') %}
                     <div class="lg-success-alert">
                         <div class="lg-success-icon-box">
-                            <i  data-lucide="circle-check"></i>
+                            <i  class="bi bi-check-circle-fill"></i>
                         </div>
                         <div>
                             <strong class="lg-success-title">Account Created!</strong>
@@ -839,7 +839,7 @@
                 {% for message in app.flashes('registration_pending') %}
                     <div class="lg-pending-alert">
                         <div class="lg-pending-icon-box">
-                            <i  data-lucide="hourglass"></i>
+                            <i  class="bi bi-hourglass-split"></i>
                         </div>
                         <div>
                             <strong class="lg-pending-title">Account Created — Pending Approval</strong>
@@ -852,7 +852,7 @@
                 {% if error %}
                     <div class="lg-error-alert">
                         <div class="lg-error-icon-box">
-                            <i  data-lucide="triangle-alert"></i>
+                            <i  class="bi bi-exclamation-triangle-fill"></i>
                         </div>
                         <div>
                             <strong class="lg-error-title">Authentication failed</strong>
@@ -868,7 +868,7 @@
                             Email or Student ID
                         </label>
                         <div class="lg-input-wrap">
-                            <i  data-lucide="mail"></i>
+                            <i  class="bi bi-envelope"></i>
                             <input type="text" value="{{ last_username }}" name="_username" id="inputEmail"
                                    class="form-control lg-input" autocomplete="username" required autofocus
                                    placeholder="Enter your email or student ID">
@@ -880,13 +880,13 @@
                             Password
                         </label>
                         <div class="lg-input-wrap">
-                            <i  data-lucide="key"></i>
+                            <i  class="bi bi-key"></i>
                             <input type="password" name="_password" id="inputPassword"
                                    class="form-control lg-input" autocomplete="current-password" required
                                    placeholder="Enter your password">
                             <button type="button" class="lg-pwd-toggle" id="pwdToggle" tabindex="-1"
                                     aria-label="Toggle password visibility">
-                                <i  id="pwdToggleIcon" data-lucide="eye"></i>
+                                <i  id="pwdToggleIcon" class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
@@ -895,7 +895,7 @@
 
                     <button type="submit" class="lg-submit-btn" id="loginSubmitBtn">
                         <span class="lg-submit-text">
-                            Sign In<i  class="ms-2" data-lucide="arrow-right"></i>
+                            Sign In<i  class="bi bi-arrow-right ms-2"></i>
                         </span>
                         <span class="lg-submit-loading d-none">
                             <span class="lg-loading-spinner"></span>
@@ -911,13 +911,13 @@
 
                     <a href="{{ path('app_student_login') }}" class="lg-alt-btn">
                         <div class="lg-alt-btn-icon">
-                            <i  data-lucide="graduation-cap"></i>
+                            <i  class="bi bi-mortarboard"></i>
                         </div>
                         <div class="lg-alt-btn-text">
                             <strong>Student Quick Login</strong>
                             <span>Sign in using Student ID only</span>
                         </div>
-                        <i  class="lg-alt-btn-arrow" data-lucide="chevron-right"></i>
+                        <i  class="bi bi-chevron-right lg-alt-btn-arrow"></i>
                     </a>
 
                     <div class="lg-register-link">

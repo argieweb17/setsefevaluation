@@ -473,28 +473,28 @@
 {% if totalFaculty > 0 %}
 <div class="rs-stats no-print">
     <div class="rs-stat-card">
-        <div class="rs-stat-icon si-purple"><i  data-lucide="users"></i></div>
+        <div class="rs-stat-icon si-purple"><i  class="bi bi-people"></i></div>
         <div>
             <div class="rs-stat-num">{{ totalFaculty }}</div>
             <div class="rs-stat-label">Faculty Evaluated</div>
         </div>
     </div>
     <div class="rs-stat-card">
-        <div class="rs-stat-icon si-blue"><i  data-lucide="user-check"></i></div>
+        <div class="rs-stat-icon si-blue"><i  class="bi bi-person-check"></i></div>
         <div>
             <div class="rs-stat-num">{{ totalEvaluators }}</div>
             <div class="rs-stat-label">Total Evaluators</div>
         </div>
     </div>
     <div class="rs-stat-card">
-        <div class="rs-stat-icon si-green"><i  data-lucide="chart-line"></i></div>
+        <div class="rs-stat-icon si-green"><i  class="bi bi-graph-up-arrow"></i></div>
         <div>
             <div class="rs-stat-num">{{ overallAvg|number_format(2) }}</div>
             <div class="rs-stat-label">Overall Average</div>
         </div>
     </div>
     <div class="rs-stat-card">
-        <div class="rs-stat-icon si-amber"><i  data-lucide="trophy"></i></div>
+        <div class="rs-stat-icon si-amber"><i  class="bi bi-trophy"></i></div>
         <div>
             <div class="rs-stat-num">{{ alwaysCount }}</div>
             <div class="rs-stat-label">Always Manifested</div>
@@ -507,7 +507,7 @@
 <div class="rs-toolbar no-print">
     <div class="rs-toolbar-row">
         <div class="rs-search-box">
-            <i  class="rs-search-icon" data-lucide="search"></i>
+            <i  class="bi bi-search rs-search-icon"></i>
             <input type="text" class="rs-search-input" id="facultySearch" placeholder="Search faculty..." autocomplete="off">
         </div>
     </div>
@@ -517,7 +517,7 @@
 <div class="rs-table-wrap">
     <div class="rs-table-bar">
         <div class="d-flex align-items-center gap-2">
-            <i  data-lucide="trophy"></i>
+            <i  class="bi bi-trophy"></i>
             <span>Superior Rankings</span>
         </div>
         <span class="rs-table-count">{{ facultyResults|length }} result{{ facultyResults|length != 1 ? 's' : '' }}</span>
@@ -527,11 +527,11 @@
             <thead>
                 <tr>
                     <th style="width:55px" class="ps-3">Rank</th>
-                    <th><span class="rs-th-with-sort">Superior <i  data-lucide="arrow-up-down"></i></span></th>
-                    <th class="text-center"><span class="rs-th-with-sort">Rating <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="rs-th-with-sort">Superior <i  class="bi bi-arrow-down-up"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Rating <i  class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center"><span class="rs-th-with-sort">Personnel Evaluated <i  data-lucide="arrow-up-down"></i></span></th>
-                    <th class="text-center"><span class="rs-th-with-sort">Performance <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Personnel Evaluated <i  class="bi bi-arrow-down-up"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Performance <i  class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:80px">Actions</th>
                 </tr>
             </thead>
@@ -578,28 +578,28 @@
                     <td class="text-center"><span class="rs-evaluator-num">{{ r.evaluators }}</span></td>
                     <td class="text-center">
                         {% if r.level == 'Always manifested' %}
-                            <span class="rs-perf-badge perf-excellent"><i  data-lucide="star"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-excellent"><i  class="bi bi-star-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Often manifested' %}
-                            <span class="rs-perf-badge perf-verygood"><i  data-lucide="thumbs-up"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-verygood"><i  class="bi bi-hand-thumbs-up-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Sometimes manifested' %}
-                            <span class="rs-perf-badge perf-good"><i  data-lucide="circle-check"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-good"><i  class="bi bi-check-circle-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Seldom manifested' %}
-                            <span class="rs-perf-badge perf-fair"><i  data-lucide="circle-alert"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-fair"><i  class="bi bi-exclamation-circle-fill"></i> {{ r.level }}</span>
                         {% else %}
-                            <span class="rs-perf-badge perf-poor"><i  data-lucide="circle-x"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-poor"><i  class="bi bi-x-circle-fill"></i> {{ r.level }}</span>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         <a href="{{ path(prefix ~ '_results_superior_faculty_evaluations', {faculty: r.faculty.id}) }}"
                            class="rs-action-btn" title="View Evaluations">
-                            <i  data-lucide="eye"></i>
+                            <i  class="bi bi-eye"></i>
                         </a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
                     <td colspan="7" class="text-center py-5">
-                        <div class="rs-empty-icon mx-auto mb-2"><i  data-lucide="inbox"></i></div>
+                        <div class="rs-empty-icon mx-auto mb-2"><i  class="bi bi-inbox"></i></div>
                         <span class="text-muted">No SEF results found for this evaluation period.</span>
                     </td>
                 </tr>

@@ -170,14 +170,14 @@
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
                 <div class="qq-header-icon">
-                    <i  data-lucide="clipboard-check"></i>
+                    <i  class="bi bi-clipboard-check"></i>
                 </div>
                 <div>
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Questionnaire Management</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="qq-meta-pill"><i  class="me-1" data-lucide="database"></i>{{ totalQ }} Question{{ totalQ != 1 ? 's' : '' }}</span>
-                        <span class="qq-meta-pill"><i  class="me-1" data-lucide="folder"></i>{{ categories|length }} Section{{ categories|length != 1 ? 's' : '' }}</span>
-                        <span class="qq-meta-pill qq-meta-type"><i  class="me-1" data-lucide="tag"></i>{{ selectedType }}</span>
+                        <span class="qq-meta-pill"><i  class="bi bi-database me-1"></i>{{ totalQ }} Question{{ totalQ != 1 ? 's' : '' }}</span>
+                        <span class="qq-meta-pill"><i  class="bi bi-folder me-1"></i>{{ categories|length }} Section{{ categories|length != 1 ? 's' : '' }}</span>
+                        <span class="qq-meta-pill qq-meta-type"><i  class="bi bi-tag me-1"></i>{{ selectedType }}</span>
                     </div>
                 </div>
             </div>
@@ -189,7 +189,7 @@
                        class="btn btn-sm {{ selectedType == 'SEF' ? 'btn-light fw-bold' : 'btn-outline-light' }}">SEF</a>
                 </div>
                 <a href="{{ path(prefix ~ '_question_create_form', {type: selectedType}) }}" class="btn btn-sm btn-light fw-semibold shadow-sm">
-                    <i  class="me-1" data-lucide="plus"></i>Add Question
+                    <i  class="bi bi-plus me-1"></i>Add Question
                 </a>
             </div>
         </div>
@@ -222,11 +222,11 @@
    ═══════════════════════════════════════ #}
 <div class="qq-toolbar">
     <div class="qq-search-wrap">
-        <i  data-lucide="search"></i>
+        <i  class="bi bi-search"></i>
         <input type="text" class="qq-search" id="qqSearch" placeholder="Search questions..." autocomplete="off">
     </div>
     <div class="qq-filter-group">
-        <i  class="qq-filter-icon" data-lucide="filter"></i>
+        <i  class="bi bi-funnel qq-filter-icon"></i>
         <select class="qq-filter-select" id="qqCatFilter">
             <option value="">All Sections</option>
             {% for cat in categories %}
@@ -235,7 +235,7 @@
         </select>
     </div>
     <div class="qq-filter-group">
-        <i  class="qq-filter-icon" data-lucide="circle-check"></i>
+        <i  class="bi bi-check-circle-fill qq-filter-icon"></i>
         <select class="qq-filter-select" id="qqStatusFilter" style="min-width:140px;">
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -265,7 +265,7 @@
 
     {# Instructions Banner #}
     <div class="qq-instructions">
-        <i  class="me-2" data-lucide="info"></i>
+        <i  class="bi bi-info-circle me-2"></i>
         <strong>Instructions:</strong>&nbsp; Rate each item using the scale:
         <strong>5</strong> – Always manifested &nbsp; <strong>4</strong> – Often manifested &nbsp; <strong>3</strong> – Sometimes manifested &nbsp; <strong>2</strong> – Seldom manifested &nbsp; <strong>1</strong> – Never/Rarely manifested
     </div>
@@ -281,7 +281,7 @@
             </div>
             <div class="d-flex align-items-center gap-2">
                 <button type="button" class="qq-desc-btn" data-bs-toggle="modal" data-bs-target="#descModal{{ loop.index }}" title="Edit section description">
-                    <i  class="me-1" data-lucide="pencil-line"></i>Description
+                    <i  class="bi bi-pencil-square me-1"></i>Description
                 </button>
                 <span class="qq-category-count">{{ questions|filter(q => q.category == category)|length }} question{{ questions|filter(q => q.category == category)|length != 1 ? 's' : '' }}</span>
             </div>
@@ -328,17 +328,17 @@
                         </div>
                         <div class="qq-question-meta">
                             {% if not q.isActive %}
-                                <span class="qq-badge qq-badge-inactive"><i  class="me-1" data-lucide="circle-pause"></i>Inactive</span>
+                                <span class="qq-badge qq-badge-inactive"><i  class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
                             {% else %}
-                                <span class="qq-badge qq-badge-active"><i  class="me-1" data-lucide="circle-check"></i>Active</span>
+                                <span class="qq-badge qq-badge-active"><i  class="bi bi-check-circle-fill me-1"></i>Active</span>
                             {% endif %}
                             {% if q.isRequired %}
-                                <span class="qq-badge qq-badge-required"><i  class="me-1" data-lucide="asterisk"></i>Required</span>
+                                <span class="qq-badge qq-badge-required"><i  class="bi bi-asterisk me-1"></i>Required</span>
                             {% else %}
                                 <span class="qq-badge qq-badge-optional">Optional</span>
                             {% endif %}
                             {% if q.weight != 1 %}
-                                <span class="qq-badge qq-badge-weight"><i  class="me-1" data-lucide="gauge"></i>{{ q.weight }}x</span>
+                                <span class="qq-badge qq-badge-weight"><i  class="bi bi-speedometer2 me-1"></i>{{ q.weight }}x</span>
                             {% endif %}
                         </div>
                     </td>
@@ -368,13 +368,13 @@
                         <div class="qq-actions">
                             <button class="qq-action-btn qq-action-edit" title="Edit Question"
                                     data-bs-toggle="modal" data-bs-target="#editModal{{ q.id }}">
-                                <i  data-lucide="pencil-line"></i>
+                                <i  class="bi bi-pencil-square"></i>
                             </button>
                             <form method="post" action="{{ path(prefix ~ '_question_delete', {id: q.id}) }}" class="d-inline"
                                   onsubmit="return confirm('Delete this question?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete_q' ~ q.id) }}">
                                 <button class="qq-action-btn qq-action-delete" title="Delete Question">
-                                    <i  data-lucide="trash-2"></i>
+                                    <i  class="bi bi-trash"></i>
                                 </button>
                             </form>
                         </div>
@@ -388,11 +388,11 @@
     </div>
     {% else %}
     <div class="qq-empty-state">
-        <div class="qq-empty-icon"><i  data-lucide="notebook-pen"></i></div>
+        <div class="qq-empty-icon"><i  class="bi bi-journal-plus"></i></div>
         <h6 class="fw-bold text-muted mb-1">No Questions Found</h6>
         <p class="text-muted mb-3" style="font-size:.85rem;">No questions found for <strong>{{ selectedType }}</strong>.</p>
         <a href="{{ path(prefix ~ '_question_create_form', {type: selectedType}) }}" class="btn btn-sm btn-primary">
-            <i  class="me-1" data-lucide="plus"></i>Add First Question
+            <i  class="bi bi-plus me-1"></i>Add First Question
         </a>
     </div>
     {% endfor %}
@@ -402,13 +402,13 @@
     <div class="qq-section">
         <div class="qq-category-bar qq-category-comments">
             <div class="d-flex align-items-center gap-2">
-                <span class="qq-category-num" style="background:rgba(255,255,255,.2);"><i  style="font-size:.65rem;" data-lucide="message-circle"></i></span>
+                <span class="qq-category-num" style="background:rgba(255,255,255,.2);"><i  style="font-size:.65rem;" class="bi bi-chat-dots"></i></span>
                 <span class="qq-category-label">Comments / Feedback</span>
             </div>
         </div>
         <div class="p-4">
             <div class="qq-comment-box">
-                <i  class="text-muted" data-lucide="pencil"></i>
+                <i  class="bi bi-pencil text-muted"></i>
                 <span class="text-muted" style="font-size:.82rem;">Student comments will appear here...</span>
             </div>
         </div>
@@ -428,7 +428,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('edit_q' ~ q.id) }}">
                 <div class="qq-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="qq-modal-icon"><i  data-lucide="pencil-line"></i></div>
+                        <div class="qq-modal-icon"><i  class="bi bi-pencil-square"></i></div>
                         <div>
                             <h6 class="fw-bold mb-0 text-white">Edit Question</h6>
                             <span style="font-size:.75rem;color:rgba(255,255,255,.65);">ID #{{ q.id }} &middot; {{ q.category ?? 'Uncategorized' }}</span>
@@ -481,7 +481,7 @@
                 <div class="modal-footer border-top" style="background:#f8fafc;">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-primary px-4">
-                        <i  class="me-1" data-lucide="check"></i>Save Changes
+                        <i  class="bi bi-check me-1"></i>Save Changes
                     </button>
                 </div>
             </form>
@@ -504,7 +504,7 @@
                 <input type="hidden" name="category" value="{{ category }}">
                 <div class="qq-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="qq-modal-icon"><i  data-lucide="file-text"></i></div>
+                        <div class="qq-modal-icon"><i  class="bi bi-file-earmark-text"></i></div>
                         <div>
                             <h6 class="fw-bold mb-0 text-white">Section Description</h6>
                             <span style="font-size:.75rem;color:rgba(255,255,255,.65);">{{ category }}</span>
@@ -520,7 +520,7 @@
                 <div class="modal-footer border-top" style="background:#f8fafc;">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-primary px-4">
-                        <i  class="me-1" data-lucide="check"></i>Save Description
+                        <i  class="bi bi-check me-1"></i>Save Description
                     </button>
                 </div>
             </form>

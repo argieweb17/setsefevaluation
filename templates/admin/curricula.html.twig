@@ -120,19 +120,19 @@
             <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="cm-header-icon">
-                        <i  data-lucide="notebook-text"></i>
+                        <i  class="bi bi-journal-text"></i>
                     </div>
                     <div>
                         <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Curricula Management</h4>
                         <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                            <span class="cm-meta-pill"><i  class="me-1" data-lucide="layers-3"></i>{{ curricula|length }} Curricula</span>
-                            <span class="cm-meta-pill"><i  class="me-1" data-lucide="building"></i>{{ departments|length }} Departments</span>
+                            <span class="cm-meta-pill"><i  class="bi bi-layers me-1"></i>{{ curricula|length }} Curricula</span>
+                            <span class="cm-meta-pill"><i  class="bi bi-building me-1"></i>{{ departments|length }} Departments</span>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-1">
                     <button type="button" class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addDeptModal">
-                        <i  class="me-1" data-lucide="plus"></i>Add Department
+                        <i  class="bi bi-plus me-1"></i>Add Department
                     </button>
                 </div>
             </div>
@@ -173,7 +173,7 @@
         </div>
         <div class="cm-cd-toolbar-right">
             <div class="cm-cd-search-box">
-                <i  class="cm-cd-search-icon" data-lucide="search"></i>
+                <i  class="bi bi-search cm-cd-search-icon"></i>
                 <input type="text" class="cm-cd-search-input" id="cmCdSearch" placeholder="Search colleges or departments..." oninput="filterCdTable()">
             </div>
         </div>
@@ -216,11 +216,11 @@
                     {% endfor %}
                     <tr class="cm-cd-college-row collapsed" data-college="{{ collegeName|lower }}" onclick="toggleCollegeDepts(this)">
                         <td class="cm-cd-td" colspan="1">
-                            <i  class="cm-cd-toggle-icon" data-lucide="chevron-down"></i>
+                            <i  class="bi bi-chevron-down cm-cd-toggle-icon"></i>
                         </td>
                         <td class="cm-cd-td" colspan="1">
                             <div class="d-flex align-items-center gap-2">
-                                <div class="cm-cd-college-icon"><i  data-lucide="graduation-cap"></i></div>
+                                <div class="cm-cd-college-icon"><i  class="bi bi-mortarboard"></i></div>
                                 <div>
                                     <span class="fw-bold" style="font-size:.85rem;">{{ collegeName }}</span>
                                     <span class="cm-cd-dept-count">{{ collegeDepts|length }} dept{{ collegeDepts|length != 1 ? 's' : '' }}</span>
@@ -248,7 +248,7 @@
                             <td class="cm-cd-td text-muted" style="font-size:.75rem;">{{ globalIdx }}</td>
                             <td class="cm-cd-td">
                                 <div class="d-flex align-items-center gap-2" style="padding-left:18px;">
-                                    <div class="cm-cd-dept-icon"><i  data-lucide="landmark"></i></div>
+                                    <div class="cm-cd-dept-icon"><i  class="bi bi-bank"></i></div>
                                     <span style="font-size:.82rem;">{{ dept.departmentName }}</span>
                                 </div>
                             </td>
@@ -261,15 +261,15 @@
                             <td class="cm-cd-td text-center">
                                 <div class="d-flex gap-1 justify-content-center">
                                     <button type="button" class="cm-cd-action-btn cm-cd-action-view" title="View Curricula" onclick="event.stopPropagation(); showDepartment({{ dept.id }})">
-                                        <i  data-lucide="eye"></i>
+                                        <i  class="bi bi-eye"></i>
                                     </button>
                                     <button type="button" class="cm-cd-action-btn cm-cd-action-edit" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ dept.id }}" title="Edit" onclick="event.stopPropagation()">
-                                        <i  data-lucide="pencil"></i>
+                                        <i  class="bi bi-pencil"></i>
                                     </button>
                                     <form method="post" action="{{ path(prefix ~ '_department_delete', {id: dept.id}) }}" class="d-inline" onsubmit="return confirm('Delete this department?')">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete_dept' ~ dept.id) }}">
                                         <button type="submit" class="cm-cd-action-btn cm-cd-action-delete" title="Delete" onclick="event.stopPropagation()">
-                                            <i  data-lucide="trash-2"></i>
+                                            <i  class="bi bi-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -279,7 +279,7 @@
                 {% else %}
                     <tr>
                         <td colspan="5" class="text-center text-muted py-5">
-                            <i  class="fs-1 d-block mb-2 opacity-25" data-lucide="building"></i>
+                            <i  class="bi bi-building fs-1 d-block mb-2 opacity-25"></i>
                             No departments found. Add departments first to manage curricula.
                         </td>
                     </tr>
@@ -307,22 +307,22 @@
             <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="cm-header-icon">
-                        <i  data-lucide="landmark"></i>
+                        <i  class="bi bi-bank"></i>
                     </div>
                     <div>
                         <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">{{ dept.departmentName }}</h4>
                         <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                            {% if dept.collegeName %}<span class="cm-meta-pill"><i  class="me-1" data-lucide="graduation-cap"></i>{{ dept.collegeName }}</span>{% endif %}
-                            <span class="cm-meta-pill"><i  class="me-1" data-lucide="layers-3"></i>{{ deptCurricula|length }} Curricula</span>
+                            {% if dept.collegeName %}<span class="cm-meta-pill"><i  class="bi bi-mortarboard me-1"></i>{{ dept.collegeName }}</span>{% endif %}
+                            <span class="cm-meta-pill"><i  class="bi bi-layers me-1"></i>{{ deptCurricula|length }} Curricula</span>
                         </div>
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-1">
                     <button class="btn btn-sm btn-light fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#addProgramModal" onclick="document.getElementById('createDept').value='{{ dept.id }}'; document.getElementById('createDeptSelect').value='{{ dept.id }}'">
-                        <i  class="me-1" data-lucide="plus"></i>Add Curriculum
+                        <i  class="bi bi-plus me-1"></i>Add Curriculum
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-light" onclick="showMain()">
-                        <i  class="me-1" data-lucide="arrow-left"></i>Back
+                        <i  class="bi bi-arrow-left me-1"></i>Back
                     </button>
                 </div>
             </div>
@@ -347,18 +347,18 @@
 
     <div class="cm-toolbar">
         <div class="cm-search-wrap">
-            <i  data-lucide="search"></i>
+            <i  class="bi bi-search"></i>
             <input type="text" class="cm-search" placeholder="Search curricula..." data-dept="{{ dept.id }}" onkeyup="filterCurricula(this, {{ dept.id }})">
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-success btn-sm cm-toolbar-btn">
-                <i  class="me-1" data-lucide="send"></i>Publish
+                <i  class="bi bi-send me-1"></i>Publish
             </button>
             <button class="btn btn-warning btn-sm text-white cm-toolbar-btn">
-                <i  class="me-1" data-lucide="download"></i>Import
+                <i  class="bi bi-download me-1"></i>Import
             </button>
             <button class="btn btn-secondary btn-sm cm-toolbar-btn" onclick="window.print()">
-                <i  class="me-1" data-lucide="printer"></i>Print
+                <i  class="bi bi-printer me-1"></i>Print
             </button>
         </div>
     </div>
@@ -369,7 +369,7 @@
             <div class="card-body py-3">
                 <div class="d-flex align-items-center">
                     <div class="cm-cur-icon bg-primary bg-opacity-10 text-primary me-3">
-                        <i  data-lucide="book-marked"></i>
+                        <i  class="bi bi-bookmark-check"></i>
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
@@ -385,15 +385,15 @@
                     </div>
                     <div class="d-flex gap-1 ms-3">
                         <button type="button" class="btn btn-sm btn-outline-primary cm-action-btn" title="View Subjects" onclick="showCurriculum({{ c.id }}, {{ dept.id }})">
-                            <i  data-lucide="eye"></i>
+                            <i  class="bi bi-eye"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary cm-action-btn" title="Edit" data-bs-toggle="modal" data-bs-target="#editProgramModal{{ c.id }}">
-                            <i  data-lucide="pencil"></i>
+                            <i  class="bi bi-pencil"></i>
                         </button>
                         <form method="post" action="{{ path(prefix ~ '_curriculum_delete', {id: c.id}) }}" class="d-inline" onsubmit="return confirm('Delete this curriculum?')">
                             <input type="hidden" name="_token" value="{{ csrf_token('delete_curriculum' ~ c.id) }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger cm-action-btn" title="Delete">
-                                <i  data-lucide="trash-2"></i>
+                                <i  class="bi bi-trash"></i>
                             </button>
                         </form>
                     </div>
@@ -402,7 +402,7 @@
         </div>
         {% else %}
         <div class="text-center text-muted py-5">
-            <i  class="fs-1 d-block mb-2 opacity-25" data-lucide="book-marked"></i>
+            <i  class="bi bi-bookmark-check fs-1 d-block mb-2 opacity-25"></i>
             No curricula in this department yet. Click "Add Curriculum" to create one.
         </div>
         {% endfor %}
@@ -454,26 +454,26 @@
             <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <div class="cm-header-icon">
-                        <i  data-lucide="book-marked"></i>
+                        <i  class="bi bi-bookmark-check"></i>
                     </div>
                     <div>
                         <h4 class="fw-bold mb-1 text-white">{{ c.curriculumName }}</h4>
                         <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.8rem;">
-                            {% if c.curriculumYear %}<span class="cm-meta-pill"><i  class="me-1" data-lucide="calendar-days"></i>{{ c.curriculumYear }}</span>{% endif %}
-                            {% if c.course %}<span class="cm-meta-pill"><i  class="me-1" data-lucide="graduation-cap"></i>{{ c.course.courseName }}</span>{% endif %}
-                            {% if c.department %}<span class="cm-meta-pill"><i  class="me-1" data-lucide="landmark"></i>{{ c.department.departmentName }}</span>{% endif %}
+                            {% if c.curriculumYear %}<span class="cm-meta-pill"><i  class="bi bi-calendar3 me-1"></i>{{ c.curriculumYear }}</span>{% endif %}
+                            {% if c.course %}<span class="cm-meta-pill"><i  class="bi bi-mortarboard me-1"></i>{{ c.course.courseName }}</span>{% endif %}
+                            {% if c.department %}<span class="cm-meta-pill"><i  class="bi bi-bank me-1"></i>{{ c.department.departmentName }}</span>{% endif %}
                         </div>
                     </div>
                 </div>
                 <div class="d-flex gap-2 mt-1">
                     <button type="button" class="btn btn-sm btn-light fw-semibold" data-bs-toggle="modal" data-bs-target="#addSubjectModal{{ c.id }}">
-                        <i  class="me-1" data-lucide="plus"></i>Add Subject
+                        <i  class="bi bi-plus me-1"></i>Add Subject
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#editProgramModal{{ c.id }}">
-                        <i  class="me-1" data-lucide="pencil"></i>Edit
+                        <i  class="bi bi-pencil me-1"></i>Edit
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-light" onclick="showDepartment({{ c.department ? c.department.id : 0 }})">
-                        <i  class="me-1" data-lucide="arrow-left"></i>Back
+                        <i  class="bi bi-arrow-left me-1"></i>Back
                     </button>
                 </div>
             </div>
@@ -528,7 +528,7 @@
                 {% endfor %}
             </div>
             <div class="cm-search-wrap">
-                <i  data-lucide="search"></i>
+                <i  class="bi bi-search"></i>
                 <input type="text" class="cm-search" placeholder="Search subjects..." oninput="filterSubjects(this, {{ c.id }})">
             </div>
         </div>
@@ -569,8 +569,8 @@
                         <span class="fw-semibold" style="font-size:.85rem;">{{ semester }}</span>
                     </div>
                     <div class="d-flex align-items-center gap-3" style="font-size:.75rem;">
-                        <span class="text-muted"><i  class="me-1" data-lucide="notebook-text"></i>{{ subjectList|length }} subject{{ subjectList|length != 1 ? 's' : '' }}</span>
-                        <span class="text-muted"><i  class="me-1" data-lucide="layers"></i>{{ semUnits }} unit{{ semUnits != 1 ? 's' : '' }}</span>
+                        <span class="text-muted"><i  class="bi bi-journal-text me-1"></i>{{ subjectList|length }} subject{{ subjectList|length != 1 ? 's' : '' }}</span>
+                        <span class="text-muted"><i  class="bi bi-layers me-1"></i>{{ semUnits }} unit{{ semUnits != 1 ? 's' : '' }}</span>
                     </div>
                 </div>
                 <div class="cm-sem-table">
@@ -595,15 +595,15 @@
                                     <td class="text-end">
                                         <div class="d-flex gap-1 justify-content-end">
                                             <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" style="font-size:.72rem;" title="View" onclick="viewSubjectDetail({{ s.id }})">
-                                                <i  data-lucide="eye"></i>
+                                                <i  class="bi bi-eye"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size:.72rem;" title="Edit" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ s.id }}">
-                                                <i  data-lucide="pencil"></i>
+                                                <i  class="bi bi-pencil"></i>
                                             </button>
                                             <form method="post" action="{{ path(prefix ~ '_curriculum_remove_subject', {id: c.id, subjectId: s.id}) }}" class="d-inline" onsubmit="return confirm('Remove this subject from the curriculum?')">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('remove_subject_curriculum' ~ c.id) }}">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size:.72rem;" title="Remove">
-                                                    <i  data-lucide="x"></i>
+                                                    <i  class="bi bi-x-lg"></i>
                                                 </button>
                                             </form>
                                         </div>
@@ -620,20 +620,20 @@
         {% endfor %}
         </div>
         <div id="no-results-{{ c.id }}" class="text-center text-muted py-4" style="display:none;">
-            <i  class="fs-3 d-block mb-2 opacity-25" data-lucide="search"></i>
+            <i  class="bi bi-search fs-3 d-block mb-2 opacity-25"></i>
             No subjects match your search.
         </div>
     {% else %}
         <div class="text-center py-5">
             <div class="mb-3">
                 <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:72px;height:72px;">
-                    <i  class="text-primary" style="font-size:1.8rem;" data-lucide="book-plus"></i>
+                    <i  class="bi bi-journal-plus text-primary" style="font-size:1.8rem;"></i>
                 </div>
             </div>
             <h6 class="fw-bold text-dark mb-1">No Subjects Yet</h6>
             <p class="text-muted small mb-3">Start building this curriculum by adding your first subject.</p>
             <button type="button" class="btn btn-norsu btn-sm" data-bs-toggle="modal" data-bs-target="#addSubjectModal{{ c.id }}">
-                <i  class="me-1" data-lucide="circle-plus"></i>Add First Subject
+                <i  class="bi bi-plus-circle-fill me-1"></i>Add First Subject
             </button>
         </div>
     {% endif %}
@@ -652,7 +652,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('create_curriculum') }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="book-marked"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-bookmark-check"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">New Curriculum</h5>
                             <small class="text-white-50">Create a new curriculum program</small>
@@ -697,7 +697,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-check"></i>Create Curriculum</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-check-circle-fill me-1"></i>Create Curriculum</button>
                 </div>
             </form>
         </div>
@@ -712,7 +712,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('edit_curriculum' ~ c.id) }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="pencil"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-pencil"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">Edit Curriculum</h5>
                             <small class="text-white-50">{{ c.curriculumName }}</small>
@@ -756,7 +756,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-check"></i>Save Changes</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-check-circle-fill me-1"></i>Save Changes</button>
                 </div>
             </form>
         </div>
@@ -772,7 +772,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('add_subject_curriculum' ~ c.id) }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="circle-plus"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-plus-circle-fill"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">Add Subject</h5>
                             <small class="text-white-50">{{ c.curriculumName }}</small>
@@ -827,7 +827,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-plus"></i>Add Subject</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-plus-circle-fill me-1"></i>Add Subject</button>
                 </div>
             </form>
         </div>
@@ -844,7 +844,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('edit_subject' ~ s.id) }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="pencil"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-pencil"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">Edit Subject</h5>
                             <small class="text-white-50">{{ s.subjectCode }} — {{ s.subjectName }}</small>
@@ -910,7 +910,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-check"></i>Save Changes</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-check-circle-fill me-1"></i>Save Changes</button>
                 </div>
             </form>
         </div>
@@ -931,7 +931,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('create_dept') }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="building-2"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-buildings"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">Add Department</h5>
                             <small class="text-white-50">Create a new department</small>
@@ -956,7 +956,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-check"></i>Create</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-check-circle-fill me-1"></i>Create</button>
                 </div>
             </form>
         </div>
@@ -971,7 +971,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('edit_dept' ~ dept.id) }}">
                 <div class="cm-modal-header">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="cm-modal-icon"><i  data-lucide="pencil"></i></div>
+                        <div class="cm-modal-icon"><i  class="bi bi-pencil"></i></div>
                         <div>
                             <h5 class="modal-title fw-bold text-white mb-0">Edit Department</h5>
                             <small class="text-white-50">{{ dept.departmentName }}</small>
@@ -996,7 +996,7 @@
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="me-1" data-lucide="circle-check"></i>Save Changes</button>
+                    <button type="submit" class="btn btn-norsu btn-sm"><i  class="bi bi-check-circle-fill me-1"></i>Save Changes</button>
                 </div>
             </form>
         </div>

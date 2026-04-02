@@ -5,7 +5,7 @@
 {% block body %}
 <div class="mb-3">
     <a href="{{ path('evaluation_sef_index') }}" class="text-decoration-none small">
-        <i  class="me-1" data-lucide="arrow-left"></i>Back to SEF
+        <i  class="bi bi-arrow-left me-1"></i>Back to SEF
     </a>
 </div>
 
@@ -125,10 +125,10 @@
 <div class="eval-form-actions-bar">
     <button type="submit" name="_action" value="submit" class="btn btn-norsu"
             onclick="return confirm('Once submitted, you cannot edit this evaluation. Continue?')">
-        <i  class="me-1" data-lucide="send"></i>Submit Evaluation
+        <i  class="bi bi-send me-1"></i>Submit Evaluation
     </button>
     <button type="submit" name="_action" value="save_draft" class="btn btn-outline-secondary">
-        <i  class="me-1" data-lucide="save"></i>Save as Draft
+        <i  class="bi bi-save me-1"></i>Save as Draft
     </button>
     <a href="{{ path('evaluation_sef_index') }}" class="btn btn-light">Cancel</a>
 </div>

@@ -1,0 +1,31 @@
+{# Header partial for FES pages #}
+<header class="fes-header">
+    <div class="container">
+        <a href="{{ path('app_home') }}" class="fes-logo">
+            <img src="{{ asset('images/norsu1logo.png') }}" alt="NORSU Logo" class="fes-logo-img">
+            <div class="fes-logo-text">
+                <span class="fes-logo-title">SET - SEF Evaluation System</span>
+                <span class="fes-logo-subtitle">Negros Oriental State University</span>
+            </div>
+        </a>
+        <nav class="fes-nav">
+            <a href="{{ path('app_home') }}" class="fes-nav-link{{ active|default('') == 'home' ? ' active' : '' }}">Home</a>
+            <a href="{{ path('app_home', {view: 'about'}) }}" class="fes-nav-link{{ active|default('') == 'about' ? ' active' : '' }}">About</a>
+            <a href="{{ path('app_home', {view: 'faq'}) }}" class="fes-nav-link{{ active|default('') == 'faq' ? ' active' : '' }}">FAQ</a>
+            <a href="{{ path('app_home', {view: 'contact'}) }}" class="fes-nav-link{{ active|default('') == 'contact' ? ' active' : '' }}">Contact Us</a>
+            <details class="fes-account-dropdown">
+                <summary class="fes-nav-btn fes-account-summary">My Account</summary>
+                <div class="fes-account-menu">
+                    <a href="{{ path('app_login') }}" class="fes-account-item">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span>Sign In</span>
+                    </a>
+                    <a href="{{ path('app_register') }}" class="fes-account-item">
+                        <i class="bi bi-person-fill"></i>
+                        <span>Register</span>
+                    </a>
+                </div>
+            </details>
+        </nav>
+    </div>
+</header>

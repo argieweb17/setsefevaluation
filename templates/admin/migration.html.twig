@@ -113,7 +113,7 @@
 <div class="mg-header">
     <div class="mg-header-left">
         <div class="mg-header-icon">
-            <i  data-lucide="database"></i>
+            <i  class="bi bi-database"></i>
         </div>
         <div>
             <h4 class="mg-title">Data Migration</h4>
@@ -122,7 +122,7 @@
     </div>
     <div class="mg-header-right">
         <a href="{{ path('admin_users') }}" class="mg-back-btn">
-            <i  class="me-1" data-lucide="arrow-left"></i>Back to Users
+            <i  class="bi bi-arrow-left me-1"></i>Back to Users
         </a>
     </div>
 </div>
@@ -130,12 +130,12 @@
 {# ═══════ FLASH MESSAGES ═══════ #}
 {% for message in app.flashes('success') %}
 <div class="mg-flash mg-flash-success">
-    <i  class="me-2" data-lucide="circle-check"></i>{{ message }}
+    <i  class="bi bi-check-circle-fill me-2"></i>{{ message }}
 </div>
 {% endfor %}
 {% for message in app.flashes('danger') %}
 <div class="mg-flash mg-flash-danger">
-    <i  class="me-2" data-lucide="triangle-alert"></i>{{ message }}
+    <i  class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
 </div>
 {% endfor %}
 
@@ -143,47 +143,47 @@
 <div class="mg-stats-grid">
     <a href="{{ path('admin_students') }}" class="mg-stat-card">
         <div class="mg-stat-icon" style="background:#F5F3FF;color:#7C3AED">
-            <i  data-lucide="backpack"></i>
+            <i  class="bi bi-backpack"></i>
         </div>
         <div class="mg-stat-body">
             <span class="mg-stat-value">{{ studentCount }}</span>
             <span class="mg-stat-label">Students</span>
         </div>
-        <i  class="mg-stat-arrow" data-lucide="chevron-right"></i>
+        <i  class="bi bi-chevron-right mg-stat-arrow"></i>
     </a>
     <a href="{{ path('admin_faculty_list') }}" class="mg-stat-card">
         <div class="mg-stat-icon" style="background:#EFF6FF;color:#2563EB">
-            <i  data-lucide="graduation-cap"></i>
+            <i  class="bi bi-mortarboard"></i>
         </div>
         <div class="mg-stat-body">
             <span class="mg-stat-value">{{ facultyCount }}</span>
             <span class="mg-stat-label">Faculty</span>
         </div>
-        <i  class="mg-stat-arrow" data-lucide="chevron-right"></i>
+        <i  class="bi bi-chevron-right mg-stat-arrow"></i>
     </a>
     <a href="{{ path('admin_staff_list') }}" class="mg-stat-card">
         <div class="mg-stat-icon" style="background:#F0FDF4;color:#16A34A">
-            <i  data-lucide="clipboard-list"></i>
+            <i  class="bi bi-card-checklist"></i>
         </div>
         <div class="mg-stat-body">
             <span class="mg-stat-value">{{ staffCount }}</span>
             <span class="mg-stat-label">Staff</span>
         </div>
-        <i  class="mg-stat-arrow" data-lucide="chevron-right"></i>
+        <i  class="bi bi-chevron-right mg-stat-arrow"></i>
     </a>
     <a href="{{ path('admin_admin_list') }}" class="mg-stat-card">
         <div class="mg-stat-icon" style="background:#FEF2F2;color:#DC2626">
-            <i  data-lucide="shield"></i>
+            <i  class="bi bi-shield"></i>
         </div>
         <div class="mg-stat-body">
             <span class="mg-stat-value">{{ adminCount }}</span>
             <span class="mg-stat-label">Admins</span>
         </div>
-        <i  class="mg-stat-arrow" data-lucide="chevron-right"></i>
+        <i  class="bi bi-chevron-right mg-stat-arrow"></i>
     </a>
     <div class="mg-stat-card mg-stat-total">
         <div class="mg-stat-icon" style="background:rgba(255,255,255,.15);color:#fff">
-            <i  data-lucide="users"></i>
+            <i  class="bi bi-people"></i>
         </div>
         <div class="mg-stat-body">
             <span class="mg-stat-value" style="color:#fff">{{ totalUsers }}</span>
@@ -197,7 +197,7 @@
     {# ── Import Card ── #}
     <div class="mg-card">
         <div class="mg-card-header mg-card-header-import">
-            <div class="mg-card-header-icon"><i  data-lucide="cloud-upload"></i></div>
+            <div class="mg-card-header-icon"><i  class="bi bi-cloud-upload"></i></div>
             <div>
                 <strong>Import Users</strong>
                 <span>Upload a CSV file to bulk-create accounts</span>
@@ -206,7 +206,7 @@
         <div class="mg-card-body">
             <form method="post" action="{{ path('admin_migration_import') }}" enctype="multipart/form-data">
                 <div class="mg-form-group">
-                    <label class="mg-form-label"><i  class="me-1" data-lucide="users"></i>Target Role</label>
+                    <label class="mg-form-label"><i  class="bi bi-people me-1"></i>Target Role</label>
                     <select name="target_role" class="mg-form-select" required>
                         <option value="student">Student</option>
                         <option value="faculty">Faculty</option>
@@ -215,28 +215,28 @@
                     </select>
                 </div>
                 <div class="mg-form-group">
-                    <label class="mg-form-label"><i  class="me-1" data-lucide="file-spreadsheet"></i>CSV File</label>
+                    <label class="mg-form-label"><i  class="bi bi-file-earmark-spreadsheet me-1"></i>CSV File</label>
                     <div class="mg-file-upload" id="mgDropZone">
                         <input type="file" name="csv_file" class="mg-file-input" id="mgFileInput" accept=".csv" required>
                         <div class="mg-file-placeholder" id="mgFilePlaceholder">
-                            <i  data-lucide="cloud-upload"></i>
+                            <i  class="bi bi-cloud-upload"></i>
                             <strong>Drop CSV file here or click to browse</strong>
                             <span>Supports .csv files only</span>
                         </div>
                         <div class="mg-file-selected d-none" id="mgFileSelected">
-                            <i  data-lucide="file-check"></i>
+                            <i  class="bi bi-file-earmark-check"></i>
                             <span id="mgFileName"></span>
                         </div>
                     </div>
                 </div>
                 <button type="submit" class="mg-btn-import">
-                    <i  class="me-1" data-lucide="cloud-upload"></i>Import Users
+                    <i  class="bi bi-cloud-upload me-1"></i>Import Users
                 </button>
             </form>
 
             <div class="mg-guide">
                 <div class="mg-guide-header">
-                    <i  class="me-1" data-lucide="info"></i>CSV Format Guide
+                    <i  class="bi bi-info-circle me-1"></i>CSV Format Guide
                 </div>
                 <div class="mg-guide-body">
                     <div class="mg-guide-row">
@@ -256,7 +256,7 @@
                         <code>EmploymentStatus</code>
                     </div>
                     <div class="mg-guide-note">
-                        <i  class="me-1" data-lucide="shield-check"></i>Duplicate emails are skipped. Default password: <code>password123</code>
+                        <i  class="bi bi-shield-check me-1"></i>Duplicate emails are skipped. Default password: <code>password123</code>
                     </div>
                 </div>
             </div>
@@ -266,7 +266,7 @@
     {# ── Export Card ── #}
     <div class="mg-card">
         <div class="mg-card-header mg-card-header-export">
-            <div class="mg-card-header-icon"><i  data-lucide="cloud-download"></i></div>
+            <div class="mg-card-header-icon"><i  class="bi bi-cloud-download"></i></div>
             <div>
                 <strong>Export Users</strong>
                 <span>Download user data as CSV files by role</span>
@@ -277,43 +277,43 @@
 
             <div class="mg-export-list">
                 <a href="{{ path('admin_migration_export', {role: 'student'}) }}" class="mg-export-item">
-                    <div class="mg-export-icon" style="background:#F5F3FF;color:#7C3AED"><i  data-lucide="backpack"></i></div>
+                    <div class="mg-export-icon" style="background:#F5F3FF;color:#7C3AED"><i  class="bi bi-backpack"></i></div>
                     <div class="mg-export-info">
                         <strong>Students</strong>
                         <span>{{ studentCount }} account{{ studentCount != 1 ? 's' : '' }}</span>
                     </div>
                     <div class="mg-export-action">
-                        <i  data-lucide="download"></i>
+                        <i  class="bi bi-download"></i>
                     </div>
                 </a>
                 <a href="{{ path('admin_migration_export', {role: 'faculty'}) }}" class="mg-export-item">
-                    <div class="mg-export-icon" style="background:#EFF6FF;color:#2563EB"><i  data-lucide="graduation-cap"></i></div>
+                    <div class="mg-export-icon" style="background:#EFF6FF;color:#2563EB"><i  class="bi bi-mortarboard"></i></div>
                     <div class="mg-export-info">
                         <strong>Faculty</strong>
                         <span>{{ facultyCount }} account{{ facultyCount != 1 ? 's' : '' }}</span>
                     </div>
                     <div class="mg-export-action">
-                        <i  data-lucide="download"></i>
+                        <i  class="bi bi-download"></i>
                     </div>
                 </a>
                 <a href="{{ path('admin_migration_export', {role: 'staff'}) }}" class="mg-export-item">
-                    <div class="mg-export-icon" style="background:#F0FDF4;color:#16A34A"><i  data-lucide="clipboard-list"></i></div>
+                    <div class="mg-export-icon" style="background:#F0FDF4;color:#16A34A"><i  class="bi bi-card-checklist"></i></div>
                     <div class="mg-export-info">
                         <strong>Staff</strong>
                         <span>{{ staffCount }} account{{ staffCount != 1 ? 's' : '' }}</span>
                     </div>
                     <div class="mg-export-action">
-                        <i  data-lucide="download"></i>
+                        <i  class="bi bi-download"></i>
                     </div>
                 </a>
                 <a href="{{ path('admin_migration_export', {role: 'admin'}) }}" class="mg-export-item">
-                    <div class="mg-export-icon" style="background:#FEF2F2;color:#DC2626"><i  data-lucide="shield"></i></div>
+                    <div class="mg-export-icon" style="background:#FEF2F2;color:#DC2626"><i  class="bi bi-shield"></i></div>
                     <div class="mg-export-info">
                         <strong>Admins</strong>
                         <span>{{ adminCount }} account{{ adminCount != 1 ? 's' : '' }}</span>
                     </div>
                     <div class="mg-export-action">
-                        <i  data-lucide="download"></i>
+                        <i  class="bi bi-download"></i>
                     </div>
                 </a>
             </div>

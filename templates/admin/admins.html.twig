@@ -14,21 +14,21 @@
     <div class="rl-header-inner">
         <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="rl-header-icon"><i  data-lucide="shield"></i></div>
+                <div class="rl-header-icon"><i  class="bi bi-shield"></i></div>
                 <div>
                     <h4 class="fw-bold mb-1 text-white" style="font-size:1.25rem;">Manage Admins</h4>
                     <div class="d-flex flex-wrap gap-2 align-items-center" style="font-size:.78rem;">
-                        <span class="rl-meta-pill"><i  class="me-1" data-lucide="user-check"></i>{{ activeCount }} Active</span>
-                        <span class="rl-meta-pill"><i  class="me-1" data-lucide="database"></i>{{ totalAdmins }} Total</span>
+                        <span class="rl-meta-pill"><i  class="bi bi-person-check me-1"></i>{{ activeCount }} Active</span>
+                        <span class="rl-meta-pill"><i  class="bi bi-database me-1"></i>{{ totalAdmins }} Total</span>
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2 mt-1">
                 <a href="{{ path('admin_users') }}" class="btn btn-sm btn-outline-light fw-semibold">
-                    <i  class="me-1" data-lucide="arrow-left"></i>All Users
+                    <i  class="bi bi-arrow-left me-1"></i>All Users
                 </a>
                 <a href="{{ path('admin_user_create') }}" class="btn btn-sm btn-light fw-semibold shadow-sm">
-                    <i  class="me-1" data-lucide="user-plus"></i>Add Admin
+                    <i  class="bi bi-person-plus me-1"></i>Add Admin
                 </a>
             </div>
         </div>
@@ -49,12 +49,12 @@
 {# ── Filter Toolbar ── #}
 <div class="rl-toolbar">
     <div class="rl-search-wrap">
-        <i  data-lucide="search"></i>
+        <i  class="bi bi-search"></i>
         <input type="text" class="rl-search" id="rlSearch" placeholder="Search by name or email..." autocomplete="off">
     </div>
     <div class="rl-filter-form">
         <div class="rl-filter-group">
-            <i  class="rl-filter-icon" data-lucide="arrow-down"></i>
+            <i  class="bi bi-arrow-down rl-filter-icon"></i>
             <select class="rl-filter-select" id="rlSort" style="min-width:150px;">
                 <option value="name-asc">Name (A–Z)</option>
                 <option value="name-desc">Name (Z–A)</option>
@@ -63,7 +63,7 @@
             </select>
         </div>
         <button type="button" class="rl-clear-btn" id="rlReset" title="Reset all filters">
-            <i  data-lucide="x"></i>
+            <i  class="bi bi-x-lg"></i>
         </button>
     </div>
     <div class="rl-toolbar-info">
@@ -74,7 +74,7 @@
 {# ── Admins Table ── #}
 <div class="rl-table-card">
     <div class="rl-table-header" style="background:linear-gradient(135deg,#be185d,#ec4899 60%,#f9a8d4);">
-        <span><i  class="me-2" data-lucide="shield"></i>Administrators</span>
+        <span><i  class="bi bi-shield me-2"></i>Administrators</span>
         <span class="rl-table-badge">{{ totalAdmins }} admin{{ totalAdmins != 1 ? 's' : '' }}</span>
     </div>
     <div class="table-responsive">
@@ -112,15 +112,15 @@
                     <td><span class="small">{{ user.department ? user.department.departmentName : '—' }}</span></td>
                     <td class="text-center">
                         {% if user.accountStatus == 'active' %}
-                            <span class="rl-status-badge status-active"><i  class="me-1" data-lucide="circle-check"></i>Active</span>
+                            <span class="rl-status-badge status-active"><i  class="bi bi-check-circle-fill me-1"></i>Active</span>
                         {% else %}
-                            <span class="rl-status-badge status-inactive"><i  class="me-1" data-lucide="circle-pause"></i>Inactive</span>
+                            <span class="rl-status-badge status-inactive"><i  class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
                         {% endif %}
                     </td>
                     <td><span class="small text-muted">{{ user.createdAt|date('M d, Y') }}</span></td>
                     <td class="text-end pe-3">
                         <div class="d-flex gap-1 justify-content-end">
-                            <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary rl-action-btn" title="Edit"><i  data-lucide="pencil-line"></i></a>
+                            <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary rl-action-btn" title="Edit"><i  class="bi bi-pencil-square"></i></a>
                             {% if user != app.user %}
                             <form method="post" action="{{ path('admin_user_toggle_status', {id: user.id}) }}" class="d-inline">
                                 <input type="hidden" name="_token" value="{{ csrf_token('toggle' ~ user.id) }}">
@@ -130,7 +130,7 @@
                             </form>
                             <form method="post" action="{{ path('admin_user_delete', {id: user.id}) }}" class="d-inline" onsubmit="return confirm('Delete this admin permanently?')">
                                 <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
-                                <button class="btn btn-sm btn-outline-danger rl-action-btn" title="Delete"><i  data-lucide="trash-2"></i></button>
+                                <button class="btn btn-sm btn-outline-danger rl-action-btn" title="Delete"><i  class="bi bi-trash"></i></button>
                             </form>
                             {% endif %}
                         </div>
@@ -138,7 +138,7 @@
                 </tr>
                 {% else %}
                 <tr><td colspan="7" class="text-center py-5">
-                    <i  class="display-4 text-muted d-block mb-2" data-lucide="shield"></i>
+                    <i  class="bi bi-shield display-4 text-muted d-block mb-2"></i>
                     <span class="text-muted">No administrators found.</span>
                 </td></tr>
                 {% endfor %}

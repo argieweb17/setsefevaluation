@@ -478,28 +478,28 @@
                     <h4 class="fe-name">{{ faculty.fullName }}</h4>
                     <div class="fe-meta">
                         {% if faculty.department %}
-                        <span class="fe-meta-tag"><i  data-lucide="building-2"></i> {{ faculty.department.departmentName }}</span>
+                        <span class="fe-meta-tag"><i  class="bi bi-buildings"></i> {{ faculty.department.departmentName }}</span>
                         {% endif %}
                         {% if faculty.employmentStatus %}
-                        <span class="fe-meta-tag"><i  data-lucide="briefcase"></i> {{ faculty.employmentStatus }}</span>
+                        <span class="fe-meta-tag"><i  class="bi bi-briefcase"></i> {{ faculty.employmentStatus }}</span>
                         {% endif %}
                         {% if faculty.campus %}
-                        <span class="fe-meta-tag"><i  data-lucide="map-pin"></i> {{ faculty.campus }}</span>
+                        <span class="fe-meta-tag"><i  class="bi bi-geo-alt"></i> {{ faculty.campus }}</span>
                         {% endif %}
                     </div>
                 </div>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ path(prefix ~ '_results') }}" class="btn btn-sm fe-btn-back">
-                    <i  class="me-1" data-lucide="arrow-left"></i>Back to Results
+                    <i  class="bi bi-arrow-left me-1"></i>Back to Results
                 </a>
                 {% if evaluations|length > 0 %}
                 <a href="{{ printAllSetupUrl }}" target="_blank" class="btn btn-sm fe-btn-print">
-                    <i  class="me-1" data-lucide="printer"></i>Print All
+                    <i  class="bi bi-printer me-1"></i>Print All
                 </a>
                 {% if not staffMode %}
                 <button type="button" id="feToggleSelect" class="btn btn-sm fe-btn-select">
-                    <i  class="me-1" data-lucide="square-check"></i>Choose the subject to print
+                    <i  class="bi bi-check2-square me-1"></i>Choose the subject to print
                 </button>
                 {% endif %}
                 {% endif %}
@@ -512,28 +512,28 @@
 {% if evaluations|length > 0 %}
 <div class="fe-stats">
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-blue"><i  data-lucide="clipboard-list"></i></div>
+        <div class="fe-stat-icon stat-blue"><i  class="bi bi-card-checklist"></i></div>
         <div>
             <div class="fe-stat-num">{{ evaluations|length }}</div>
             <div class="fe-stat-label">Evaluations</div>
         </div>
     </div>
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-green"><i  data-lucide="chart-line"></i></div>
+        <div class="fe-stat-icon stat-green"><i  class="bi bi-graph-up-arrow"></i></div>
         <div>
             <div class="fe-stat-num">{{ overallAvg|number_format(2) }}</div>
             <div class="fe-stat-label">Overall Average</div>
         </div>
     </div>
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-purple"><i  data-lucide="users"></i></div>
+        <div class="fe-stat-icon stat-purple"><i  class="bi bi-people"></i></div>
         <div>
             <div class="fe-stat-num">{{ totalEvaluators }}</div>
             <div class="fe-stat-label">Total Evaluators</div>
         </div>
     </div>
     <div class="fe-stat-card">
-        <div class="fe-stat-icon stat-amber"><i  data-lucide="trophy"></i></div>
+        <div class="fe-stat-icon stat-amber"><i  class="bi bi-trophy"></i></div>
         <div>
             {% set overallLevel = overallAvg >= 4.5 ? 'Always manifested' : (overallAvg >= 3.5 ? 'Often manifested' : (overallAvg >= 2.5 ? 'Sometimes manifested' : (overallAvg >= 1.5 ? 'Seldom manifested' : 'Never manifested'))) %}
             <div class="fe-stat-num" style="font-size:1rem;">{{ overallLevel }}</div>
@@ -558,7 +558,7 @@
             <span>Select All</span>
         </label>
         <div class="ev-search-box">
-            <i  class="ev-search-icon" data-lucide="search"></i>
+            <i  class="bi bi-search ev-search-icon"></i>
             <input type="text" class="ev-search-input" id="feSearchInput" placeholder="Search..." oninput="feApplyFilters()">
         </div>
     </div>
@@ -594,10 +594,10 @@
                     <div class="fw-semibold" style="font-size:.85rem;">{{ ev.semester ?? '' }} {{ ev.schoolYear ?? '' }}</div>
                 </td>
                 <td>
-                    {% if ev.subject %}<span class="fe-info-badge"><i  class="me-1" data-lucide="book-open"></i>{{ ev.subject }}</span>{% else %}ΓÇö{% endif %}
+                    {% if ev.subject %}<span class="fe-info-badge"><i  class="bi bi-book me-1"></i>{{ ev.subject }}</span>{% else %}ΓÇö{% endif %}
                 </td>
                 <td>
-                    {% if ev.section %}<span class="fe-info-badge"><i  class="me-1" data-lucide="users"></i>{{ ev.section }}</span>{% else %}ΓÇö{% endif %}
+                    {% if ev.section %}<span class="fe-info-badge"><i  class="bi bi-people me-1"></i>{{ ev.section }}</span>{% else %}ΓÇö{% endif %}
                 </td>
                 <td></td>
                 <td class="text-center">
@@ -612,20 +612,20 @@
                 <td class="text-center"><span class="fw-semibold">{{ item.evaluators }}</span></td>
                 <td class="text-center">
                     {% if item.level == 'Always manifested' %}
-                        <span class="fe-perf-badge perf-excellent"><i  data-lucide="star"></i> {{ item.level }}</span>
+                        <span class="fe-perf-badge perf-excellent"><i  class="bi bi-star-fill"></i> {{ item.level }}</span>
                     {% elseif item.level == 'Often manifested' %}
-                        <span class="fe-perf-badge perf-verygood"><i  data-lucide="thumbs-up"></i> {{ item.level }}</span>
+                        <span class="fe-perf-badge perf-verygood"><i  class="bi bi-hand-thumbs-up-fill"></i> {{ item.level }}</span>
                     {% elseif item.level == 'Sometimes manifested' %}
-                        <span class="fe-perf-badge perf-good"><i  data-lucide="circle-check"></i> {{ item.level }}</span>
+                        <span class="fe-perf-badge perf-good"><i  class="bi bi-check-circle-fill"></i> {{ item.level }}</span>
                     {% elseif item.level == 'Seldom manifested' %}
-                        <span class="fe-perf-badge perf-fair"><i  data-lucide="circle-alert"></i> {{ item.level }}</span>
+                        <span class="fe-perf-badge perf-fair"><i  class="bi bi-exclamation-circle-fill"></i> {{ item.level }}</span>
                     {% else %}
-                        <span class="fe-perf-badge perf-poor"><i  data-lucide="circle-x"></i> {{ item.level }}</span>
+                        <span class="fe-perf-badge perf-poor"><i  class="bi bi-x-circle-fill"></i> {{ item.level }}</span>
                     {% endif %}
                 </td>
                 <td class="text-center">
                     <div class="d-flex justify-content-center gap-1">
-                        <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i  data-lucide="printer"></i></a>
+                        <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i  class="bi bi-printer"></i></a>
                     </div>
                 </td>
             </tr>
@@ -658,18 +658,18 @@
                     <td class="text-center"><span class="fw-semibold">{{ subj.evaluators }}</span></td>
                     <td class="text-center">
                         {% if subj.average >= 4.5 %}
-                            <span class="fe-perf-badge perf-excellent"><i  data-lucide="star"></i> Always manifested</span>
+                            <span class="fe-perf-badge perf-excellent"><i  class="bi bi-star-fill"></i> Always manifested</span>
                         {% elseif subj.average >= 3.5 %}
-                            <span class="fe-perf-badge perf-verygood"><i  data-lucide="thumbs-up"></i> Often manifested</span>
+                            <span class="fe-perf-badge perf-verygood"><i  class="bi bi-hand-thumbs-up-fill"></i> Often manifested</span>
                         {% elseif subj.average >= 2.5 %}
-                            <span class="fe-perf-badge perf-good"><i  data-lucide="circle-check"></i> Sometimes manifested</span>
+                            <span class="fe-perf-badge perf-good"><i  class="bi bi-check-circle-fill"></i> Sometimes manifested</span>
                         {% else %}
-                            <span class="fe-perf-badge perf-fair"><i  data-lucide="circle-alert"></i> Seldom manifested</span>
+                            <span class="fe-perf-badge perf-fair"><i  class="bi bi-exclamation-circle-fill"></i> Seldom manifested</span>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         <div class="d-flex justify-content-center gap-1">
-                            <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id, subject: subj.subjectId, section: subj.section}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i  data-lucide="printer"></i></a>
+                            <a href="{{ path(prefix ~ '_results_print_setup', {faculty: faculty.id, evaluation: ev.id, subject: subj.subjectId, section: subj.section}) }}" target="_blank" class="fe-action-btn" title="Print Results"><i  class="bi bi-printer"></i></a>
                         </div>
                     </td>
                 </tr>
@@ -681,7 +681,7 @@
 </div>
 {% else %}
 <div class="fe-empty">
-    <div class="fe-empty-icon"><i  data-lucide="clipboard-x"></i></div>
+    <div class="fe-empty-icon"><i  class="bi bi-clipboard-x"></i></div>
     <h6 class="fw-bold text-dark mb-1">No Evaluations Found</h6>
     <p class="text-muted small mb-0">This faculty has not been evaluated in any period yet.</p>
 </div>
@@ -692,10 +692,10 @@
     <div class="fe-action-inner">
         <span class="fe-action-count"><span id="feSelCount">0</span> evaluation(s) selected</span>
         <a href="#" id="fePrintSelected" target="_blank" class="btn btn-sm fe-action-print">
-            <i  class="me-1" data-lucide="printer"></i>Print Selected
+            <i  class="bi bi-printer me-1"></i>Print Selected
         </a>
         <button type="button" id="feCancelSelect" class="btn btn-sm fe-action-cancel">
-            <i  class="me-1" data-lucide="x"></i>Cancel
+            <i  class="bi bi-x-lg me-1"></i>Cancel
         </button>
     </div>
 </div>
@@ -745,7 +745,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function enterSelectMode() {
         selectMode = true;
         toggleBtn.classList.add('active');
-        toggleBtn.innerHTML = '<i  class="me-1" data-lucide="x"></i>Cancel Selection';
+        toggleBtn.innerHTML = '<i  class="bi bi-x-lg me-1"></i>Cancel Selection';
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         selectAllWrap.style.display = 'flex';
         thChecks.forEach(th => th.style.display = 'table-cell');
         tdChecks.forEach(td => td.style.display = 'table-cell');
@@ -756,7 +757,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function exitSelectMode() {
         selectMode = false;
         toggleBtn.classList.remove('active');
-        toggleBtn.innerHTML = '<i  class="me-1" data-lucide="square-check"></i>Choose the subject to print';
+        toggleBtn.innerHTML = '<i  class="bi bi-check2-square me-1"></i>Choose the subject to print';
+        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
         selectAllWrap.style.display = 'none';
         thChecks.forEach(th => th.style.display = 'none');
         tdChecks.forEach(td => td.style.display = 'none');

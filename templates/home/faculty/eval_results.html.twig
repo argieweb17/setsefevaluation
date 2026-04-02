@@ -79,7 +79,7 @@
 {# ── Toolbar ── #}
 <div class="er-toolbar">
     <div class="er-search-wrap">
-        <i  data-lucide="search"></i>
+        <i  class="bi bi-search"></i>
         <input type="text" class="er-search" id="erSearch" placeholder="Search subjects..." oninput="erFilter()">
     </div>
     <div class="er-toolbar-info">
@@ -92,7 +92,7 @@
 <div class="er-period-card">
     <div class="er-period-header" onclick="erToggle(this)">
         <div class="d-flex align-items-center gap-2">
-            <div class="er-period-icon"><i  data-lucide="calendar-days"></i></div>
+            <div class="er-period-icon"><i  class="bi bi-calendar3"></i></div>
             <div>
                 <h6 class="fw-bold mb-0" style="font-size:.92rem;color:#1e293b;">{{ period.evaluation.label }}</h6>
                 <span style="font-size:.72rem;color:#64748b;">{{ period.subjects|length }} subject{{ period.subjects|length != 1 ? 's' : '' }} evaluated</span>
@@ -100,7 +100,7 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <span class="er-period-badge">{{ period.subjects|length }}</span>
-            <i  class="er-period-chevron" data-lucide="chevron-down"></i>
+            <i  class="bi bi-chevron-down er-period-chevron"></i>
         </div>
     </div>
     <div class="er-period-body">
@@ -127,12 +127,12 @@
                     <td class="er-subject-name">{{ subj.subjectName }}</td>
                     <td class="text-center">
                         <span class="er-pill er-pill-evaluator">
-                            <i  class="me-1" data-lucide="users"></i>{{ subj.evaluatorCount }}
+                            <i  class="bi bi-people me-1"></i>{{ subj.evaluatorCount }}
                         </span>
                     </td>
                     <td class="text-center">
                         <span class="er-pill er-pill-status">
-                            <i  class="me-1" data-lucide="circle-check"></i>Evaluated
+                            <i  class="bi bi-check-circle-fill me-1"></i>Evaluated
                         </span>
                     </td>
                 </tr>
@@ -144,13 +144,13 @@
 {% endfor %}
 
 <div class="er-no-results" id="erNoResults" style="display:none;">
-    <i  class="me-2" data-lucide="search"></i>No subjects match your search.
+    <i  class="bi bi-search me-2"></i>No subjects match your search.
 </div>
 
 {% else %}
 <div class="er-table-wrap">
     <div class="er-empty">
-        <div class="er-empty-icon"><i  data-lucide="clipboard-list"></i></div>
+        <div class="er-empty-icon"><i  class="bi bi-card-checklist"></i></div>
         <p class="mb-0">No evaluation results available yet.</p>
     </div>
 </div>

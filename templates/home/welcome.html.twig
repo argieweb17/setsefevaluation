@@ -1,413 +1,161 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Welcome | SET-SEF Evaluation System{% endblock %}
+{% block title %}Welcome | SET - SEF Evaluation System{% endblock %}
 
 {% block body_class %}no-navbar{% endblock %}
 
+{% block stylesheets %}
+{{ parent() }}
+<style>
+{% include 'home/_fes_styles.html.twig' %}
+</style>
+{% endblock %}
+
 {% block body %}
-<div class="welcome-page">
+{% set currentHeroView = heroView|default('home') %}
+<div class="fes-page">
+    {% include 'home/_fes_header.html.twig' with {active: currentHeroView} %}
+
     {# ── Hero Section ── #}
-    <section class="welcome-hero">
-        <div class="welcome-hero-bg"></div>
-
-        {# ── Circle Nav ── #}
-        <nav class="welcome-nav">
-            <a href="#hero" class="welcome-nav-circle active">
-                <i  data-lucide="house"></i>
-                <span>Home</span>
-            </a>
-            <a href="#about" class="welcome-nav-circle">
-                <i  data-lucide="info"></i>
-                <span>About</span>
-            </a>
-            <a href="#faq" class="welcome-nav-circle">
-                <i  data-lucide="circle-help"></i>
-                <span>FAQ</span>
-            </a>
-            <a href="#contact" class="welcome-nav-circle">
-                <i  data-lucide="mail"></i>
-                <span>Contact Us</span>
-            </a>
-        </nav>
-
-        <div class="container position-relative" style="z-index:2" id="hero">
-            <div class="row align-items-center min-vh-100 py-5">
-                <div class="col-lg-6 text-white mb-5 mb-lg-0">
-                    <div class="welcome-badge mb-3">
-                        <i  class="me-1" data-lucide="graduation-cap"></i> Negros Oriental State University
-                    </div>
-                    <h1 class="welcome-title">SET-SEF<br>Evaluation System</h1>
-                    <p class="welcome-subtitle">
-                        Student Evaluation for Teacher &amp; Superior Evaluation for Faculty — 
-                        a streamlined platform for transparent and meaningful academic assessment.
-                    </p>
-                    <div class="d-flex gap-3 flex-wrap mt-4">
-                        <a href="{{ path('app_login') }}" class="btn btn-welcome-primary btn-lg">
-                            <i  class="me-2" data-lucide="log-in"></i>Sign In
-                        </a>
-                        <a href="{{ path('app_register') }}" class="btn btn-welcome-outline btn-lg">
-                            <i  class="me-2" data-lucide="user-plus"></i>Register
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-6 text-center">
-                    <div class="welcome-logo-card">
-                        <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC Logo" class="welcome-logo">
-                        <h3 class="mt-3 mb-1 fw-bold" style="color:var(--norsu-blue-dark)">NORSU</h3>
-                        <p class="text-muted mb-0" style="font-size:0.9rem">Quality Assured · Nationally Accredited</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── Features Section ── #}
-    <section class="ertqa-section" id="features">
-        <div class="ertqa-section-bg ertqa-section-bg-alt"></div>
-        <div class="ertqa-orb" style="width:160px;height:150px;background:rgba(109,87,50,.35);top:15%;right:12%"></div>
-        <div class="container position-relative" style="z-index:2">
-            <div class="text-center mb-5 reveal">
-                <span class="ertqa-badge"><i  class="me-1" data-lucide="settings"></i>How It Works</span>
-                <h2 class="ertqa-title">How It Works</h2>
-                <p class="ertqa-desc mx-auto" style="max-width:560px">A simple, secure process that empowers students, faculty, and staff to participate in academic quality assurance.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-4 reveal reveal-delay-1">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="id-card"></i></div>
-                        <h6 class="ertqa-stat-label">Register &amp; Verify</h6>
-                        <p class="ertqa-stat-value">Create your account and get verified by an administrator to ensure secure, role-based access.</p>
-                    </div>
-                </div>
-                <div class="col-md-4 reveal reveal-delay-2">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="clipboard-list"></i></div>
-                        <h6 class="ertqa-stat-label">Evaluate</h6>
-                        <p class="ertqa-stat-value">Complete structured SET or SEF questionnaires during open evaluation periods set by the administration.</p>
-                    </div>
-                </div>
-                <div class="col-md-4 reveal reveal-delay-3">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="chart-line"></i></div>
-                        <h6 class="ertqa-stat-label">View Results</h6>
-                        <p class="ertqa-stat-value">Access aggregated results and insights that drive continuous improvement in teaching quality.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── Roles Section ── #}
-    <section class="ertqa-section" id="roles">
-        <div class="ertqa-section-bg"></div>
-        <div class="ertqa-orb" style="width:140px;height:130px;background:rgba(109,87,50,.3);bottom:10%;left:8%"></div>
-        <div class="container position-relative" style="z-index:2">
-            <div class="text-center mb-5 reveal">
-                <span class="ertqa-badge"><i  class="me-1" data-lucide="users"></i>Roles</span>
-                <h2 class="ertqa-title">Who Can Use This?</h2>
-            </div>
-            <div class="row g-4 justify-content-center">
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-1">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="book-open"></i></div>
-                        <h6 class="ertqa-stat-label">Students</h6>
-                        <p class="ertqa-stat-value">Evaluate enrolled faculty through SET questionnaires</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-2">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="id-card"></i></div>
-                        <h6 class="ertqa-stat-label">Faculty</h6>
-                        <p class="ertqa-stat-value">View personal evaluation results and feedback</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-3">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="award"></i></div>
-                        <h6 class="ertqa-stat-label">Staff</h6>
-                        <p class="ertqa-stat-value">Participate in superior evaluations for faculty performance</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-4">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-stat-icon"><i  data-lucide="settings-2"></i></div>
-                        <h6 class="ertqa-stat-label">Administrators</h6>
-                        <p class="ertqa-stat-value">Manage users, periods, questions, and view reports</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── About Section ── #}
-    <section class="ertqa-section" id="about">
-        <div class="ertqa-section-bg"></div>
-        <div class="ertqa-orb ertqa-orb-1"></div>
-        <div class="ertqa-orb ertqa-orb-2"></div>
-        <div class="container position-relative" style="z-index:2">
-            <div class="text-center mb-5 reveal">
-                <span class="ertqa-badge"><i  class="me-1" data-lucide="info"></i>About</span>
-                <h2 class="ertqa-title">About the System</h2>
-                <p class="ertqa-desc mx-auto" style="max-width:640px">
-                    The SET-SEF Evaluation System is the official online platform of the
-                    <strong>Quality Assurance Management Center (QUAMC)</strong> at
-                    Negros Oriental State University.
-                </p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6 reveal reveal-left reveal-delay-1">
-                    <div class="ertqa-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-card-content">
-                            <div class="ertqa-card-icon"><i  data-lucide="lock"></i></div>
-                            <div>
-                                <h6 class="ertqa-card-h">Secure & Confidential</h6>
-                                <p class="ertqa-card-p">All evaluations can be <strong>anonymous</strong>, ensuring honest and unbiased feedback from every participant.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 reveal reveal-right reveal-delay-2">
-                    <div class="ertqa-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-card-content">
-                            <div class="ertqa-card-icon"><i  data-lucide="zap"></i></div>
-                            <div>
-                                <h6 class="ertqa-card-h">Real-Time Results</h6>
-                                <p class="ertqa-card-p">Administrators and faculty can <strong>access evaluation data</strong> as soon as the evaluation period closes.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 reveal reveal-left reveal-delay-3">
-                    <div class="ertqa-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-card-content">
-                            <div class="ertqa-card-icon"><i  data-lucide="file-text"></i></div>
-                            <div>
-                                <h6 class="ertqa-card-h">Official Reports</h6>
-                                <p class="ertqa-card-p">Generate <strong>printable IPCR-ready reports</strong> matching the official NORSU QUAMC format.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 reveal reveal-right reveal-delay-4">
-                    <div class="ertqa-card">
-                        <div class="ertqa-card-dot"></div>
-                        <div class="ertqa-card-content">
-                            <div class="ertqa-card-icon"><i  data-lucide="chart-line"></i></div>
-                            <div>
-                                <h6 class="ertqa-card-h">Data-Driven Improvement</h6>
-                                <p class="ertqa-card-p">Digitizes collection, analysis, and reporting of faculty evaluations for <strong>academic quality improvement</strong>.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── FAQ Section ── #}
-    <section class="ertqa-section" id="faq">
-        <div class="ertqa-section-bg ertqa-section-bg-alt"></div>
-        <div class="ertqa-orb ertqa-orb-3"></div>
-        <div class="container position-relative" style="z-index:2">
-            <div class="text-center mb-5 reveal">
-                <span class="ertqa-badge"><i  class="me-1" data-lucide="circle-help"></i>FAQ</span>
-                <h2 class="ertqa-title">Frequently Asked Questions</h2>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="ertqa-faq-list">
-                        <div class="ertqa-faq-item active reveal reveal-delay-1">
-                            <button class="ertqa-faq-q" onclick="toggleFaq(this)">
-                                <span class="ertqa-faq-dot"></span>
-                                <span class="ertqa-faq-text">Who can use this system?</span>
-                                <i  class="ertqa-faq-toggle" data-lucide="plus"></i>
-                            </button>
-                            <div class="ertqa-faq-a">
-                                Students, faculty members, staff (superiors), and administrators of NORSU can use the system. Each role has specific access and features.
-                            </div>
-                        </div>
-                        <div class="ertqa-faq-item reveal reveal-delay-2">
-                            <button class="ertqa-faq-q" onclick="toggleFaq(this)">
-                                <span class="ertqa-faq-dot"></span>
-                                <span class="ertqa-faq-text">Are my evaluations anonymous?</span>
-                                <i  class="ertqa-faq-toggle" data-lucide="plus"></i>
-                            </button>
-                            <div class="ertqa-faq-a">
-                                Yes. When anonymous mode is enabled by the administrator, your identity is not linked to your responses, ensuring honest and confidential feedback.
-                            </div>
-                        </div>
-                        <div class="ertqa-faq-item reveal reveal-delay-3">
-                            <button class="ertqa-faq-q" onclick="toggleFaq(this)">
-                                <span class="ertqa-faq-dot"></span>
-                                <span class="ertqa-faq-text">What is the difference between SET and SEF?</span>
-                                <i  class="ertqa-faq-toggle" data-lucide="plus"></i>
-                            </button>
-                            <div class="ertqa-faq-a">
-                                <strong>SET</strong> (Student Evaluation for Teacher) is completed by students to evaluate their instructors.
-                                <strong>SEF</strong> (Superior Evaluation for Faculty) is completed by department heads or deans to evaluate faculty under their supervision.
-                            </div>
-                        </div>
-                        <div class="ertqa-faq-item reveal reveal-delay-4">
-                            <button class="ertqa-faq-q" onclick="toggleFaq(this)">
-                                <span class="ertqa-faq-dot"></span>
-                                <span class="ertqa-faq-text">How do I register?</span>
-                                <i  class="ertqa-faq-toggle" data-lucide="plus"></i>
-                            </button>
-                            <div class="ertqa-faq-a">
-                                Click <strong>Register</strong>, fill in your details (name, ID number, college, department, year level), and submit. An administrator will verify and approve your account.
-                            </div>
-                        </div>
-                        <div class="ertqa-faq-item reveal reveal-delay-5">
-                            <button class="ertqa-faq-q" onclick="toggleFaq(this)">
-                                <span class="ertqa-faq-dot"></span>
-                                <span class="ertqa-faq-text">Can I save my evaluation and continue later?</span>
-                                <i  class="ertqa-faq-toggle" data-lucide="plus"></i>
-                            </button>
-                            <div class="ertqa-faq-a">
-                                Yes. You can save your evaluation as a <strong>draft</strong> and return to complete it later, as long as the evaluation period is still open.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── Contact Us Section ── #}
-    <section class="ertqa-section" id="contact">
-        <div class="ertqa-section-bg"></div>
-        <div class="ertqa-orb ertqa-orb-4"></div>
-        <div class="ertqa-orb ertqa-orb-5"></div>
-        <div class="container position-relative" style="z-index:2">
-            <div class="text-center mb-5 reveal">
-                <span class="ertqa-badge"><i  class="me-1" data-lucide="mail"></i>Contact</span>
-                <h2 class="ertqa-title">Contact Us</h2>
-                <p class="ertqa-desc mx-auto" style="max-width:520px">Have questions or need assistance? Reach out to the QUAMC office.</p>
-            </div>
-            <div class="row g-4 justify-content-center">
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-1">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-stat-icon"><i  data-lucide="building-2"></i></div>
-                        <h6 class="ertqa-stat-label">Location</h6>
-                        <p class="ertqa-stat-value">NORSU Main Campus, Dumaguete City</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-2">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-stat-icon"><i  data-lucide="send"></i></div>
-                        <h6 class="ertqa-stat-label">Email</h6>
-                        <p class="ertqa-stat-value">quamc@norsu.edu.ph</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-3">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-stat-icon"><i  data-lucide="headphones"></i></div>
-                        <h6 class="ertqa-stat-label">Phone</h6>
-                        <p class="ertqa-stat-value">(035) 225-2270</p>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3 reveal reveal-delay-4">
-                    <div class="ertqa-stat-card">
-                        <div class="ertqa-stat-icon"><i  data-lucide="calendar-days"></i></div>
-                        <h6 class="ertqa-stat-label">Office Hours</h6>
-                        <p class="ertqa-stat-value">Mon–Fri, 8 AM – 5 PM</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    {# ── CTA Section ── #}
-    <section class="welcome-cta text-center py-5">
+    <section class="fes-hero" id="hero">
         <div class="container">
-            <h2 class="text-white fw-bold mb-3 reveal">Ready to Get Started?</h2>
-            <p class="text-white-50 mb-4 mx-auto reveal reveal-delay-1" style="max-width:480px">Join the evaluation community and help improve the quality of education at NORSU.</p>
-            <div class="d-flex gap-3 justify-content-center flex-wrap reveal reveal-delay-2">
-                <a href="{{ path('app_login') }}" class="btn btn-light btn-lg fw-semibold px-4">
-                    <i  class="me-2" data-lucide="log-in"></i>Sign In
-                </a>
-                <a href="{{ path('app_register') }}" class="btn btn-outline-light btn-lg fw-semibold px-4">
-                    <i  class="me-2" data-lucide="user-plus"></i>Create Account
-                </a>
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <div class="fes-hero-content">
+                        <div class="fes-hero-panel" data-hero-view="home" {{ currentHeroView == 'home' ? '' : 'hidden' }}>
+                            <h1 class="fes-hero-title">SET - SEF Evaluation System <span class="fes-hero-version">Ver 1.0</span></h1>
+                            <p class="fes-hero-subtitle">Students, Supervisors, Peers and Faculty can now evaluate through this online tool.</p>
+
+                            <ul class="fes-hero-features">
+                                <li>Students can evaluate faculty of subjects enrolled in a semester</li>
+                                <li>Supervisors can evaluate his/her subordinate</li>
+                                <li>Faculty can evaluate his/her self and his/her peers</li>
+                            </ul>
+
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="fes-hero-buttons">
+                                    <span class="fes-hero-label">* You can now login!</span>
+                                    <a href="{{ path('app_login') }}" class="fes-btn-login">
+                                        <i class="bi bi-box-arrow-in-right"></i> Sign In
+                                    </a>
+                                </div>
+                                <div class="fes-hero-buttons">
+                                    <span class="fes-hero-label">* You can now register!</span>
+                                    <a href="{{ path('app_register') }}" class="fes-btn-register">
+                                        <i class="bi bi-person-fill"></i> Register
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fes-hero-panel" data-hero-view="about" {{ currentHeroView == 'about' ? '' : 'hidden' }}>
+                            <h1 class="fes-hero-title">About the System</h1>
+                            <p class="fes-hero-subtitle">The Faculty Evaluation System is an online platform for transparent and meaningful academic assessment of faculty performance.</p>
+
+                            <ul class="fes-hero-features">
+                                <li><strong>Secure and Confidential</strong>: all evaluations are anonymous, ensuring honest and unbiased feedback.</li>
+                                <li><strong>Real-Time Results</strong>: administrators and faculty can access data as soon as evaluation periods close.</li>
+                                <li><strong>Role-Based Access</strong>: students, staff, faculty, and supervisors each get the right tools.</li>
+                            </ul>
+
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="fes-hero-buttons">
+                                    <span class="fes-hero-label">* Ready to start?</span>
+                                    <a href="{{ path('app_register') }}" class="fes-btn-register">
+                                        <i class="bi bi-person-fill"></i> Register
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fes-hero-panel" data-hero-view="faq" {{ currentHeroView == 'faq' ? '' : 'hidden' }}>
+                            <h1 class="fes-hero-title">Frequently Asked Questions</h1>
+                            <p class="fes-hero-subtitle">Quick answers to common questions about using the SET-SEF Evaluation System.</p>
+
+                            <ul class="fes-hero-features">
+                                <li><strong>Who can use this system?</strong> Students, faculty, supervisors, peers, and administrators with role-based access.</li>
+                                <li><strong>Are evaluations anonymous?</strong> Yes, responses are confidential to encourage honest feedback.</li>
+                                <li><strong>How do I register?</strong> Click Register, complete your information, and wait for account approval.</li>
+                            </ul>
+
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="fes-hero-buttons">
+                                    <span class="fes-hero-label">* Need an account?</span>
+                                    <a href="{{ path('app_register') }}" class="fes-btn-register">
+                                        <i class="bi bi-person-fill"></i> Register
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="fes-hero-panel" data-hero-view="contact" {{ currentHeroView == 'contact' ? '' : 'hidden' }}>
+                            <h1 class="fes-hero-title">Contact Us</h1>
+                            <p class="fes-hero-subtitle">Reach our support team for assistance, account concerns, or system-related inquiries.</p>
+
+                            <ul class="fes-hero-features">
+                                <li><strong>Location</strong>: Main Campus, Negros Oriental State University</li>
+                                <li><strong>Email</strong>: support@example.edu.ph</li>
+                                <li><strong>Phone</strong>: (000) 000-0000 (Mon-Fri, 8 AM - 5 PM)</li>
+                            </ul>
+
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="fes-hero-buttons">
+                                    <span class="fes-hero-label">* Prefer email?</span>
+                                    <a href="mailto:support@example.edu.ph" class="fes-btn-login">
+                                        <i class="bi bi-envelope"></i> Send Email
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="fes-hero-image fes-hero-logo-card">
+                        <img src="{{ asset('images/quamc-logo.png') }}" alt="QUAMC Logo" class="fes-quamc-logo">
+                        <h3 class="fes-quamc-title">NORSU</h3>
+                        <p class="fes-quamc-subtitle">Quality Assured - Nationally Accredited</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    {# ── Footer ── #}
-    <footer class="welcome-footer text-center py-4">
+    {# ── Stats Section ── #}
+    <section class="fes-stats" id="stats">
         <div class="container">
-            <p class="mb-0 text-muted" style="font-size:0.85rem">&copy; {{ 'now'|date('Y') }} Negros Oriental State University &middot; SET-SEF Evaluation System</p>
+            <div class="fes-stats-grid">
+                <div class="fes-stat-card">
+                    <div class="fes-stat-icon">
+                        <i class="bi bi-mortarboard"></i>
+                    </div>
+                    <div class="fes-stat-number">{{ studentCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-label">Students</div>
+                </div>
+                <div class="fes-stat-card">
+                    <div class="fes-stat-icon">
+                        <i class="bi bi-person-workspace"></i>
+                    </div>
+                    <div class="fes-stat-number">{{ facultyCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-label">Faculty</div>
+                </div>
+                <div class="fes-stat-card">
+                    <div class="fes-stat-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div class="fes-stat-number">{{ staffCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-label">Staff</div>
+                </div>
+                <div class="fes-stat-card">
+                    <div class="fes-stat-icon">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <div class="fes-stat-number">{{ evaluationCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-label">Evaluations</div>
+                </div>
+            </div>
         </div>
-    </footer>
+    </section>
+
+    {% include 'home/_fes_footer.html.twig' %}
 </div>
-
-<script>
-function toggleFaq(btn) {
-    var item = btn.closest('.ertqa-faq-item');
-    var wasActive = item.classList.contains('active');
-    document.querySelectorAll('.ertqa-faq-item').forEach(function(el) { el.classList.remove('active'); });
-    if (!wasActive) item.classList.add('active');
-}
-document.addEventListener('DOMContentLoaded', function() {
-    // Smooth scroll
-    document.querySelectorAll('.welcome-nav-circle').forEach(function(link) {
-        link.addEventListener('click', function(e) {
-            var href = this.getAttribute('href');
-            if (href && href.charAt(0) === '#') {
-                e.preventDefault();
-                var target = document.getElementById(href.substring(1));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
-        });
-    });
-
-    // Highlight active circle on scroll
-    var sections = ['hero', 'about', 'faq', 'contact'];
-    var circles = document.querySelectorAll('.welcome-nav-circle');
-    function updateActive() {
-        var scrollY = window.scrollY + window.innerHeight / 3;
-        var current = 'hero';
-        sections.forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el && el.offsetTop <= scrollY) {
-                current = id;
-            }
-        });
-        circles.forEach(function(c) {
-            c.classList.toggle('active', c.getAttribute('href') === '#' + current);
-        });
-    }
-    window.addEventListener('scroll', updateActive, { passive: true });
-    updateActive();
-
-    // Scroll-triggered reveal animations via IntersectionObserver
-    var revealEls = document.querySelectorAll('.reveal');
-    if ('IntersectionObserver' in window) {
-        var observer = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('reveal-visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-        revealEls.forEach(function(el) { observer.observe(el); });
-    } else {
-        // Fallback: show everything immediately
-        revealEls.forEach(function(el) { el.classList.add('reveal-visible'); });
-    }
-});
-</script>
 {% endblock %}

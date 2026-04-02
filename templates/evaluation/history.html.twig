@@ -82,7 +82,7 @@
     </div>
     {% if history|length > 0 %}
     <div class="eh-search-wrap">
-        <i  data-lucide="search"></i>
+        <i  class="bi bi-search"></i>
         <input type="search" id="ehSearch" placeholder="Search history...">
     </div>
     {% endif %}
@@ -91,7 +91,7 @@
 {% if history|length > 0 %}
 <div class="eh-chips">
     <div class="eh-chip">
-        <span class="eh-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i  data-lucide="check-check"></i></span>
+        <span class="eh-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i  class="bi bi-check2-all"></i></span>
         <span><span class="eh-chip-val">{{ history|length }}</span> Submitted</span>
     </div>
 
@@ -108,7 +108,7 @@
 <div class="eh-panel" data-period="{{ period|lower }}">
     <div class="eh-panel-head">
         <div class="eh-panel-title">
-            <i  data-lucide="calendar-days"></i>
+            <i  class="bi bi-calendar3"></i>
             {{ period }}
         </div>
         <span class="eh-panel-badge">{{ items|length }} evaluation{{ items|length > 1 ? 's' : '' }}</span>
@@ -123,7 +123,7 @@
                     {% if item.subjectCode %}
                         {{ item.subjectCode[:2]|upper }}
                     {% else %}
-                        <i  style="font-size:1rem;" data-lucide="user"></i>
+                        <i  style="font-size:1rem;" class="bi bi-person"></i>
                     {% endif %}
                 </div>
                 <div class="eh-item-body">
@@ -134,12 +134,12 @@
                         <span class="eh-item-name">{% if item.subjectName %}{{ item.subjectName }}{% else %}{{ item.facultyName }}{% endif %}</span>
                     </div>
                     <div class="eh-item-meta">
-                        <span><i  data-lucide="user"></i> {{ item.facultyName }}</span>
-                        <span><i  data-lucide="clock-3"></i> {{ item.submittedAt|date('M d, Y g:i A') }}</span>
+                        <span><i  class="bi bi-person"></i> {{ item.facultyName }}</span>
+                        <span><i  class="bi bi-clock"></i> {{ item.submittedAt|date('M d, Y g:i A') }}</span>
                     </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0;">
-                    <span class="eh-submitted-badge"><i  data-lucide="circle-check"></i> Submitted</span>
+                    <span class="eh-submitted-badge"><i  class="bi bi-check-circle-fill"></i> Submitted</span>
                 </div>
             </div>
         {% endfor %}
@@ -150,11 +150,11 @@
 {% else %}
 <div class="eh-panel">
     <div class="eh-panel-head">
-        <div class="eh-panel-title"><i  data-lucide="history"></i> History</div>
+        <div class="eh-panel-title"><i  class="bi bi-clock-history"></i> History</div>
     </div>
     <div class="eh-empty">
         <div class="eh-empty-illustration">
-            <i  data-lucide="history"></i>
+            <i  class="bi bi-clock-history"></i>
         </div>
         <div class="eh-empty-title">No evaluation history yet</div>
         <div class="eh-empty-desc">Your submitted evaluations will appear here once you complete them during an active evaluation period.</div>

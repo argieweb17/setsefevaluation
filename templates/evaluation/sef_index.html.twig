@@ -84,7 +84,7 @@
 <div class="sf-page">
 
 <div class="sf-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i  data-lucide="house"></i> Dashboard</a>
+    <a href="{{ path('app_dashboard') }}"><i  class="bi bi-house"></i> Dashboard</a>
     <span class="sep">/</span>
     <span class="current">Superior Evaluation (SEF)</span>
 </div>
@@ -99,24 +99,24 @@
 {% if periods|length > 0 %}
 <div class="sf-chips">
     <div class="sf-chip">
-        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);"><i  data-lucide="notebook-text"></i></span>
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);"><i  class="bi bi-journal-text"></i></span>
         <span><span class="sf-chip-val">{{ periods|length }}</span> Period{{ periods|length > 1 ? 's' : '' }}</span>
     </div>
     {% if pendingCount > 0 %}
     <div class="sf-chip">
-        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i  data-lucide="clock-3"></i></span>
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i  class="bi bi-clock"></i></span>
         <span><span class="sf-chip-val">{{ pendingCount }}</span> Pending</span>
     </div>
     {% endif %}
     {% if draftCount > 0 %}
     <div class="sf-chip">
-        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i  data-lucide="pencil"></i></span>
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i  class="bi bi-pencil"></i></span>
         <span><span class="sf-chip-val">{{ draftCount }}</span> Draft{{ draftCount > 1 ? 's' : '' }}</span>
     </div>
     {% endif %}
     {% if submittedCount > 0 %}
     <div class="sf-chip">
-        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i  data-lucide="circle-check"></i></span>
+        <span class="sf-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i  class="bi bi-check-circle-fill"></i></span>
         <span><span class="sf-chip-val">{{ submittedCount }}</span> Submitted</span>
     </div>
     {% endif %}
@@ -125,7 +125,7 @@
 <div class="sf-panel mb-4">
     <div class="sf-panel-head">
         <div class="sf-panel-title">
-            <i  data-lucide="user-check"></i>
+            <i  class="bi bi-person-check"></i>
             Evaluation Periods
             <span class="sf-panel-count">({{ periods|length }})</span>
         </div>
@@ -134,36 +134,36 @@
         {% for item in periods %}
             <div class="sf-item">
                 <div class="sf-item-icon">
-                    <i  data-lucide="id-card"></i>
+                    <i  class="bi bi-person-vcard"></i>
                 </div>
                 <div class="sf-item-body">
                     <div class="sf-item-top">
                         <span class="sf-item-label">SEF</span>
                         <span class="sf-item-name">Superior Evaluation</span>
                         {% if item.submitted %}
-                            <span class="sf-badge sf-badge-submitted"><i  data-lucide="circle-check"></i> Submitted</span>
+                            <span class="sf-badge sf-badge-submitted"><i  class="bi bi-check-circle-fill"></i> Submitted</span>
                         {% elseif item.hasDraft %}
-                            <span class="sf-badge sf-badge-draft"><i  data-lucide="pencil"></i> Draft</span>
+                            <span class="sf-badge sf-badge-draft"><i  class="bi bi-pencil"></i> Draft</span>
                         {% else %}
-                            <span class="sf-badge sf-badge-pending"><i  data-lucide="clock-3"></i> Pending</span>
+                            <span class="sf-badge sf-badge-pending"><i  class="bi bi-clock"></i> Pending</span>
                         {% endif %}
                     </div>
                     <div class="sf-item-meta">
-                        <span><i  data-lucide="calendar-days"></i> {{ item.evaluation.semester ?? '—' }}</span>
-                        <span><i  data-lucide="graduation-cap"></i> {{ item.evaluation.schoolYear ?? '—' }}</span>
-                        <span><i  data-lucide="clock-3"></i> {{ item.evaluation.startDate|date('M d') }} – {{ item.evaluation.endDate|date('M d, Y') }}</span>
+                        <span><i  class="bi bi-calendar3"></i> {{ item.evaluation.semester ?? '—' }}</span>
+                        <span><i  class="bi bi-mortarboard"></i> {{ item.evaluation.schoolYear ?? '—' }}</span>
+                        <span><i  class="bi bi-clock"></i> {{ item.evaluation.startDate|date('M d') }} – {{ item.evaluation.endDate|date('M d, Y') }}</span>
                     </div>
                 </div>
                 <div class="sf-item-actions">
                     {% if item.submitted %}
-                        <span class="sf-action-btn sf-action-done"><i  data-lucide="check-check"></i> Done</span>
+                        <span class="sf-action-btn sf-action-done"><i  class="bi bi-check2-all"></i> Done</span>
                     {% elseif item.hasDraft %}
                         <a href="{{ path('evaluation_sef_form', {evalId: item.evaluation.id}) }}" class="sf-action-btn sf-action-continue">
-                            <i  data-lucide="pencil-line"></i> Continue
+                            <i  class="bi bi-pencil-square"></i> Continue
                         </a>
                     {% else %}
                         <a href="{{ path('evaluation_sef_form', {evalId: item.evaluation.id}) }}" class="sf-action-btn sf-action-start">
-                            <i  data-lucide="pencil-line"></i> Start SEF
+                            <i  class="bi bi-pencil-square"></i> Start SEF
                         </a>
                     {% endif %}
                 </div>
@@ -175,11 +175,11 @@
 {% else %}
 <div class="sf-panel mb-4">
     <div class="sf-panel-head">
-        <div class="sf-panel-title"><i  data-lucide="user-check"></i> Evaluation Periods</div>
+        <div class="sf-panel-title"><i  class="bi bi-person-check"></i> Evaluation Periods</div>
     </div>
     <div class="sf-empty">
         <div class="sf-empty-illustration">
-            <i  data-lucide="clipboard-check"></i>
+            <i  class="bi bi-clipboard-check"></i>
         </div>
         <div class="sf-empty-title">No SEF evaluation periods open</div>
         <div class="sf-empty-desc">Superior evaluation forms will appear here when the administrator opens a SEF period for your department.</div>

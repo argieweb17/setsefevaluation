@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FAQ | Faculty Evaluation System{% endblock %}
+
+{% block body_class %}no-navbar{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+{% include 'home/_fes_styles.html.twig' %}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="fes-page">
+    {% include 'home/_fes_header.html.twig' with {active: 'faq'} %}
+
+    {# ── FAQ Section ── #}
+    <section class="fes-faq" id="faq">
+        <div class="container">
+            <div class="fes-section-title">
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="fes-faq-list">
+                <div class="fes-faq-item active">
+                    <button class="fes-faq-question" onclick="toggleFaq(this)">
+                        <span><a href="#" class="text-decoration-underline">Who can use this system?</a></span>
+                    </button>
+                    <div class="fes-faq-answer">
+                        Students, faculty members, supervisors, peers, and administrators can use the system. Each role has specific access and features.
+                    </div>
+                </div>
+                <div class="fes-faq-item">
+                    <button class="fes-faq-question" onclick="toggleFaq(this)">
+                        <span><a href="#" class="text-decoration-underline">Are my evaluations anonymous?</a></span>
+                    </button>
+                    <div class="fes-faq-answer">
+                        Yes. Your identity is not linked to your responses, ensuring honest and confidential feedback.
+                    </div>
+                </div>
+                <div class="fes-faq-item">
+                    <button class="fes-faq-question" onclick="toggleFaq(this)">
+                        <span><a href="#" class="text-decoration-underline">How do I register?</a></span>
+                    </button>
+                    <div class="fes-faq-answer">
+                        Click Register, fill in your details, and submit. An administrator will verify and approve your account.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% include 'home/_fes_footer.html.twig' %}
+</div>
+
+<script>
+function toggleFaq(btn) {
+    var item = btn.closest('.fes-faq-item');
+    var wasActive = item.classList.contains('active');
+    document.querySelectorAll('.fes-faq-item').forEach(function(el) { el.classList.remove('active'); });
+    if (!wasActive) item.classList.add('active');
+}
+</script>
+{% endblock %}

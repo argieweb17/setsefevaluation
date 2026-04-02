@@ -90,7 +90,7 @@
 <div class="ev-page">
 
 <div class="ev-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i  data-lucide="house"></i> Dashboard</a>
+    <a href="{{ path('app_dashboard') }}"><i  class="bi bi-house"></i> Dashboard</a>
     <span class="sep">/</span>
     <span class="current">Evaluate Teachers</span>
 </div>
@@ -105,23 +105,23 @@
 {% if subjects|length > 0 %}
 <div class="ev-chips">
     <div class="ev-chip">
-        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i  data-lucide="notebook-text"></i></span>
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i  class="bi bi-journal-text"></i></span>
         <span><span class="ev-chip-val">{{ subjects|length }}</span> Total</span>
     </div>
     {% if pendingCount > 0 %}
     <div class="ev-chip">
-        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i  data-lucide="clock-3"></i></span>
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#94a3b8,#64748b);"><i  class="bi bi-clock"></i></span>
         <span><span class="ev-chip-val">{{ pendingCount }}</span> Pending</span>
     </div>
     {% endif %}
     {% if draftCount > 0 %}
     <div class="ev-chip">
-        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i  data-lucide="pencil"></i></span>
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i  class="bi bi-pencil"></i></span>
         <span><span class="ev-chip-val">{{ draftCount }}</span> Drafts</span>
     </div>
     {% endif %}
     <div class="ev-chip">
-        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i  data-lucide="circle-check"></i></span>
+        <span class="ev-chip-icon" style="background:linear-gradient(135deg,#10b981,#059669);"><i  class="bi bi-check-circle-fill"></i></span>
         <span><span class="ev-chip-val">{{ submittedCount }}</span> Submitted</span>
     </div>
 </div>
@@ -129,12 +129,12 @@
 <div class="ev-panel mb-4">
     <div class="ev-panel-head">
         <div class="ev-panel-title">
-            <i  data-lucide="pencil-line"></i>
+            <i  class="bi bi-pencil-square"></i>
             Subjects to Evaluate
             <span class="ev-panel-count">({{ subjects|length }})</span>
         </div>
         <div class="ev-search-wrap">
-            <i  data-lucide="search"></i>
+            <i  class="bi bi-search"></i>
             <input type="search" id="evSearch" placeholder="Search...">
         </div>
     </div>
@@ -150,31 +150,31 @@
                     <div class="ev-item-top">
                         <span class="ev-item-code">{{ item.subject.subjectCode }}</span>
                         {% if item.submitted %}
-                            <span class="ev-badge ev-badge-submitted"><i  data-lucide="circle-check"></i> Submitted</span>
+                            <span class="ev-badge ev-badge-submitted"><i  class="bi bi-check-circle-fill"></i> Submitted</span>
                         {% elseif item.hasDraft %}
-                            <span class="ev-badge ev-badge-draft"><i  data-lucide="pencil"></i> Draft</span>
+                            <span class="ev-badge ev-badge-draft"><i  class="bi bi-pencil"></i> Draft</span>
                         {% else %}
-                            <span class="ev-badge ev-badge-pending"><i  data-lucide="clock-3"></i> Pending</span>
+                            <span class="ev-badge ev-badge-pending"><i  class="bi bi-clock"></i> Pending</span>
                         {% endif %}
                     </div>
                     <div class="ev-item-desc">{{ item.subject.subjectName }}</div>
                     <div class="ev-item-meta">
-                        <span><i  data-lucide="user"></i> {{ item.faculty.fullName }}</span>
-                        {% if item.evaluation.section %}<span><i  data-lucide="grid-3x3"></i> Sec {{ item.evaluation.section|upper }}</span>{% endif %}
-                        {% if item.evaluation.time ?? null %}<span><i  data-lucide="clock-3"></i> {{ item.evaluation.time }}</span>{% endif %}
-                        <span><i  data-lucide="calendar-days"></i> {{ item.evaluation.label }}</span>
+                        <span><i  class="bi bi-person"></i> {{ item.faculty.fullName }}</span>
+                        {% if item.evaluation.section %}<span><i  class="bi bi-grid-3x3-gap"></i> Sec {{ item.evaluation.section|upper }}</span>{% endif %}
+                        {% if item.evaluation.time ?? null %}<span><i  class="bi bi-clock"></i> {{ item.evaluation.time }}</span>{% endif %}
+                        <span><i  class="bi bi-calendar3"></i> {{ item.evaluation.label }}</span>
                     </div>
                 </div>
                 <div class="ev-item-actions">
                     {% if item.submitted %}
-                        <span class="ev-action-btn ev-action-done"><i  data-lucide="check-check"></i> Done</span>
+                        <span class="ev-action-btn ev-action-done"><i  class="bi bi-check2-all"></i> Done</span>
                     {% elseif item.hasDraft %}
                         <a href="{{ path('evaluation_set_form', {evalId: item.evaluation.id, subjectId: item.subject.id}) }}" class="ev-action-btn ev-action-continue">
-                            <i  data-lucide="pencil-line"></i> Continue
+                            <i  class="bi bi-pencil-square"></i> Continue
                         </a>
                     {% else %}
                         <a href="{{ path('evaluation_set_form', {evalId: item.evaluation.id, subjectId: item.subject.id}) }}" class="ev-action-btn ev-action-evaluate">
-                            <i  data-lucide="pencil-line"></i> Evaluate
+                            <i  class="bi bi-pencil-square"></i> Evaluate
                         </a>
                     {% endif %}
                 </div>
@@ -186,11 +186,11 @@
 {% else %}
 <div class="ev-panel mb-4">
     <div class="ev-panel-head">
-        <div class="ev-panel-title"><i  data-lucide="pencil-line"></i> Subjects to Evaluate</div>
+        <div class="ev-panel-title"><i  class="bi bi-pencil-square"></i> Subjects to Evaluate</div>
     </div>
     <div class="ev-empty">
         <div class="ev-empty-illustration">
-            <i  data-lucide="clipboard-check"></i>
+            <i  class="bi bi-clipboard-check"></i>
         </div>
         <div class="ev-empty-title">No evaluations available</div>
         <div class="ev-empty-desc">Evaluations will appear here when an evaluation period is open and you are enrolled in subjects.</div>

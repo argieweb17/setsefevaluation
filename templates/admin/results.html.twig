@@ -526,16 +526,16 @@
         </div>
         {% endif %}
         <div class="rs-search-box">
-            <i  class="rs-search-icon" data-lucide="search"></i>
+            <i  class="bi bi-search rs-search-icon"></i>
             <input type="text" class="rs-search-input" id="facultySearch" placeholder="{{ isSefView ? 'Search superior...' : 'Search faculty...' }}" autocomplete="off">
         </div>
         {% if not isSefView %}
         {% if selectedEvaluation %}
         <button type="button" class="btn btn-sm rs-btn-ghost" onclick="window.print()">
-            <i  class="me-1" data-lucide="printer"></i>Print
+            <i  class="bi bi-printer me-1"></i>Print
         </button>
         <a href="{{ path(prefix ~ '_results_export', {evaluation: selectedEvaluation, department: selectedDepartment}) }}" class="btn btn-sm rs-btn-white">
-            <i  class="me-1" data-lucide="file-down"></i>Export CSV
+            <i  class="bi bi-file-earmark-arrow-down me-1"></i>Export CSV
         </a>
         {% endif %}
         {% endif %}
@@ -548,17 +548,17 @@
         <table class="table table-hover align-middle mb-0 rs-table">
             <thead>
                 <tr>
-                    <th><span class="rs-th-with-sort">{{ isSefView ? 'Superior' : 'Faculty Name' }} <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="rs-th-with-sort">{{ isSefView ? 'Superior' : 'Faculty Name' }} <i  class="bi bi-arrow-down-up"></i></span></th>
                     {% if isSefView %}
-                    <th><span class="rs-th-with-sort">Position <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="rs-th-with-sort">Position <i  class="bi bi-arrow-down-up"></i></span></th>
                     {% endif %}
                     {% if not isSefView %}
-                    <th><span class="rs-th-with-sort">Department <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th><span class="rs-th-with-sort">Department <i  class="bi bi-arrow-down-up"></i></span></th>
                     {% endif %}
-                    <th class="text-center"><span class="rs-th-with-sort">Rating <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Rating <i  class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:100px">Progress</th>
-                    <th class="text-center"><span class="rs-th-with-sort">{{ isSefView ? 'Personnel Evaluated' : 'Evaluators' }} <i  data-lucide="arrow-up-down"></i></span></th>
-                    <th class="text-center"><span class="rs-th-with-sort">Performance <i  data-lucide="arrow-up-down"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">{{ isSefView ? 'Personnel Evaluated' : 'Evaluators' }} <i  class="bi bi-arrow-down-up"></i></span></th>
+                    <th class="text-center"><span class="rs-th-with-sort">Performance <i  class="bi bi-arrow-down-up"></i></span></th>
                     <th class="text-center" style="width:60px">Actions</th>
                 </tr>
             </thead>
@@ -593,7 +593,7 @@
                     {% if not isSefView %}
                     <td>
                         <span class="rs-dept-tag">
-                            <i  data-lucide="building-2"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
+                            <i  class="bi bi-buildings"></i> {{ r.faculty.department ? r.faculty.department.departmentName : '—' }}
                         </span>
                     </td>
                     {% endif %}
@@ -610,21 +610,21 @@
                     <td class="text-center"><span class="rs-evaluator-num">{{ r.evaluators }}</span></td>
                     <td class="text-center">
                         {% if r.level == 'Always manifested' %}
-                            <span class="rs-perf-badge perf-excellent"><i  data-lucide="star"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-excellent"><i  class="bi bi-star-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Often manifested' %}
-                            <span class="rs-perf-badge perf-verygood"><i  data-lucide="thumbs-up"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-verygood"><i  class="bi bi-hand-thumbs-up-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Sometimes manifested' %}
-                            <span class="rs-perf-badge perf-good"><i  data-lucide="circle-check"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-good"><i  class="bi bi-check-circle-fill"></i> {{ r.level }}</span>
                         {% elseif r.level == 'Seldom manifested' %}
-                            <span class="rs-perf-badge perf-fair"><i  data-lucide="circle-alert"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-fair"><i  class="bi bi-exclamation-circle-fill"></i> {{ r.level }}</span>
                         {% else %}
-                            <span class="rs-perf-badge perf-poor"><i  data-lucide="circle-x"></i> {{ r.level }}</span>
+                            <span class="rs-perf-badge perf-poor"><i  class="bi bi-x-circle-fill"></i> {{ r.level }}</span>
                         {% endif %}
                     </td>
                     <td class="text-center">
                         <div class="d-flex gap-2 justify-content-center">
                             <a href="{{ path(isSefView ? (prefix ~ '_results_superior_faculty_evaluations') : (prefix ~ '_results_faculty_evaluations'), {faculty: r.faculty.id}) }}" class="rs-view-btn" title="View Evaluations">
-                                <i  data-lucide="eye"></i>
+                                <i  class="bi bi-eye"></i>
                             </a>
                         </div>
                     </td>
@@ -632,7 +632,7 @@
                 {% else %}
                 <tr>
                     <td colspan="7" class="text-center py-5">
-                        <div class="rs-empty-icon mx-auto mb-2"><i  data-lucide="inbox"></i></div>
+                        <div class="rs-empty-icon mx-auto mb-2"><i  class="bi bi-inbox"></i></div>
                         <span class="text-muted">No results found for this evaluation period.</span>
                     </td>
                 </tr>
