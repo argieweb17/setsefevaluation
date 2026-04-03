@@ -63,6 +63,10 @@ RUN mkdir -p var/cache var/log var/share
 ENV APP_ENV=prod
 ENV APP_RUNTIME_OPTIONS='{"disable_dotenv":true}'
 ENV APP_SECRET=build-secret-change-in-runtime
+ENV TRUSTED_PROXIES=REMOTE_ADDR
+ENV DEFAULT_URI=http://localhost
+ENV MAILER_DSN=null://null
+ENV MESSENGER_TRANSPORT_DSN=doctrine://default?auto_setup=0
 RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy?serverVersion=8.0.32&charset=utf8mb4" \
     composer run-script post-install-cmd
 
