@@ -12,7 +12,9 @@ class ApiAuthSubscriber implements EventSubscriberInterface
 {
     // Routes that don't require authentication
     private const PUBLIC_ROUTES = [
+        'api_index',
         'api_login',
+        'api_register',
         'api_active_evaluations',
         'active_evaluations',  // Fallback in case class-level prefix doesn't concatenate
     ];
@@ -20,6 +22,7 @@ class ApiAuthSubscriber implements EventSubscriberInterface
     // Role requirements per route name (null = any authenticated user)
     private const ROUTE_ROLES = [
         'api_login'                => null,
+        'api_register'             => null,
         'api_profile'              => null, // any authenticated user
         'api_dashboard'            => null, // any authenticated user
         'api_evaluations'          => ['ROLE_STUDENT', 'ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_ADMIN'],
@@ -62,7 +65,10 @@ class ApiAuthSubscriber implements EventSubscriberInterface
 
         // Public paths that don't require authentication
         $publicPaths = [
+            '/api',
+            '/api/',
             '/api/login',
+            '/api/register',
             '/api/active-evaluations',
         ];
 

@@ -8,7 +8,7 @@
 .fd-actions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;}
 .fd-action-card{display:flex;align-items:center;gap:.85rem;padding:.9rem 1rem;background:#fff;border:1px solid #e8ecf1;border-radius:12px;text-decoration:none;transition:all .2s ease;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .fd-action-card:hover{border-color:#c7d2fe;box-shadow:0 4px 15px rgba(37,99,235,.08);transform:translateY(-2px);}
-.fd-action-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;}
+.fd-action-icon{width:auto;height:auto;border-radius:0;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0;background:transparent;}
 .fd-action-text{display:flex;flex-direction:column;min-width:0;flex:1;}
 .fd-action-title{font-weight:600;font-size:.82rem;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .fd-action-desc{font-size:.7rem;color:#94a3b8;margin-top:1px;}
@@ -213,7 +213,7 @@
 
 <div class="analytics-grid mb-4">
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#EFF6FF;color:#2563EB">
+        <div class="analytics-stat-icon" style="color:#2563EB">
             <i class="bi bi-book-fill"></i>
         </div>
         <div class="analytics-stat-body">
@@ -222,7 +222,7 @@
         </div>
     </div>
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#F0FDF4;color:#16A34A">
+        <div class="analytics-stat-icon" style="color:#16A34A">
             <i class="bi bi-clipboard-check-fill"></i>
         </div>
         <div class="analytics-stat-body">
@@ -231,7 +231,7 @@
         </div>
     </div>
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#FFF7ED;color:#EA580C">
+        <div class="analytics-stat-icon" style="color:#EA580C">
             <i class="bi bi-calendar-event-fill"></i>
         </div>
         <div class="analytics-stat-body">
@@ -240,7 +240,7 @@
         </div>
     </div>
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#FDF4FF;color:#A855F7">
+        <div class="analytics-stat-icon" style="color:#A855F7">
             <i class="bi bi-star-fill"></i>
         </div>
         <div class="analytics-stat-body">
@@ -249,7 +249,7 @@
         </div>
     </div>
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#ECFDF5;color:#059669">
+        <div class="analytics-stat-icon" style="color:#059669">
             <i class="bi bi-people-fill"></i>
         </div>
         <div class="analytics-stat-body">
@@ -258,7 +258,7 @@
         </div>
     </div>
     <div class="analytics-stat-card">
-        <div class="analytics-stat-icon" style="background:#EEF2FF;color:#4F46E5">
+        <div class="analytics-stat-icon" style="color:#4F46E5">
             <i class="bi bi-building"></i>
         </div>
         <div class="analytics-stat-body">
@@ -271,7 +271,7 @@
 {# ═══════ QUICK ACTIONS ═══════ #}
 <div class="fd-actions-grid mb-4">
     <a href="{{ path('faculty_subjects') }}" class="fd-action-card">
-        <div class="fd-action-icon" style="background:#EFF6FF;color:#2563EB"><i class="bi bi-book"></i></div>
+        <div class="fd-action-icon" style="color:#2563EB"><i class="bi bi-book"></i></div>
         <div class="fd-action-text">
             <span class="fd-action-title">Subject Load</span>
             <span class="fd-action-desc">Browse & select subjects</span>
@@ -279,7 +279,7 @@
         <i class="bi bi-chevron-right fd-action-arrow"></i>
     </a>
     <a href="{{ path('faculty_loaded_subjects') }}" class="fd-action-card">
-        <div class="fd-action-icon" style="background:#F0FDF4;color:#16A34A"><i class="bi bi-calendar-week"></i></div>
+        <div class="fd-action-icon" style="color:#16A34A"><i class="bi bi-calendar-week"></i></div>
         <div class="fd-action-text">
             <span class="fd-action-title">Class Schedule</span>
             <span class="fd-action-desc">View weekly timetable</span>
@@ -287,7 +287,7 @@
         <i class="bi bi-chevron-right fd-action-arrow"></i>
     </a>
     <a href="{{ path('faculty_eval_results') }}" class="fd-action-card">
-        <div class="fd-action-icon" style="background:#FDF4FF;color:#A855F7"><i class="bi bi-clipboard-data"></i></div>
+        <div class="fd-action-icon" style="color:#A855F7"><i class="bi bi-clipboard-data"></i></div>
         <div class="fd-action-text">
             <span class="fd-action-title">Evaluation Results</span>
             <span class="fd-action-desc">View student ratings</span>

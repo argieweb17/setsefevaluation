@@ -32,7 +32,7 @@
                                 <li>Faculty can evaluate his/her self and his/her peers</li>
                             </ul>
 
-                            <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex gap-4 flex-wrap fes-hero-cta-row">
                                 <div class="fes-hero-buttons">
                                     <span class="fes-hero-label">* You can now login!</span>
                                     <a href="{{ path('app_login') }}" class="fes-btn-login">
@@ -58,7 +58,7 @@
                                 <li><strong>Role-Based Access</strong>: students, staff, faculty, and supervisors each get the right tools.</li>
                             </ul>
 
-                            <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex gap-4 flex-wrap fes-hero-cta-row">
                                 <div class="fes-hero-buttons">
                                     <span class="fes-hero-label">* Ready to start?</span>
                                     <a href="{{ path('app_register') }}" class="fes-btn-register">
@@ -78,7 +78,7 @@
                                 <li><strong>How do I register?</strong> Click Register, complete your information, and wait for account approval.</li>
                             </ul>
 
-                            <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex gap-4 flex-wrap fes-hero-cta-row">
                                 <div class="fes-hero-buttons">
                                     <span class="fes-hero-label">* Need an account?</span>
                                     <a href="{{ path('app_register') }}" class="fes-btn-register">
@@ -98,7 +98,7 @@
                                 <li><strong>Phone</strong>: (000) 000-0000 (Mon-Fri, 8 AM - 5 PM)</li>
                             </ul>
 
-                            <div class="d-flex gap-4 flex-wrap">
+                            <div class="d-flex gap-4 flex-wrap fes-hero-cta-row">
                                 <div class="fes-hero-buttons">
                                     <span class="fes-hero-label">* Prefer email?</span>
                                     <a href="mailto:support@example.edu.ph" class="fes-btn-login">
@@ -128,28 +128,28 @@
                     <div class="fes-stat-icon">
                         <i class="bi bi-mortarboard"></i>
                     </div>
-                    <div class="fes-stat-number">{{ studentCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-number" data-target="{{ studentCount|default(0) }}">0</div>
                     <div class="fes-stat-label">Students</div>
                 </div>
                 <div class="fes-stat-card">
                     <div class="fes-stat-icon">
                         <i class="bi bi-person-workspace"></i>
                     </div>
-                    <div class="fes-stat-number">{{ facultyCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-number" data-target="{{ facultyCount|default(0) }}">0</div>
                     <div class="fes-stat-label">Faculty</div>
                 </div>
                 <div class="fes-stat-card">
                     <div class="fes-stat-icon">
                         <i class="bi bi-people"></i>
                     </div>
-                    <div class="fes-stat-number">{{ staffCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-number" data-target="{{ staffCount|default(0) }}">0</div>
                     <div class="fes-stat-label">Staff</div>
                 </div>
                 <div class="fes-stat-card">
                     <div class="fes-stat-icon">
                         <i class="bi bi-clipboard-check"></i>
                     </div>
-                    <div class="fes-stat-number">{{ evaluationCount|default(0)|number_format }}</div>
+                    <div class="fes-stat-number" data-target="{{ evaluationCount|default(0) }}">0</div>
                     <div class="fes-stat-label">Evaluations</div>
                 </div>
             </div>
@@ -158,4 +158,87 @@
 
     {% include 'home/_fes_footer.html.twig' %}
 </div>
+
+<script>
+(function() {
+    'use strict';
+
+    function formatNumber(value) {
+        return new Intl.NumberFormat().format(value);
+    }
+
+    function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target') || '0', 10);
+        if (!Number.isFinite(target) || target < 0) {
+            target = 0;
+        }
+
+        var duration = 1200;
+        var startTime = null;
+
+        function tick(timestamp) {
+            if (!startTime) {
+                startTime = timestamp;
+            }
+
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            var current = Math.round(progress * target);
+            el.textContent = formatNumber(current);
+
+            if (progress < 1) {
+                window.requestAnimationFrame(tick);
+            }
+        }
+
+        window.requestAnimationFrame(tick);
+    }
+
+    function initCountUp() {
+        var statsSection = document.getElementById('stats');
+        if (!statsSection) {
+            return;
+        }
+
+        var counters = statsSection.querySelectorAll('.fes-stat-number[data-target]');
+        if (!counters.length) {
+            return;
+        }
+
+        var hasStarted = false;
+        function runCounters() {
+            if (hasStarted) {
+                return;
+            }
+            hasStarted = true;
+            counters.forEach(function(counter, index) {
+                window.setTimeout(function() {
+                    animateCounter(counter);
+                }, index * 120);
+            });
+        }
+
+        if ('IntersectionObserver' in window) {
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        runCounters();
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.35 });
+
+            observer.observe(statsSection);
+            return;
+        }
+
+        runCounters();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCountUp);
+    } else {
+        initCountUp();
+    }
+})();
+</script>
 {% endblock %}

@@ -8,9 +8,9 @@
 /* ──── Header ──── */
 .ev-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
 .ev-header-inner{padding:16px 22px 12px;}
-.ev-header-icon{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:#fff;backdrop-filter:blur(8px);}
-.ev-meta-pill{background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);padding:2px 9px;border-radius:20px;font-weight:500;backdrop-filter:blur(6px);}
-.ev-meta-active{background:rgba(34,197,94,.25);color:#bbf7d0;}
+.ev-header-icon{width:42px;height:42px;background:transparent;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;color:#fff;backdrop-filter:none;}
+.ev-meta-pill{background:transparent;color:rgba(255,255,255,.85);padding:0;border-radius:0;font-weight:500;backdrop-filter:none;}
+.ev-meta-active{background:transparent;color:#bbf7d0;}
 
 /* ──── Stats Row ──── */
 .ev-stats-row{display:flex;gap:0;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1);flex-wrap:wrap;}
@@ -52,10 +52,10 @@
 .ev-row-expired{opacity:.85;}
 
 /* ──── Type Badge ──── */
-.ev-type-badge{padding:3px 10px;border-radius:6px;font-size:.72rem;font-weight:700;letter-spacing:.5px;}
-.ev-type-set{background:#dbeafe;color:#1d4ed8;}
-.ev-type-sef{background:#fef3c7;color:#92400e;}
-.ev-type-superior{background:#ede9fe;color:#6d28d9;}
+.ev-type-badge{padding:0;border-radius:0;font-size:.72rem;font-weight:700;letter-spacing:.5px;}
+.ev-type-set{background:transparent;color:#1d4ed8;}
+.ev-type-sef{background:transparent;color:#92400e;}
+.ev-type-superior{background:transparent;color:#6d28d9;}
 
 /* ──── Cell Styles ──── */
 .ev-cell-period strong{font-size:.82rem;color:#1e293b;}
@@ -64,11 +64,11 @@
 .ev-cell-schedule small{font-size:.72rem;color:#64748b;}
 
 /* ──── Status Pill ──── */
-.ev-status-pill{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:20px;}
-.ev-status-active{background:#dcfce7;color:#166534;}
-.ev-status-pending{background:#fef3c7;color:#92400e;}
-.ev-status-expired{background:#fee2e2;color:#991b1b;}
-.ev-status-closed{background:#f1f5f9;color:#64748b;}
+.ev-status-pill{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;padding:0;border-radius:0;}
+.ev-status-active{background:transparent;color:#166534;}
+.ev-status-pending{background:transparent;color:#92400e;}
+.ev-status-expired{background:transparent;color:#991b1b;}
+.ev-status-closed{background:transparent;color:#64748b;}
 .ev-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 .ev-dot-success{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,.4);}
 .ev-dot-warning{background:#f59e0b;}
@@ -80,13 +80,13 @@
 .ev-mini-progress-fill{height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:3px;}
 
 /* ──── Badges ──── */
-.ev-badge{padding:2px 8px;border-radius:6px;font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;}
-.ev-badge-primary{background:#dbeafe;color:#1e40af;}
-.ev-badge-success{background:#dcfce7;color:#166534;}
-.ev-badge-info{background:#e0f2fe;color:#0369a1;}
-.ev-badge-secondary{background:#f1f5f9;color:#475569;}
-.ev-badge-dark{background:#e2e8f0;color:#1e293b;}
-.ev-badge-muted{background:#f1f5f9;color:#94a3b8;}
+.ev-badge{padding:0;border-radius:0;font-size:.7rem;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;}
+.ev-badge-primary{background:transparent;color:#1e40af;}
+.ev-badge-success{background:transparent;color:#166534;}
+.ev-badge-info{background:transparent;color:#0369a1;}
+.ev-badge-secondary{background:transparent;color:#475569;}
+.ev-badge-dark{background:transparent;color:#1e293b;}
+.ev-badge-muted{background:transparent;color:#94a3b8;}
 .ev-mini-badge{padding:2px 6px;border-radius:10px;font-size:.65rem;font-weight:600;}
 .ev-mini-success{background:#dcfce7;color:#166534;}
 .ev-mini-warning{background:#fef3c7;color:#92400e;}
@@ -94,21 +94,21 @@
 
 /* ──── Actions ──── */
 .ev-actions-cell{display:flex;gap:3px;flex-wrap:nowrap;}
-.ev-action-btn{width:28px;height:28px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.75rem;color:#64748b;text-decoration:none;}
+.ev-action-btn{width:28px;height:28px;border:none;border-radius:0;background:transparent;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:.75rem;color:#64748b;text-decoration:none;}
 .ev-action-btn:hover{transform:scale(1.08);}
-.ev-action-edit:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
-.ev-action-success:hover{background:#dcfce7;color:#16a34a;border-color:#86efac;}
-.ev-action-warning:hover{background:#fef3c7;color:#d97706;border-color:#fcd34d;}
-.ev-action-danger:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
-.ev-action-delete:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.ev-action-edit:hover{background:transparent;color:#1d4ed8;}
+.ev-action-success:hover{background:transparent;color:#16a34a;}
+.ev-action-warning:hover{background:transparent;color:#d97706;}
+.ev-action-danger:hover{background:transparent;color:#dc2626;}
+.ev-action-delete:hover{background:transparent;color:#dc2626;}
 .ev-action-reopen{color:#2563EB;}
-.ev-action-reopen:hover{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd;}
+.ev-action-reopen:hover{background:transparent;color:#1d4ed8;}
 .ev-action-view{color:#7c3aed;}
-.ev-action-view:hover{background:#f3e8ff;color:#6d28d9;border-color:#c4b5fd;}
+.ev-action-view:hover{background:transparent;color:#6d28d9;}
 .ev-action-qr{color:#0d9488;}
-.ev-action-qr:hover{background:#ccfbf1;color:#0f766e;border-color:#5eead4;}
+.ev-action-qr:hover{background:transparent;color:#0f766e;}
 .ev-action-expand{color:#1d4ed8;}
-.ev-action-expand:hover{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+.ev-action-expand:hover{background:transparent;color:#1e40af;}
 
 .ev-detail-row td{background:#f8fbff;border-top:0;}
 .ev-detail-box{border:1px solid #dbeafe;border-radius:10px;overflow:hidden;background:#fff;}

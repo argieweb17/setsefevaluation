@@ -8,8 +8,8 @@
 /* Header Card (system blue-green gradient) */
 .cm-header{border-radius:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(30,58,138,.95),rgba(30,64,175,.9) 50%,rgba(5,150,105,.85) 100%);box-shadow:0 4px 24px rgba(26,86,219,.15);margin-bottom:16px;}
 .cm-header-inner{padding:22px 26px 18px;}
-.cm-header-icon{width:50px;height:50px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
-.cm-meta-pill{display:inline-flex;align-items:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);padding:2px 10px;border-radius:20px;font-weight:500;backdrop-filter:blur(4px);}
+.cm-header-icon{width:auto;height:auto;border-radius:0;background:transparent;backdrop-filter:none;display:inline-flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;}
+.cm-meta-pill{display:inline-flex;align-items:center;background:transparent;color:rgba(255,255,255,.85);padding:0;border-radius:0;font-weight:500;backdrop-filter:none;}
 .cm-stats-row{display:flex;gap:0;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.12);}
 .cm-stat{flex:1;text-align:center;}
 .cm-stat-val{display:block;font-size:1.15rem;font-weight:700;color:#fff;line-height:1.2;}
@@ -44,24 +44,32 @@
 .cm-cd-dept-row{transition:background .15s;}
 .cm-cd-dept-row:hover{background:#f0f4ff;}
 .cm-cd-dept-row.cm-cd-hidden{display:none;}
-.cm-cd-college-icon{width:32px;height:32px;min-width:32px;border-radius:8px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#1a56db;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
-.cm-cd-dept-icon{width:32px;height:32px;min-width:32px;border-radius:8px;background:#ecfdf5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.cm-cd-college-icon{width:auto;height:auto;min-width:0;border-radius:0;background:transparent;color:#1a56db;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.cm-cd-dept-icon{width:auto;height:auto;min-width:0;border-radius:0;background:transparent;color:#059669;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
 .cm-cd-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;padding:2px 8px;border-radius:20px;font-size:.75rem;font-weight:700;}
 .cm-cd-count-primary{background:#eff6ff;color:#1a56db;}
 .cm-cd-count-secondary{background:#f1f5f9;color:#475569;}
-.cm-cd-action-btn{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;font-size:.78rem;cursor:pointer;transition:all .15s;}
-.cm-cd-action-view{background:#eff6ff;color:#1a56db;border-color:#dbeafe;}
-.cm-cd-action-view:hover{background:#1a56db;color:#fff;}
-.cm-cd-action-edit{background:#f8fafc;color:#64748b;border-color:#e2e8f0;}
-.cm-cd-action-edit:hover{background:#475569;color:#fff;}
-.cm-cd-action-delete{background:#fef2f2;color:#dc2626;border-color:#fecaca;}
-.cm-cd-action-delete:hover{background:#dc2626;color:#fff;}
+.cm-cd-action-btn{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:0;border:none;font-size:.78rem;cursor:pointer;transition:all .15s;background:transparent;box-shadow:none;}
+.cm-cd-action-view{background:transparent;color:#1a56db;border-color:transparent;}
+.cm-cd-action-view:hover{background:transparent;color:#1e40af;}
+.cm-cd-action-edit{background:transparent;color:#64748b;border-color:transparent;}
+.cm-cd-action-edit:hover{background:transparent;color:#475569;}
+.cm-cd-action-delete{background:transparent;color:#dc2626;border-color:transparent;}
+.cm-cd-action-delete:hover{background:transparent;color:#b91c1c;}
 
 /* Curriculum list items */
-.cm-cur-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.cm-cur-icon{width:auto;height:auto;border-radius:0;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;color:#2563eb;background:transparent;}
+.cm-status-active{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:600;color:#16a34a;background:transparent;padding:0;border-radius:0;}
 .cm-curriculum-item{border-radius:10px;transition:box-shadow .2s ease;}
 .cm-curriculum-item:hover{box-shadow:0 4px 16px rgba(0,0,0,.06)!important;}
-.cm-action-btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:.85rem;}
+.cm-action-btn{width:32px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:0;font-size:.85rem;border:none!important;background:transparent!important;box-shadow:none!important;}
+.cm-action-btn.btn-outline-primary{color:#2563eb!important;}
+.cm-action-btn.btn-outline-secondary{color:#64748b!important;}
+.cm-action-btn.btn-outline-danger{color:#ef4444!important;}
+.cm-action-btn:hover{background:transparent!important;transform:translateY(-1px);}
+.cm-action-btn.btn-outline-primary:hover{color:#1d4ed8!important;}
+.cm-action-btn.btn-outline-secondary:hover{color:#475569!important;}
+.cm-action-btn.btn-outline-danger:hover{color:#dc2626!important;}
 
 /* Navigation Bar (Year Level Tabs) */
 .cm-nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:6px 8px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
@@ -368,13 +376,13 @@
         <div class="card border-0 shadow-sm mb-3 cm-curriculum-item" data-name="{{ c.curriculumName|lower }}">
             <div class="card-body py-3">
                 <div class="d-flex align-items-center">
-                    <div class="cm-cur-icon bg-primary bg-opacity-10 text-primary me-3">
+                    <div class="cm-cur-icon text-primary me-3">
                         <i  class="bi bi-bookmark-check"></i>
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                             <h6 class="fw-bold mb-0">{{ c.curriculumName }}</h6>
-                            <span class="badge bg-success bg-opacity-10 text-success border-0 small">Active</span>
+                            <span class="cm-status-active"><i class="bi bi-check-circle-fill"></i>Active</span>
                         </div>
                         <div class="text-muted small">
                             {% if c.curriculumYear %}Version: {{ c.curriculumYear }}{% endif %}
@@ -594,15 +602,15 @@
                                     <td class="text-center fw-semibold">{{ s.units ?? '—' }}</td>
                                     <td class="text-end">
                                         <div class="d-flex gap-1 justify-content-end">
-                                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1" style="font-size:.72rem;" title="View" onclick="viewSubjectDetail({{ s.id }})">
+                                            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-1 cm-action-btn" style="font-size:.72rem;" title="View" onclick="viewSubjectDetail({{ s.id }})">
                                                 <i  class="bi bi-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" style="font-size:.72rem;" title="Edit" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ s.id }}">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1 cm-action-btn" style="font-size:.72rem;" title="Edit" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ s.id }}">
                                                 <i  class="bi bi-pencil"></i>
                                             </button>
                                             <form method="post" action="{{ path(prefix ~ '_curriculum_remove_subject', {id: c.id, subjectId: s.id}) }}" class="d-inline" onsubmit="return confirm('Remove this subject from the curriculum?')">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('remove_subject_curriculum' ~ c.id) }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1" style="font-size:.72rem;" title="Remove">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1 cm-action-btn" style="font-size:.72rem;" title="Remove">
                                                     <i  class="bi bi-x-lg"></i>
                                                 </button>
                                             </form>

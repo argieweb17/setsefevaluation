@@ -26,7 +26,7 @@
 .rg-brand-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg,#1E3A8A 0%,#1E40AF 40%,#059669 100%);
+    background: #1E3A8A;
     z-index: 0;
 }
 .rg-brand-bg::before {
@@ -62,16 +62,16 @@
     justify-content: center;
 }
 .rg-brand-logo-wrap {
-    width: 90px;
-    height: 90px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 1.25rem;
+    width: 60px;
+    height: 60px;
+    background: transparent;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
     margin-bottom: 1.5rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    box-shadow: none;
 }
 .rg-brand-logo {
     width: 60px;
@@ -105,7 +105,7 @@
     width: 40px;
     height: 40px;
     border-radius: 0.625rem;
-    background: rgba(255,255,255,0.15);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -170,7 +170,7 @@
     opacity: 1;
 }
 .rg-step.completed .rg-step-num {
-    background: #059669;
+    background: #1E3A8A;
     color: #fff;
 }
 .rg-step-num {
@@ -187,9 +187,9 @@
     transition: all 0.3s;
 }
 .rg-step.active .rg-step-num {
-    background: linear-gradient(135deg,#1E40AF,#059669);
+    background: #1E3A8A;
     color: #fff;
-    box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.35);
 }
 .rg-step span {
     font-size: 0.82rem;
@@ -210,7 +210,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg,#1E40AF,#059669);
+    background: #1E3A8A;
     animation: rgLineExpand 0.4s ease forwards;
 }
 @keyframes rgLineExpand {
@@ -265,6 +265,7 @@
     width: 48px;
     height: 48px;
     border-radius: 0.75rem;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -276,19 +277,19 @@
     transform: scale(1.08);
 }
 .rg-role-student {
-    background: linear-gradient(135deg,#DBEAFE,#EFF6FF);
+    background: transparent;
     color: #1E40AF;
 }
 .rg-role-faculty {
-    background: linear-gradient(135deg,#D1FAE5,#ECFDF5);
+    background: transparent;
     color: #059669;
 }
 .rg-role-staff {
-    background: linear-gradient(135deg,#FEF3C7,#FFFBEB);
+    background: transparent;
     color: #D97706;
 }
 .rg-role-superior {
-    background: linear-gradient(135deg,#EDE9FE,#F5F3FF);
+    background: transparent;
     color: #7C3AED;
 }
 .rg-role-info {
@@ -447,7 +448,7 @@
     gap: 0.65rem;
     padding: 0.85rem 1rem;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg, #FEF2F2, #FFF1F2);
+    background: #1E3A8A;
     border: 1px solid #FECACA;
     margin-bottom: 1rem;
     font-size: 0.82rem;
@@ -608,7 +609,7 @@
     color: transparent;
 }
 .rg-checkbox-box.checked {
-    background: linear-gradient(135deg, #1E40AF, #059669);
+    background: #1E3A8A;
     border-color: #1E40AF;
     color: #fff;
     font-size: 0.75rem;
@@ -642,26 +643,28 @@
     gap: 0.75rem;
     padding: 0.85rem 1rem;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg,#EFF6FF,#F0FDF4);
-    border: 1px solid #BFDBFE;
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
     margin-bottom: 1.25rem;
     font-size: 0.82rem;
-    color: #1E40AF;
+    color: #1E3A8A;
 }
 .rg-notice i {
     font-size: 1.1rem;
     margin-top: 0.1rem;
     flex-shrink: 0;
+    color: #1E3A8A;
 }
 .rg-notice strong {
     display: block;
     font-size: 0.82rem;
     margin-bottom: 0.15rem;
+    color: #1E3A8A;
 }
 .rg-notice p {
     margin: 0;
     font-size: 0.78rem;
-    color: #475569;
+    color: #334155;
     line-height: 1.4;
 }
 
@@ -671,7 +674,7 @@
     padding: 0.8rem;
     border: none;
     border-radius: 0.75rem;
-    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    background: #1E3A8A;
     color: #fff;
     font-size: 1rem;
     font-weight: 700;
@@ -685,7 +688,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, transparent,rgba(255,255,255,0.1),transparent);
+    background: #1E3A8A;
     transform: translateX(-100%);
     transition: transform 0.5s;
 }
@@ -701,7 +704,7 @@
 }
 .rg-submit-btn.rg-btn-loading {
     pointer-events: none;
-    background: linear-gradient(135deg,#1a3279,#1a38a0 50%,#047857);
+    background: #1E3A8A;
     box-shadow: 0 4px 15px rgba(30,64,175,0.35);
 }
 .rg-submit-btn.rg-btn-loading::before {
@@ -761,7 +764,7 @@
     left: 0;
     height: 3px;
     width: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+    background: #1E3A8A;
     border-radius: 0 0 0.75rem 0.75rem;
     transition: width 0.3s;
 }
@@ -808,14 +811,14 @@
     border-radius: 1.25rem;
     overflow: hidden;
     box-shadow: 0 25px 60px rgba(0,0,0,0.2);
-    background: linear-gradient(180deg, #f0fdf4 0%, #fff 40%);
+    background: #1E3A8A;
 }
 .rg-modal-btn {
     display: inline-flex;
     align-items: center;
     padding: 0.6rem 2rem;
     border-radius: 0.625rem;
-    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    background: #1E3A8A;
     color: #fff;
     font-weight: 700;
     font-size: 0.9rem;
@@ -864,7 +867,7 @@
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    background: #1E3A8A;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -967,7 +970,7 @@
     padding: 0.55rem 1.5rem;
     border: none;
     border-radius: 0.625rem;
-    background: linear-gradient(135deg,#1E3A8A,#1E40AF 50%,#059669);
+    background: #1E3A8A;
     color: #fff;
     font-size: 0.88rem;
     font-weight: 700;
@@ -1191,7 +1194,7 @@ a.rg-contact-item:hover {
         display: none;
     }
     .rg-page {
-        background: linear-gradient(135deg,rgba(30,58,138,0.92),rgba(30,64,175,0.88) 40%,rgba(5,150,105,0.82) 100%);
+        background: #1E3A8A;
         justify-content: center;
         align-items: center;
         min-height: 100vh;
@@ -2069,10 +2072,10 @@ a.rg-contact-item:hover {
     var stepsEl      = document.getElementById('rgSteps');
 
     var roleConfig = {
-        student: { label: 'Student', icon: 'bi-mortarboard-fill', color: '#1E40AF', bg: 'linear-gradient(135deg,#1E40AF,#3B82F6)' },
-        faculty: { label: 'Faculty', icon: 'bi-person-workspace', color: '#059669', bg: 'linear-gradient(135deg,#059669,#10B981)' },
-        staff:    { label: 'Staff',    icon: 'bi-clipboard2-check-fill', color: '#D97706', bg: 'linear-gradient(135deg,#D97706,#F59E0B)' },
-        superior: { label: 'Superior', icon: 'bi-star-fill',             color: '#7C3AED', bg: 'linear-gradient(135deg,#7C3AED,#8B5CF6)' }
+        student: { label: 'Student', icon: 'bi-mortarboard-fill', color: '#1E40AF', bg: '#1E3A8A' },
+        faculty: { label: 'Faculty', icon: 'bi-person-workspace', color: '#059669', bg: '#1E3A8A' },
+        staff:    { label: 'Staff',    icon: 'bi-clipboard2-check-fill', color: '#D97706', bg: '#1E3A8A' },
+        superior: { label: 'Superior', icon: 'bi-star-fill',             color: '#7C3AED', bg: '#1E3A8A' }
     };
 
     /* ── Step progress helpers ── */

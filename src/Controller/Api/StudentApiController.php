@@ -14,41 +14,25 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api', name: 'api_')]
 class StudentApiController extends AbstractController
 {
-    #[Route('/login', name: 'login', methods: ['POST'])]
-    public function login(
-        Request $request,
-        UserRepository $userRepo,
-        UserPasswordHasherInterface $hasher
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-        $email = $data['email'] ?? '';
-        $password = $data['password'] ?? '';
-
-        if (!$email || !$password) {
-            return $this->json(['error' => 'Email and password are required.'], 400);
-        }
-
-        $user = $userRepo->findOneBy(['email' => $email]);
-
-        if (!$user || !$hasher->isPasswordValid($user, $password)) {
-            return $this->json(['error' => 'Invalid credentials.'], 401);
-        }
-
-        if ($user->getAccountStatus() !== 'active') {
-            return $this->json(['error' => 'Account is not active.'], 403);
-        }
-
-        $token = hash('sha256', $user->getId() . $_ENV['APP_SECRET'] . date('Y-m-d'));
-
+    #[Route('', name: 'index', methods: ['GET'])]
+    public function index(): JsonResponse
+    {
         return $this->json([
-            'token' => $token,
-            'user' => $this->serializeUser($user),
+            'name' => 'SET-SEF Evaluation API',
+            'publicEndpoints' => [
+                'GET /api',
+                'GET /api/login',
+                'POST /api/login',
+                'GET /api/register',
+                'POST /api/register',
+                'GET /api/active-evaluations',
+            ],
+            'auth' => 'Use Authorization: Bearer <token> for protected /api endpoints.',
         ]);
     }
 
@@ -296,4 +280,5 @@ class StudentApiController extends AbstractController
             'yearLevel' => $eval->getYearLevel(),
         ];
     }
+
 }
