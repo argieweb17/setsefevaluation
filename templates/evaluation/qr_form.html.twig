@@ -82,7 +82,8 @@
     <p class="text-muted">Thank you for your feedback. Your evaluation has been recorded.</p>
     <div class="mt-3 p-3 rounded-3 d-inline-block" style="background:#f0fdf4;border:1px solid #bbf7d0;">
         <small class="text-muted">Faculty: <strong>{{ faculty.fullName }}</strong></small><br>
-        <small class="text-muted">Subject: <strong>{{ subject.subjectCode }} — {{ subject.subjectName }}</strong></small>
+        <small class="text-muted">Subject: <strong>{{ subject.subjectCode }}</strong></small>
+        <br><small class="text-muted">Description: <strong>{{ subject.subjectName }}</strong></small>
         <br><small class="text-muted">Section: <strong>{{ section|default('N/A') }}</strong></small>
         <br><small class="text-muted">Schedule: <strong>{{ schedule|default('N/A') }}</strong></small>
     </div>
@@ -102,59 +103,102 @@
 
 <form method="post" id="qrEvalForm">
 
-{# ── Student Identification ── #}
+{# ── Student ID Gate ── #}
 <div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
-    <div class="card-header py-3" style="background:linear-gradient(135deg,#0f172a,#1e40af);color:#fff;">
+    <div class="card-header py-3" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;">
         <div class="d-flex align-items-center gap-2">
-            <i class="bi bi-person-badge-fill" style="font-size:1.2rem;"></i>
+            <i class="bi bi-person-vcard-fill" style="font-size:1.2rem;"></i>
             <div>
-                <h6 class="mb-0 fw-bold">Student Verification</h6>
-                <small class="opacity-75">Enter your Student ID, Full Name, Email, College, Department, and Year Level</small>
+                <h6 class="mb-0 fw-bold">Student ID Verification</h6>
+                <small class="opacity-75">Enter your Student ID first to continue</small>
             </div>
         </div>
     </div>
     <div class="card-body p-4">
-        <div class="row g-3">
-            <div class="col-md-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
                 <label class="form-label fw-semibold" style="font-size:.82rem;">Student ID <span class="text-danger">*</span></label>
-                <input type="text" name="school_id" class="form-control" placeholder="e.g. 2023-1234" value="{{ formValues.school_id|default('') }}" required>
+                <input type="text" name="school_id" class="form-control" placeholder="e.g. 2023-1234"
+                       value="{{ qrVerified and verifiedStudent ? verifiedStudent.schoolId : formValues.school_id|default('') }}"
+                       {{ qrVerified ? 'readonly' : '' }} required>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">Full Name <span class="text-danger">*</span></label>
-                <input type="text" name="full_name" class="form-control" placeholder="First Name Last Name" value="{{ formValues.full_name|default('') }}" required>
+                {% if not qrVerified %}
+                <button type="submit" name="_action" value="verify_student" class="btn btn-norsu w-100">
+                    <i class="bi bi-check2-circle me-1"></i> Verify
+                </button>
+                {% else %}
+                <div class="alert alert-success mb-0 py-2 text-center" style="font-size:.85rem;">
+                    <i class="bi bi-patch-check-fill me-1"></i> Verified: {{ verifiedStudent.fullName }}
+                </div>
+                {% endif %}
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">Email <span class="text-danger">*</span></label>
-                <input type="email" name="email" class="form-control" placeholder="you@example.com" value="{{ formValues.email|default('') }}" required>
+        </div>
+
+        {% if qrVerified and (qrLoadslipRows|default([])) is not empty %}
+        <div class="mt-3 p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
+            <div class="small fw-semibold text-primary mb-2">
+                <i class="bi bi-journal-check me-1"></i> Matched Loadslip Row
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">College <span class="text-danger">*</span></label>
-                <select name="college_name" id="qrCollegeSelect" class="form-select" required>
-                    <option value="">Select College</option>
-                    {% for college in colleges %}
-                        <option value="{{ college }}" {{ formValues.college_name|default('') == college ? 'selected' : '' }}>{{ college }}</option>
-                    {% endfor %}
-                </select>
+            {% for row in qrLoadslipRows|slice(0, 3) %}
+                {% set displaySection = row.section|default('') %}
+                {% if displaySection == '' and section|default('') != '' %}
+                    {% set displaySection = section %}
+                {% endif %}
+            <div class="small mb-2" style="color:#334155;">
+                <strong>Subject:</strong> {{ row.code|default('N/A') }}
+                    &nbsp; | &nbsp;<strong>Section:</strong> {{ displaySection != '' ? displaySection : 'N/A' }}
+                {% if row.schedule|default('') != '' %}&nbsp; | &nbsp;<strong>Schedule:</strong> {{ row.schedule }}{% endif %}
+                {% if row.units|default('') != '' %}&nbsp; | &nbsp;<strong>Units:</strong> {{ row.units }}{% endif %}
+                {% if row.description|default('') != '' %}<br><strong>Description:</strong> {{ row.description }}{% endif %}
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">Department <span class="text-danger">*</span></label>
-                <select name="department_id" id="qrDepartmentSelect" class="form-select" required>
-                    <option value="">Select Department</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept.id }}" data-college="{{ dept.collegeName ?? '' }}" {{ formValues.department_id|default('') == dept.id ? 'selected' : '' }}>
-                            {{ dept.departmentName }}
-                        </option>
-                    {% endfor %}
-                </select>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if qrVerified %}
+
+<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
+    <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
+        <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
+    </div>
+    <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
+        <span style="display:inline-block;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#1e3a8a;border-radius:20px;padding:6px 20px;font-size:.85rem;font-weight:600;">Student Evaluation for Teacher (SET)</span>
+    </div>
+    <div style="text-align:center;padding:12px 32px 14px;background:#fff;">
+        <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(NBC 461 Evaluation Instrument for Teaching Effectiveness)</div>
+        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">It's time to evaluate your teacher. Please answer honestly based on your experience. All responses are confidential, and your identity will not be shared with faculty members. Your feedback is valuable in improving the quality of teaching.</p>
+    </div>
+</div>
+
+{# ── Data Privacy Disclaimer ── #}
+<div class="card border-0 shadow-sm mb-3" style="border-radius:12px;overflow:hidden;">
+    <div class="card-header py-3" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-lock-fill" style="font-size:1.15rem;"></i>
+            <div>
+                <h6 class="mb-0 fw-bold">Data Privacy Disclaimer</h6>
+                <small class="opacity-75">Please read before proceeding</small>
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-semibold" style="font-size:.82rem;">Year Level <span class="text-danger">*</span></label>
-                <select name="year_level" class="form-select" required>
-                    <option value="">Select Year Level</option>
-                    {% for yl in yearLevelOptions %}
-                        <option value="{{ yl }}" {{ formValues.year_level|default('') == yl ? 'selected' : '' }}>{{ yl }}</option>
-                    {% endfor %}
-                </select>
+        </div>
+    </div>
+    <div class="card-body p-4" style="font-size:.95rem;line-height:1.7;color:#1f2937;">
+        <div class="mb-0">{{ privacyDisclaimerHtml|raw }}</div>
+
+        <hr class="my-4">
+        <div class="mb-2 fw-semibold" style="font-size:1rem;">
+            Do you agree to the Data Privacy Disclaimer? <span class="text-danger">*</span>
+        </div>
+        <div class="d-flex flex-wrap gap-4 align-items-center">
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" name="privacy_consent" id="privacyAgree" value="agree" {{ formValues.privacy_consent|default('') == 'agree' ? 'checked' : '' }}>
+                <label class="form-check-label" for="privacyAgree">Agree</label>
+            </div>
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="radio" name="privacy_consent" id="privacyDisagree" value="disagree" {{ formValues.privacy_consent|default('') == 'disagree' ? 'checked' : '' }}>
+                <label class="form-check-label" for="privacyDisagree">Disagree</label>
             </div>
         </div>
     </div>
@@ -162,21 +206,11 @@
 
 {# ── Evaluation Form Paper ── #}
 <div class="eval-form-paper">
-    <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
-        <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
-    </div>
-    <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
-        <span style="display:inline-block;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#1e3a8a;border-radius:20px;padding:6px 20px;font-size:.85rem;font-weight:600;">Student Evaluation for Teacher (SET)</span>
-    </div>
-    <div style="text-align:center;padding:12px 32px 14px;background:#fff;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(NBC 461 Evaluation Instrument for Teaching Effectiveness)</div>
-        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">It's time to evaluate your teacher. Please answer honestly based on your experience. All responses are confidential, and your identity will not be shared with faculty members. Your feedback is valuable in improving the quality of teaching.</p>
-    </div>
-
     {# ── Evaluation Info Bar ── #}
     <div class="eval-info-bar">
         <div><i class="bi bi-person-fill text-primary me-1"></i><strong>Faculty:</strong> {{ faculty.fullName }}</div>
-        <div><i class="bi bi-journal-text text-success me-1"></i><strong>Subject:</strong> {{ subject.subjectCode }} — {{ subject.subjectName }}</div>
+        <div><i class="bi bi-journal-text text-success me-1"></i><strong>Subject:</strong> {{ subject.subjectCode }}</div>
+        <div><i class="bi bi-card-text text-secondary me-1"></i><strong>Description:</strong> {{ subject.subjectName }}</div>
         {% if section %}<div><i class="bi bi-diagram-3 text-info me-1"></i><strong>Section:</strong> {{ section }}</div>{% endif %}
         {% if schedule %}<div><i class="bi bi-calendar-event text-warning me-1"></i><strong>Schedule:</strong> {{ schedule }}</div>{% endif %}
     </div>
@@ -266,6 +300,7 @@
         <i class="bi bi-send me-1"></i>Submit Evaluation
     </button>
 </div>
+{% endif %}
 </form>
 {% endif %}
 
@@ -273,44 +308,23 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var collegeSelect = document.getElementById('qrCollegeSelect');
-    var deptSelect = document.getElementById('qrDepartmentSelect');
-    if (!collegeSelect || !deptSelect) return;
+    var form = document.getElementById('qrEvalForm');
+    if (form) {
+        form.addEventListener('submit', function (event) {
+            var action = (event.submitter && event.submitter.value) ? event.submitter.value : '';
+            if (action !== 'submit') {
+                return;
+            }
 
-    var allOptions = Array.from(deptSelect.querySelectorAll('option')).slice(1).map(function (opt) {
-        return {
-            value: opt.value,
-            text: opt.textContent,
-            college: opt.getAttribute('data-college') || '',
-            selected: opt.selected
-        };
-    });
-
-    function repopulateDepartments() {
-        var selectedCollege = collegeSelect.value;
-        var previousValue = deptSelect.value;
-
-        while (deptSelect.options.length > 1) {
-            deptSelect.remove(1);
-        }
-
-        allOptions.forEach(function (opt) {
-            if (!selectedCollege || opt.college === selectedCollege) {
-                var o = document.createElement('option');
-                o.value = opt.value;
-                o.textContent = opt.text;
-                o.setAttribute('data-college', opt.college);
-                deptSelect.appendChild(o);
+            var consentSelected = form.querySelector('input[name="privacy_consent"]:checked');
+            if (!consentSelected) {
+                event.preventDefault();
+                alert('Please select Agree or Disagree for the Data Privacy Disclaimer before submitting.');
+                var agree = document.getElementById('privacyAgree');
+                if (agree) agree.focus();
             }
         });
-
-        var hasPrevious = Array.from(deptSelect.options).some(function (o) { return o.value === previousValue; });
-        deptSelect.value = hasPrevious ? previousValue : '';
-        deptSelect.disabled = selectedCollege === '';
     }
-
-    repopulateDepartments();
-    collegeSelect.addEventListener('change', repopulateDepartments);
 });
 </script>
 

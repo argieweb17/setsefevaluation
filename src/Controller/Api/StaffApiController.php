@@ -10,37 +10,18 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/reports')]
+#[IsGranted('ROLE_STAFF')]
 class StaffApiController extends AbstractController
 {
-    private function resolveStaffUser(Request $request): User|JsonResponse
-    {
-        $apiUser = $request->attributes->get('_api_user');
-        $user = $apiUser instanceof User ? $apiUser : $this->getUser();
-
-        if (!$user instanceof User) {
-            return $this->json(['error' => 'Authentication required.'], 401);
-        }
-
-        $roles = $user->getRoles();
-        if (
-            !in_array('ROLE_STAFF', $roles, true)
-            && !in_array('ROLE_SUPERIOR', $roles, true)
-            && !in_array('ROLE_ADMIN', $roles, true)
-        ) {
-            return $this->json(['error' => 'Access denied. Insufficient permissions.'], 403);
-        }
-
-        return $user;
-    }
-
     #[Route('/api/profile', name: 'staff_api_profile', methods: ['GET'])]
-    public function profile(Request $request): JsonResponse
+    public function profile(): JsonResponse
     {
-        $user = $this->resolveStaffUser($request);
-        if ($user instanceof JsonResponse) {
-            return $user;
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['error' => 'Unauthorized'], 401);
         }
 
         return $this->json([
@@ -55,15 +36,9 @@ class StaffApiController extends AbstractController
 
     #[Route('/api/summary', name: 'staff_api_summary', methods: ['GET'])]
     public function summary(
-        Request $request,
         AcademicYearRepository $ayRepo,
         SubjectRepository $subjectRepo
     ): JsonResponse {
-        $user = $this->resolveStaffUser($request);
-        if ($user instanceof JsonResponse) {
-            return $user;
-        }
-
         $currentAY = $ayRepo->findCurrent();
 
         return $this->json([
@@ -83,11 +58,6 @@ class StaffApiController extends AbstractController
         AcademicYearRepository $ayRepo,
         SubjectRepository $subjectRepo
     ): JsonResponse {
-        $user = $this->resolveStaffUser($request);
-        if ($user instanceof JsonResponse) {
-            return $user;
-        }
-
         $currentAY = $ayRepo->findCurrent();
         $loads = $fslRepo->findByFacultyAndAcademicYear($id, $currentAY ? $currentAY->getId() : null);
         $strictLoad = $request->query->getBoolean('strictLoad', false);

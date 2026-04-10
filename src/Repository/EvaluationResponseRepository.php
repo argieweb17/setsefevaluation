@@ -466,6 +466,55 @@ class EvaluationResponseRepository extends ServiceEntityRepository
     }
 
     /**
+     * Get unique student responders for CSV export.
+     *
+     * @return array<array{
+     *   schoolId: string|null,
+     *   fullName: string,
+     *   email: string|null,
+     *   yearLevel: string|null,
+     *   departmentName: string|null,
+     *   submittedAt: \DateTimeInterface|string|null,
+     *   avgRating: float|int|string
+     * }>
+     */
+    public function getStudentResponsesForExport(int $evaluationPeriodId, ?int $subjectId = null, ?string $section = null): array
+    {
+        $qb = $this->createQueryBuilder('r')
+            ->select(
+                'u.schoolId as schoolId',
+                "CONCAT(COALESCE(u.firstName, ''), ' ', COALESCE(u.lastName, '')) as fullName",
+                'u.email as email',
+                'u.yearLevel as yearLevel',
+                'd.departmentName as departmentName',
+                'MAX(r.submittedAt) as submittedAt',
+                'AVG(r.rating) as avgRating'
+            )
+            ->join('r.evaluator', 'u')
+            ->leftJoin('u.department', 'd')
+            ->where('r.evaluationPeriod = :epid')
+            ->andWhere('r.isDraft = false')
+            ->setParameter('epid', $evaluationPeriodId)
+            ->groupBy('u.id, u.schoolId, u.firstName, u.lastName, u.email, u.yearLevel, d.departmentName')
+            ->orderBy('u.lastName', 'ASC')
+            ->addOrderBy('u.firstName', 'ASC');
+
+        if ($subjectId !== null) {
+            $qb->andWhere('r.subject = :sid')->setParameter('sid', $subjectId);
+        } else {
+            $qb->andWhere('r.subject IS NULL');
+        }
+
+        if ($section !== null) {
+            $qb->andWhere('r.section = :section')->setParameter('section', $section);
+        } else {
+            $qb->andWhere('r.section IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * Get a student's submitted evaluations grouped by period+faculty+subject.
      * @return array<array{evaluationPeriodId: int, facultyId: int, subjectId: int|null, subjectCode: string|null, subjectName: string|null, facultyName: string, semester: string, schoolYear: string, submittedAt: string, avgRating: float}>
      */

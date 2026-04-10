@@ -54,6 +54,10 @@ class AuthApiController extends AbstractController
                     ?? $source['email']
                     ?? $source['schoolId']
                     ?? $source['school_id']
+                    ?? $source['studentId']
+                    ?? $source['student_id']
+                    ?? $source['studentNumber']
+                    ?? $source['student_number']
                     ?? $source['username']
                     ?? ''
                 ));
@@ -88,7 +92,10 @@ class AuthApiController extends AbstractController
         $token = hash('sha256', $user->getId() . $_ENV['APP_SECRET'] . date('Y-m-d'));
 
         return $this->json([
+            'success' => true,
             'token' => $token,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
             'user' => $this->serializeUser($user),
         ]);
     }
@@ -96,6 +103,7 @@ class AuthApiController extends AbstractController
     private function extractLoginData(Request $request): array
     {
         $data = [];
+        $rawBody = trim($request->getContent());
 
         try {
             $jsonData = $request->toArray();
@@ -106,10 +114,16 @@ class AuthApiController extends AbstractController
             $data = [];
         }
 
+        if ($data === [] && $rawBody !== '') {
+            $decodedRawJson = json_decode($rawBody, true);
+            if (is_array($decodedRawJson) && $decodedRawJson !== []) {
+                $data = $decodedRawJson;
+            }
+        }
+
         $data = array_merge($data, $request->request->all(), $request->query->all());
 
         if ($data === []) {
-            $rawBody = trim($request->getContent());
             if ($rawBody !== '') {
                 parse_str($rawBody, $parsedBody);
                 if (is_array($parsedBody) && $parsedBody !== []) {
@@ -224,7 +238,7 @@ class AuthApiController extends AbstractController
             'faculty' => ['ROLE_FACULTY'],
             'staff' => ['ROLE_STAFF'],
             'superior' => ['ROLE_FACULTY', 'ROLE_SUPERIOR'],
-            'student' => [],
+            'student' => ['ROLE_STUDENT'],
         ];
 
         $user = new User();

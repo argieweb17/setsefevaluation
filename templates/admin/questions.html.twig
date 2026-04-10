@@ -19,6 +19,16 @@
 .qq-val-success{color:#34d399!important;}
 .qq-val-warn{color:#fbbf24!important;}
 
+/* ─── Privacy Disclaimer ─── */
+.qq-disclaimer{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.03);margin-bottom:16px;}
+.qq-disclaimer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.2px;}
+.qq-disclaimer-body{padding:12px 14px;font-size:.8rem;line-height:1.6;color:#475569;background:#f8fafc;}
+.qq-disclaimer-body p{margin:0 0 8px 0;}
+.qq-disclaimer-body p:last-child{margin-bottom:0;}
+.qq-disclaimer-sub{display:block;font-size:.75rem;font-weight:500;opacity:.85;margin-top:1px;}
+.qq-disclaimer-edit{font-size:.72rem;font-weight:600;border-color:rgba(255,255,255,.45)!important;color:#fff!important;}
+.qq-disclaimer-edit:hover{background:rgba(255,255,255,.18)!important;border-color:rgba(255,255,255,.7)!important;}
+
 /* ─── Toolbar ─── */
 .qq-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .qq-search-wrap{position:relative;flex:1;min-width:200px;max-width:360px;}
@@ -214,6 +224,24 @@
                 <span class="qq-stat-lbl">Required</span>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="qq-disclaimer">
+    <div class="qq-disclaimer-head">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-lock"></i>
+            <div>
+                <div>Data Privacy Disclaimer</div>
+                <span class="qq-disclaimer-sub">Please read before proceeding</span>
+            </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-light qq-disclaimer-edit" data-bs-toggle="modal" data-bs-target="#disclaimerModal">
+            <i class="bi bi-pencil-square me-1"></i>Edit Text
+        </button>
+    </div>
+    <div class="qq-disclaimer-body">
+        {{ questionnaireDisclaimerHtml|raw }}
     </div>
 </div>
 
@@ -528,6 +556,38 @@
     </div>
 </div>
 {% endfor %}
+
+<div class="modal fade" id="disclaimerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content qq-modal-content">
+            <form method="post" action="{{ path(prefix ~ '_question_disclaimer') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('question_disclaimer') }}">
+                <input type="hidden" name="evaluationType" value="{{ selectedType }}">
+                <div class="qq-modal-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="qq-modal-icon"><i class="bi bi-shield-lock"></i></div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-white">Edit Data Privacy Disclaimer</h6>
+                            <span style="font-size:.75rem;color:rgba(255,255,255,.65);">Shown in Questionnaire and QR pages</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="qq-form-label">Disclaimer Text</label>
+                    <textarea name="description" class="form-control" rows="10" placeholder="Enter the data privacy disclaimer text...">{{ questionnaireDisclaimerText }}</textarea>
+                    <div class="form-text mt-1">Line breaks are preserved. Use <strong>**double asterisks**</strong> to make text bold.</div>
+                </div>
+                <div class="modal-footer border-top" style="background:#f8fafc;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary px-4">
+                        <i class="bi bi-check me-1"></i>Save Disclaimer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {# ═══════════════════════════════════════
    SCOPED STYLES

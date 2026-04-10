@@ -524,7 +524,9 @@ class ReportController extends AbstractController
             $schoolYear = trim((string) $request->request->get('schoolYear'));
             $section = $request->request->get('section');
             $sem = $request->request->get('semester');
+            $college = trim((string) $request->request->get('college', ''));
             $deptId = $request->request->get('department');
+            $position = trim((string) $request->request->get('position', ''));
             $currentAY = $ayRepo->syncCurrentToCalendar() ?? $ayRepo->findCurrent();
 
             if ($schoolYear === '' && $currentAY) {
@@ -559,28 +561,70 @@ class ReportController extends AbstractController
                 }
             }
 
-            if ($evaluationType === 'SUPERIOR' && is_string($faculty) && trim($faculty) !== '') {
-                $selectedFaculty = $userRepo->findOneByFullName(trim($faculty));
-                if (!$selectedFaculty) {
-                    $this->addFlash('danger', 'Please select a valid superior evaluator.');
-                    return $this->redirectToRoute('staff_evaluations');
-                }
+            if ($evaluationType === 'SUPERIOR') {
+                $selectedFaculty = null;
 
-                $rank = $this->resolveSuperiorHierarchyRank($selectedFaculty);
-                if ($rank === null) {
-                    $this->addFlash('danger', 'SEF evaluator must be President, Vice President, Campus Director, Dean, or Department Head/Chair.');
-                    return $this->redirectToRoute('staff_evaluations');
-                }
+                if (is_string($faculty) && trim($faculty) !== '') {
+                    $selectedFaculty = $userRepo->findOneByFullName(trim($faculty));
+                    if (!$selectedFaculty) {
+                        $this->addFlash('danger', 'Please select a valid superior evaluator.');
+                        return $this->redirectToRoute('staff_evaluations');
+                    }
+                } elseif ($position !== '') {
+                    $targetRank = $this->mapSuperiorPositionToRank($position);
+                    if ($targetRank === null) {
+                        $this->addFlash('danger', 'Please select a valid SEF evaluator position.');
+                        return $this->redirectToRoute('staff_evaluations');
+                    }
 
-                if ($deptId && ($rank === 'dean' || $rank === 'department_head')) {
-                    $facultyDept = $selectedFaculty->getDepartment();
-                    if (!$facultyDept || (int) $facultyDept->getId() !== (int) $deptId) {
-                        $this->addFlash('danger', 'Selected evaluator must belong to the selected department.');
+                    $qb = $userRepo->createQueryBuilder('u')
+                        ->leftJoin('u.department', 'd')
+                        ->where('u.accountStatus = :status')
+                        ->setParameter('status', 'active')
+                        ->orderBy('u.lastName', 'ASC')
+                        ->addOrderBy('u.firstName', 'ASC');
+
+                    if ($deptId) {
+                        $qb->andWhere('u.department = :deptId')->setParameter('deptId', (int) $deptId);
+                    } elseif ($college !== '') {
+                        $qb->andWhere('d.collegeName = :college')->setParameter('college', $college);
+                    }
+
+                    $candidates = $qb->getQuery()->getResult();
+                    foreach ($candidates as $candidate) {
+                        if ($candidate instanceof User && $this->resolveSuperiorHierarchyRank($candidate) === $targetRank) {
+                            $selectedFaculty = $candidate;
+                            break;
+                        }
+                    }
+
+                    if (!$selectedFaculty) {
+                        $this->addFlash('danger', 'No evaluator found for the selected position and filters.');
                         return $this->redirectToRoute('staff_evaluations');
                     }
                 }
 
-                $faculty = $selectedFaculty->getFullName();
+                if ($selectedFaculty) {
+                    $rank = $this->resolveSuperiorHierarchyRank($selectedFaculty);
+                    if ($rank === null) {
+                        $this->addFlash('danger', 'SEF evaluator must be President, Vice President, Campus Director, Dean, or Department Head/Chair.');
+                        return $this->redirectToRoute('staff_evaluations');
+                    }
+
+                    if ($deptId && ($rank === 'dean' || $rank === 'department_head')) {
+                        $facultyDept = $selectedFaculty->getDepartment();
+                        if (!$facultyDept || (int) $facultyDept->getId() !== (int) $deptId) {
+                            $this->addFlash('danger', 'Selected evaluator must belong to the selected department.');
+                            return $this->redirectToRoute('staff_evaluations');
+                        }
+                    }
+
+                    if (!$deptId && $selectedFaculty->getDepartment()) {
+                        $deptId = (string) $selectedFaculty->getDepartment()->getId();
+                    }
+
+                    $faculty = $selectedFaculty->getFullName();
+                }
             }
 
             $evalRepo = $em->getRepository(EvaluationPeriod::class);
@@ -595,6 +639,7 @@ class ReportController extends AbstractController
             $eval->setSchoolYear($schoolYear);
             $eval->setSemester($sem !== '' ? $sem : null);
             $eval->setFaculty($faculty);
+            $eval->setCollege($college !== '' ? $college : null);
             $eval->setSubject($subject);
             $eval->setTime($request->request->get('time'));
             $eval->setSection($section);
@@ -646,6 +691,23 @@ class ReportController extends AbstractController
         }
 
         return null;
+    }
+
+    private function mapSuperiorPositionToRank(string $position): ?string
+    {
+        $value = mb_strtolower(trim($position));
+        if ($value === '') {
+            return null;
+        }
+
+        return match ($value) {
+            'president' => 'president',
+            'vice president' => 'vice_president',
+            'campus director' => 'campus_director',
+            'dean' => 'dean',
+            'department head' => 'department_head',
+            default => null,
+        };
     }
 
     #[Route('/evaluations/{id}/toggle', name: 'staff_evaluation_toggle', methods: ['POST'])]
@@ -831,6 +893,82 @@ class ReportController extends AbstractController
         return $this->redirectToRoute('staff_evaluations');
     }
 
+    #[Route('/evaluations/{id}/responses.csv', name: 'staff_evaluation_responses_csv', methods: ['GET'])]
+    #[IsGranted('ROLE_STAFF')]
+    public function exportEvaluationResponsesCsv(
+        EvaluationPeriod $eval,
+        Request $request,
+        EvaluationResponseRepository $responseRepo,
+    ): StreamedResponse {
+        $subjectIdRaw = (int) $request->query->get('subjectId', 0);
+        $subjectId = $subjectIdRaw > 0 ? $subjectIdRaw : null;
+        $sectionRaw = trim((string) $request->query->get('section', ''));
+        $section = $sectionRaw !== '' ? $sectionRaw : null;
+
+        $rows = $responseRepo->getStudentResponsesForExport($eval->getId(), $subjectId, $section);
+        $studentCount = count($rows);
+
+        $this->audit->log(
+            AuditLog::ACTION_EXPORT_REPORT,
+            'EvaluationPeriod',
+            $eval->getId(),
+            'Exported student responses CSV (' . $studentCount . ' students) for ' . $eval->getLabel()
+        );
+
+        $filename = sprintf(
+            'responses_%s_eval%s_%s.csv',
+            strtolower((string) $eval->getEvaluationType()),
+            $eval->getId(),
+            (new \DateTimeImmutable())->format('Ymd_His')
+        );
+
+        $response = new StreamedResponse(function () use ($eval, $section, $rows, $studentCount): void {
+            $handle = fopen('php://output', 'w');
+            if ($handle === false) {
+                return;
+            }
+
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, ['Evaluation', $eval->getLabel()]);
+            fputcsv($handle, ['Type', (string) $eval->getEvaluationType()]);
+            fputcsv($handle, ['Section', $section ?? 'All / None']);
+            fputcsv($handle, ['Students Responded', (string) $studentCount]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Student ID', 'Student Name', 'Email', 'Department', 'Year Level', 'Average Rating', 'Submitted At']);
+
+            foreach ($rows as $row) {
+                $submittedAt = $row['submittedAt'] ?? null;
+                $submittedAtText = '';
+
+                if ($submittedAt instanceof \DateTimeInterface) {
+                    $submittedAtText = $submittedAt->format('Y-m-d H:i:s');
+                } elseif (is_string($submittedAt)) {
+                    $submittedAtText = $submittedAt;
+                }
+
+                fputcsv($handle, [
+                    (string) ($row['schoolId'] ?? ''),
+                    trim((string) ($row['fullName'] ?? '')),
+                    (string) ($row['email'] ?? ''),
+                    (string) ($row['departmentName'] ?? ''),
+                    (string) ($row['yearLevel'] ?? ''),
+                    number_format((float) ($row['avgRating'] ?? 0), 2, '.', ''),
+                    $submittedAtText,
+                ]);
+            }
+
+            fclose($handle);
+        });
+
+        $disposition = $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename);
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', $disposition);
+
+        return $response;
+    }
+
     // ════════════════════════════════════════════════
     //  STAFF: QUESTIONNAIRE
     // ════════════════════════════════════════════════
@@ -846,12 +984,16 @@ class ReportController extends AbstractController
         $questions = $repo->findByType($type);
         $categories = $repo->findCategories($type);
         $categoryDescriptions = $descRepo->findDescriptionsByType($type);
+        $questionnaireDisclaimerText = $descRepo->getDisclaimerText($type);
+        $questionnaireDisclaimerHtml = $descRepo->getDisclaimerHtml($type);
 
         return $this->render('admin/questions.html.twig', [
             'questions' => $questions,
             'categories' => $categories,
             'selectedType' => $type,
             'categoryDescriptions' => $categoryDescriptions,
+            'questionnaireDisclaimerText' => $questionnaireDisclaimerText,
+            'questionnaireDisclaimerHtml' => $questionnaireDisclaimerHtml,
             'staffMode' => true,
         ]);
     }
@@ -1060,10 +1202,6 @@ class ReportController extends AbstractController
                             'average' => round((float) ($subj['avgRating'] ?? 0), 2),
                             'evaluators' => (int) $subj['evaluatorCount'],
                         ];
-                    }
-
-                    if (empty($subjectDetails)) {
-                        continue;
                     }
 
                     $facultyResults[] = [
@@ -2084,6 +2222,90 @@ class ReportController extends AbstractController
         ]);
     }
 
+    #[Route('/announcements', name: 'staff_announcements', methods: ['GET'])]
+    public function announcements(QuestionCategoryDescriptionRepository $descRepo): Response
+    {
+        $meta = $descRepo->getSystemAnnouncementMeta();
+
+        return $this->render('admin/system_announcement.html.twig', [
+            'title' => $descRepo->getSystemAnnouncementTitle(),
+            'body' => $descRepo->getSystemAnnouncementBody(),
+            'metaUpdatedBy' => $meta['updatedBy'] ?? '',
+            'metaUpdatedAt' => $meta['updatedAt'] ?? '',
+        ]);
+    }
+
+    #[Route('/announcements', name: 'staff_announcements_save', methods: ['POST'])]
+    public function saveAnnouncements(
+        Request $request,
+        EntityManagerInterface $em,
+        QuestionCategoryDescriptionRepository $descRepo,
+    ): Response {
+        if (!$this->isCsrfTokenValid('save_system_announcement', $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid security token.');
+            return $this->redirectToRoute('staff_announcements');
+        }
+
+        $title = trim((string) $request->request->get('title', ''));
+        $body = trim((string) $request->request->get('body', ''));
+
+        if ($title === '' || $body === '') {
+            $this->addFlash('danger', 'Announcement title and content are required.');
+            return $this->redirectToRoute('staff_announcements');
+        }
+
+        $titleEntity = $descRepo->findOneBy([
+            'category' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TITLE_CATEGORY,
+            'evaluationType' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE,
+        ]);
+        if (!$titleEntity) {
+            $titleEntity = new QuestionCategoryDescription();
+            $titleEntity->setCategory(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TITLE_CATEGORY);
+            $titleEntity->setEvaluationType(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE);
+            $em->persist($titleEntity);
+        }
+        $titleEntity->setDescription($title);
+
+        $bodyEntity = $descRepo->findOneBy([
+            'category' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_BODY_CATEGORY,
+            'evaluationType' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE,
+        ]);
+        if (!$bodyEntity) {
+            $bodyEntity = new QuestionCategoryDescription();
+            $bodyEntity->setCategory(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_BODY_CATEGORY);
+            $bodyEntity->setEvaluationType(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE);
+            $em->persist($bodyEntity);
+        }
+        $bodyEntity->setDescription($body);
+
+        $metaEntity = $descRepo->findOneBy([
+            'category' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_META_CATEGORY,
+            'evaluationType' => QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE,
+        ]);
+        if (!$metaEntity) {
+            $metaEntity = new QuestionCategoryDescription();
+            $metaEntity->setCategory(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_META_CATEGORY);
+            $metaEntity->setEvaluationType(QuestionCategoryDescriptionRepository::SYSTEM_ANNOUNCEMENT_TYPE);
+            $em->persist($metaEntity);
+        }
+
+        $editorName = 'Staff';
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            $editorName = $currentUser->getFullName();
+        }
+
+        $metaEntity->setDescription((string) json_encode([
+            'updatedBy' => $editorName,
+            'updatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
+        ]));
+
+        $em->flush();
+        $this->addFlash('success', 'System announcement updated.');
+
+        return $this->redirectToRoute('staff_announcements');
+    }
+
     #[Route('/faculty-messages/{id}/reply', name: 'staff_faculty_message_reply', methods: ['POST'])]
     public function facultyMessageReply(
         int $id,
@@ -2204,6 +2426,33 @@ class ReportController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Section description updated.');
         }
+        return $this->redirectToRoute('staff_questions', ['type' => $type]);
+    }
+
+    #[Route('/questions/disclaimer', name: 'staff_question_disclaimer', methods: ['POST'])]
+    public function saveQuestionnaireDisclaimer(Request $request, EntityManagerInterface $em, QuestionCategoryDescriptionRepository $descRepo): Response
+    {
+        $type = $request->request->get('evaluationType', 'SET');
+        $description = trim((string) $request->request->get('description', ''));
+
+        if ($this->isCsrfTokenValid('question_disclaimer', $request->request->get('_token'))) {
+            $entity = $descRepo->findOneBy([
+                'category' => QuestionCategoryDescriptionRepository::DISCLAIMER_CATEGORY,
+                'evaluationType' => $type,
+            ]);
+
+            if (!$entity) {
+                $entity = new QuestionCategoryDescription();
+                $entity->setCategory(QuestionCategoryDescriptionRepository::DISCLAIMER_CATEGORY);
+                $entity->setEvaluationType($type);
+                $em->persist($entity);
+            }
+
+            $entity->setDescription($description !== '' ? $description : null);
+            $em->flush();
+            $this->addFlash('success', 'Questionnaire disclaimer updated.');
+        }
+
         return $this->redirectToRoute('staff_questions', ['type' => $type]);
     }
 

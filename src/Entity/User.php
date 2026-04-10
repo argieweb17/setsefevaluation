@@ -111,6 +111,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             $roles[] = 'ROLE_SUPERIOR';
         }
 
+        $hasPrivilegedRole = false;
+        foreach (['ROLE_ADMIN', 'ROLE_SUPERIOR', 'ROLE_STAFF', 'ROLE_FACULTY'] as $privilegedRole) {
+            if (in_array($privilegedRole, $roles, true)) {
+                $hasPrivilegedRole = true;
+                break;
+            }
+        }
+
+        // Students are represented by absence of privileged roles; expose explicit ROLE_STUDENT for API clients.
+        if (!$hasPrivilegedRole && !in_array('ROLE_STUDENT', $roles, true)) {
+            $roles[] = 'ROLE_STUDENT';
+        }
+
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }

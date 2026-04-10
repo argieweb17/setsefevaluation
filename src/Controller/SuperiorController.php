@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Repository\AcademicYearRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\EvaluationPeriodRepository;
+use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\SuperiorEvaluationRepository;
@@ -148,6 +149,7 @@ class SuperiorController extends AbstractController
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
         QuestionRepository $questionRepo,
+        QuestionCategoryDescriptionRepository $descRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         EntityManagerInterface $em,
     ): Response {
@@ -218,6 +220,17 @@ class SuperiorController extends AbstractController
             $commentSaved = false;
             $isDraft = ($action === 'save_draft');
 
+            if (!$isDraft) {
+                $privacyConsent = trim((string) $request->request->get('privacy_consent', ''));
+                if ($privacyConsent === '') {
+                    $this->addFlash('danger', 'Please select Agree or Disagree in the Data Privacy Disclaimer before submitting.');
+                    return $this->redirectToRoute('superior_evaluate_form', [
+                        'evalId' => $evalId,
+                        'evaluateeId' => $evaluateeId,
+                    ]);
+                }
+            }
+
             // Remove existing drafts
             foreach ($drafts as $d) {
                 $em->remove($d);
@@ -283,6 +296,7 @@ class SuperiorController extends AbstractController
             'evaluateeRole' => $evaluateeRole,
             'evaluateeRoleLabel' => $evaluateeRoleLabel,
             'evaluateeSubjects' => $evaluateeSubjects,
+            'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
             'generalComment' => '',
@@ -299,6 +313,7 @@ class SuperiorController extends AbstractController
         SubjectRepository $subjectRepo,
         FacultySubjectLoadRepository $fslRepo,
         AcademicYearRepository $ayRepo,
+        QuestionCategoryDescriptionRepository $descRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
     ): Response {
         /** @var User $user */
@@ -354,6 +369,7 @@ class SuperiorController extends AbstractController
             'evaluateeRole' => $this->resolveEvaluateeType($evaluatee),
             'evaluateeRoleLabel' => $this->resolveEvaluateeLabel($evaluatee),
             'evaluateeSubjects' => $evaluateeSubjects,
+            'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
             'generalComment' => $generalComment,

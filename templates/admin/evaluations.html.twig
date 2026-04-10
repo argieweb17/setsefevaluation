@@ -455,8 +455,10 @@
                                     <tr>
                                         <th>Subject</th>
                                         <th>Section</th>
+                                        <th>Description</th>
                                         <th>Schedule</th>
                                         <th class="text-center">Evaluators</th>
+                                        <th class="text-center">Responses CSV</th>
                                         <th class="text-center">QR</th>
                                     </tr>
                                     {% else %}
@@ -471,10 +473,25 @@
                                     {% if eval.evaluationType == 'SET' %}
                                     {% for item in row.items %}
                                     <tr>
-                                        <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
+                                        {% set subjectFull = item.subject ?: eval.subject ?: '' %}
+                                        {% set subjectParts = subjectFull != '' ? subjectFull|split(' — ', 2) : [] %}
+                                        <td>{{ subjectParts|length > 1 ? subjectParts[0] : (subjectFull != '' ? subjectFull : '—') }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
+                                        <td>{{ subjectParts|length > 1 ? subjectParts[1] : '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
+                                        <td class="text-center">
+                                            {% set csvParams = {id: item.eval.id} %}
+                                            {% if item.subjectId %}
+                                                {% set csvParams = csvParams|merge({subjectId: item.subjectId}) %}
+                                            {% endif %}
+                                            {% if item.section %}
+                                                {% set csvParams = csvParams|merge({section: item.section}) %}
+                                            {% endif %}
+                                            <a href="{{ path(prefix ~ '_evaluation_responses_csv', csvParams) }}" class="ev-action-btn ev-action-success" title="Download student responses CSV">
+                                                <i class="bi bi-filetype-csv"></i>
+                                            </a>
+                                        </td>
                                         <td class="text-center">
                                             <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ item.eval.id }}" data-eval-type="{{ item.eval.evaluationType }}" data-eval-faculty="{{ item.eval.faculty ?? '' }}" data-eval-subject="{{ item.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ item.subjectId ?? '' }}" data-eval-section="{{ item.section ?: '' }}" data-eval-schedule="{{ item.schedule ?: '' }}" data-eval-school-year="{{ item.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
                                         </td>
@@ -482,37 +499,68 @@
                                     {% endfor %}
                                     {% else %}
                                     {% set firstItem = row.items|first %}
+                                    {% set targetName = (eval.faculty ?? '')|trim %}
+                                    {% set targetPositionRow = null %}
                                     {% set positionRows = [] %}
-                                    {% for rank in superiorHierarchy|default([]) %}
-                                        {% set rankMembers = [] %}
-                                        {% for member in rank.members %}
-                                            {% set isDeptScopedRank = rank.rankKey in ['dean', 'department_head'] %}
-                                            {% set includeMember = (not isDeptScopedRank) or (eval.department is null) or (member.departmentId and member.departmentId == eval.department.id) %}
-                                            {% if includeMember %}
-                                                {% set rankMembers = rankMembers|merge([member]) %}
-                                            {% endif %}
-                                        {% endfor %}
-
-                                        {% if rankMembers is not empty %}
-                                            {% set departmentNames = [] %}
-                                            {% for rankedMember in rankMembers %}
-                                                {% if rankedMember.department not in departmentNames %}
-                                                    {% set departmentNames = departmentNames|merge([rankedMember.department]) %}
+                                    {% if targetName != '' %}
+                                        {% for rank in superiorHierarchy|default([]) %}
+                                            {% for member in rank.members %}
+                                                {% if member.fullName == targetName %}
+                                                    {% set targetPositionRow = {
+                                                        rankLabel: rank.rankLabel,
+                                                        members: [member]
+                                                    } %}
                                                 {% endif %}
                                             {% endfor %}
-                                            {% set departmentLabel = departmentNames|length == 1 ? departmentNames|first : (departmentNames|length > 1 ? 'Multiple' : '—') %}
-                                            {% set positionRows = positionRows|merge([{
-                                                rankLabel: rank.rankLabel,
-                                                members: rankMembers,
-                                                department: departmentLabel
-                                            }]) %}
-                                        {% endif %}
-                                    {% endfor %}
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for rank in superiorHierarchy|default([]) %}
+                                            {% set rankMembers = [] %}
+                                            {% for member in rank.members %}
+                                                {% set isDeptScopedRank = rank.rankKey in ['dean', 'department_head'] %}
+                                                {% set includeMember = (not isDeptScopedRank) or (eval.department is null) or (member.departmentId and member.departmentId == eval.department.id) %}
+                                                {% if includeMember %}
+                                                    {% set rankMembers = rankMembers|merge([member]) %}
+                                                {% endif %}
+                                            {% endfor %}
 
-                                    {% if positionRows is empty %}
+                                            {% if rankMembers is not empty %}
+                                                {% set positionRows = positionRows|merge([{
+                                                    rankLabel: rank.rankLabel,
+                                                    members: rankMembers
+                                                }]) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {% if targetPositionRow is null and positionRows is empty %}
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted">No superior hierarchy names configured.</td>
+                                        <td colspan="3" class="text-center text-muted">No eligible hierarchy evaluators found for this SEF period.</td>
                                     </tr>
+                                    {% elseif targetPositionRow is not null %}
+                                        <tr>
+                                            <td>
+                                                <details class="ev-position-disclosure">
+                                                    <summary>
+                                                        {{ targetPositionRow.rankLabel }}
+                                                        <span class="ev-position-count">{{ targetPositionRow.members|length }}</span>
+                                                    </summary>
+                                                    <div class="ev-position-names">
+                                                        {% for rankedMember in targetPositionRow.members %}
+                                                        <div class="ev-position-name-item">{{ rankedMember.fullName }}</div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </details>
+                                            </td>
+                                            <td class="text-center"><span class="fw-semibold">{{ row.evaluatorCount }}</span></td>
+                                            <td class="text-center">
+                                                {% if firstItem %}
+                                                <button class="ev-action-btn ev-action-qr" title="QR Code" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-eval-id="{{ firstItem.eval.id }}" data-eval-type="{{ firstItem.eval.evaluationType }}" data-eval-faculty="{{ firstItem.eval.faculty ?? '' }}" data-eval-subject="{{ firstItem.subject ?: eval.subject ?: '' }}" data-eval-subject-id="{{ firstItem.subjectId ?? '' }}" data-eval-section="{{ firstItem.section ?: '' }}" data-eval-schedule="{{ firstItem.schedule ?: '' }}" data-eval-school-year="{{ firstItem.eval.schoolYear ?? '' }}"><i class="bi bi-qr-code"></i></button>
+                                                {% else %}
+                                                <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
                                     {% else %}
                                         {% for positionRow in positionRows %}
                                         <tr>
@@ -726,6 +774,7 @@
                                     <tr>
                                         <th>Subject</th>
                                         <th>Section</th>
+                                        <th>Description</th>
                                         <th>Schedule</th>
                                         <th class="text-center">Evaluators</th>
                                         <th class="text-center">QR</th>
@@ -742,8 +791,11 @@
                                     {% if eval.evaluationType == 'SET' %}
                                     {% for item in row.items %}
                                     <tr>
-                                        <td>{{ item.subject ?: eval.subject ?: '—' }}</td>
+                                        {% set subjectFull = item.subject ?: eval.subject ?: '' %}
+                                        {% set subjectParts = subjectFull != '' ? subjectFull|split(' — ', 2) : [] %}
+                                        <td>{{ subjectParts|length > 1 ? subjectParts[0] : (subjectFull != '' ? subjectFull : '—') }}</td>
                                         <td>{{ item.section ?: '—' }}</td>
+                                        <td>{{ subjectParts|length > 1 ? subjectParts[1] : '—' }}</td>
                                         <td>{{ item.schedule ?: '—' }}</td>
                                         <td class="text-center"><span class="fw-semibold">{{ item.evaluatorCount }}</span></td>
                                         <td class="text-center">
@@ -1033,7 +1085,7 @@
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="createEvalForm" method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false" data-subjects-url-template="{{ path(prefix ~ '_api_faculty_subjects', {id: '__FACULTY_ID__', strictLoad: 1}) }}">
+            <form id="createEvalForm" method="post" action="{{ path(prefix ~ '_evaluation_create') }}" data-turbo="false" data-subjects-url-template="{{ path(prefix ~ '_api_faculty_subjects', {id: '__FACULTY_ID__', strictLoad: 0}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('create_eval') }}">
                 <div class="modal-body p-4">
                     <div class="row g-3">
@@ -1725,12 +1777,53 @@ function normalizeSuperiorPosition(raw) {
 
         try {
             var endpoint = urlTemplate.replace('__FACULTY_ID__', encodeURIComponent(facultyId));
-            var res = await fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!res.ok) {
-                throw new Error('Request failed');
+            try {
+                var parsedEndpoint = new URL(endpoint, window.location.origin);
+                endpoint = parsedEndpoint.pathname + parsedEndpoint.search;
+            } catch (urlError) {
+                // Keep original endpoint when URL parsing is not available.
             }
 
-            var subjects = await res.json();
+            var staffEndpoint = '/reports/api/faculty/' + encodeURIComponent(facultyId) + '/subjects?strictLoad=0';
+            var adminEndpoint = '/admin/api/faculty/' + encodeURIComponent(facultyId) + '/subjects?strictLoad=0';
+            var candidates = [];
+            if (window.location.pathname.indexOf('/reports/') === 0) {
+                candidates.push(staffEndpoint);
+            }
+            candidates.push(endpoint);
+            candidates.push(adminEndpoint);
+
+            var subjects = null;
+            for (var i = 0; i < candidates.length; i++) {
+                var candidate = candidates[i];
+                if (!candidate) {
+                    continue;
+                }
+
+                var res = await fetch(candidate, {
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) {
+                    continue;
+                }
+
+                try {
+                    var payload = await res.json();
+                    if (Array.isArray(payload)) {
+                        subjects = payload;
+                        break;
+                    }
+                } catch (parseError) {
+                    // Try next candidate.
+                }
+            }
+
+            if (!Array.isArray(subjects)) {
+                setWarning('No subject found or added in schedule for this faculty.');
+                setSubmitEnabled(false);
+                return false;
+            }
             var hasScheduledLoad = Array.isArray(subjects) && subjects.some(function(item) {
                 var value = (item && item.value ? String(item.value) : '').trim();
                 var schedule = (item && item.schedule ? String(item.schedule) : '').trim();
@@ -1748,7 +1841,7 @@ function normalizeSuperiorPosition(raw) {
             setSubmitEnabled(true);
             return true;
         } catch (e) {
-            setWarning('Unable to verify faculty subject load right now. Please try again.');
+            setWarning('No subject found or added in schedule for this faculty.');
             setSubmitEnabled(false);
             return false;
         }

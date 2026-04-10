@@ -1115,10 +1115,10 @@ body {
     animation: slideUp 0.6s ease 0.65s both;
 }
 .welcome-logo-card {
-    animation: scaleIn 0.7s ease 0.4s both;
+    animation: none;
 }
 .welcome-logo-card:hover {
-    animation: float 2.5s ease-in-out infinite;
+    animation: none;
 }
 
 /* ── Scroll-triggered reveal system ── */

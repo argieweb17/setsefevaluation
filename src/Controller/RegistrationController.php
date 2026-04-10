@@ -84,7 +84,7 @@ class RegistrationController extends AbstractController
                     'faculty' => ['ROLE_FACULTY'],
                     'staff'   => ['ROLE_STAFF'],
                     'superior' => ['ROLE_FACULTY', 'ROLE_SUPERIOR'],
-                    'student' => [],
+                    'student' => ['ROLE_STUDENT'],
                 ];
                 $user->setRoles($roleMap[$role] ?? []);
 

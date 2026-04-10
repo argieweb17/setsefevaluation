@@ -19,12 +19,18 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 class ProfileController extends AbstractController
 {
     #[Route('', name: 'app_profile', methods: ['GET'])]
-    public function index(): Response
+    public function index(Request $request): Response
     {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
+
+        $studentLoadslipCodes = (array) $request->getSession()->get('student_loadslip_codes', []);
+        $studentLoadslipVerified = (bool) $request->getSession()->get('student_loadslip_verified', false);
+        $isStudentVerified = $user->isStudent() && ($studentLoadslipVerified || !empty($studentLoadslipCodes));
+
         return $this->render('profile/index.html.twig', [
             'user' => $user,
+            'isStudentVerified' => $isStudentVerified,
         ]);
     }
 

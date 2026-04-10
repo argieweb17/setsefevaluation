@@ -10,9 +10,128 @@
 .ev-breadcrumb a:hover { color: #2563eb; }
 .ev-breadcrumb .sep { color: #cbd5e1; }
 .ev-breadcrumb .current { color: #1e293b; font-weight: 600; }
-.ev-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+.ev-header { display: flex; align-items: flex-start; justify-content: flex-end; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
 .ev-header-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
 .ev-header-sub { font-size: .85rem; color: #64748b; margin-top: .25rem; }
+.ev-loadslip { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ev-loadslip .ev-loadslip-file {
+    width: 232px;
+    max-width: 100%;
+    height: 34px;
+    border-radius: 6px;
+    font-size: .74rem;
+}
+.ev-loadslip .ev-loadslip-btn {
+    width: 128px;
+    height: 34px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .76rem;
+    white-space: nowrap;
+}
+.ev-loadslip .ev-loadslip-btn.is-loading { opacity: .95; cursor: wait; }
+.ev-loadslip .ev-loadslip-btn .ev-btn-spinner {
+    display: none;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255,255,255,.45);
+    border-top-color: #fff;
+    border-radius: 50%;
+    margin-right: .4rem;
+    animation: ev-import-spin .8s linear infinite;
+}
+.ev-loadslip .ev-loadslip-btn.is-loading .ev-btn-spinner { display: inline-block; }
+.ev-loadslip .ev-instruction-trigger {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 0;
+    line-height: 1;
+}
+.ev-loadslip .ev-instruction-trigger:hover { background: #dbeafe; color: #1d4ed8; }
+.ev-import-wrap { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:1rem; }
+.ev-import-wrap.has-image { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+.ev-import-head { padding:.8rem 1rem; border-bottom:1px solid #f1f5f9; font-size:.82rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:.4rem; }
+.ev-import-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.ev-import-table th, .ev-import-table td { padding:.55rem .75rem; border-bottom:1px solid #f1f5f9; text-align:left; }
+.ev-import-table th { background:#f8fafc; font-size:.68rem; text-transform:uppercase; letter-spacing:.5px; color:#64748b; }
+.ev-preview-box { margin:0 auto; background:#f8fafc; display:flex; align-items:center; justify-content:center; }
+.ev-preview-box-image { width:auto; max-width:100%; height:auto; }
+.ev-preview-empty-box { width:100%; max-width:1200px; height:620px; }
+.ev-preview-img { display:block; width:auto; height:auto; max-width:100%; max-height:820px; image-rendering:auto; background:#f8fafc; }
+.ev-preview-empty { flex-direction:column; text-align:center; color:#64748b; }
+.ev-preview-empty i { font-size:2rem; color:#94a3b8; margin-bottom:.5rem; }
+.ev-preview-empty-title { margin:0; font-size:.95rem; font-weight:700; color:#334155; }
+.ev-preview-empty-sub { margin:.25rem 0 0; font-size:.8rem; }
+
+.ev-import-loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: rgba(15, 23, 42, 0.42);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.ev-import-loading-overlay.is-visible { display: flex; }
+.ev-import-loading-card {
+    width: min(92vw, 420px);
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #dbeafe;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    padding: 1rem 1.1rem;
+    text-align: center;
+}
+.ev-import-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 4px solid #dbeafe;
+    border-top-color: #2563eb;
+    margin: 0 auto .75rem;
+    animation: ev-import-spin .8s linear infinite;
+}
+.ev-import-loading-title {
+    font-size: .92rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: .15rem;
+}
+.ev-import-loading-percent {
+    font-size: .95rem;
+    font-weight: 800;
+    color: #1d4ed8;
+    margin: .35rem 0 .3rem;
+}
+.ev-import-loading-meter {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin: 0 auto .45rem;
+}
+.ev-import-loading-meter-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    transition: width .18s ease;
+}
+.ev-import-loading-sub {
+    font-size: .78rem;
+    color: #475569;
+}
+@keyframes ev-import-spin { to { transform: rotate(360deg); } }
 
 .ev-chips { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .ev-chip { display: inline-flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; padding: .45rem 1rem .45rem .6rem; font-size: .82rem; color: #334155; font-weight: 500; }
@@ -71,6 +190,9 @@
     .ev-item { padding: .75rem 1rem; }
     .ev-item-desc { max-width: 180px; }
     .ev-search-wrap input { width: 150px; }
+    .ev-loadslip .ev-loadslip-btn { width: 128px; }
+    .ev-preview-empty-box { height: 360px; }
+    .ev-preview-img { max-height: 520px; }
 }
 </style>
 {% endblock %}
@@ -87,20 +209,178 @@
     {% endif %}
 {% endfor %}
 
-<div class="ev-page">
-
-<div class="ev-breadcrumb">
-    <a href="{{ path('app_dashboard') }}"><i  class="bi bi-house"></i> Dashboard</a>
-    <span class="sep">/</span>
-    <span class="current">Evaluate Teachers</span>
-</div>
-
-<div class="ev-header">
-    <div>
-        <h1 class="ev-header-title">Evaluate Teachers</h1>
-        <div class="ev-header-sub">Student Evaluation for Teacher (SET) &middot; Rate your enrolled subjects</div>
+<div id="loadslipImportOverlay" class="ev-import-loading-overlay" aria-hidden="true">
+    <div class="ev-import-loading-card" role="status" aria-live="polite">
+        <div class="ev-import-loading-spinner"></div>
+        <div id="loadslipImportOverlayTitle" class="ev-import-loading-title">Scanning loadslip...</div>
+        <div id="loadslipImportOverlayPercent" class="ev-import-loading-percent">0%</div>
+        <div class="ev-import-loading-meter" aria-hidden="true">
+            <div id="loadslipImportOverlayBar" class="ev-import-loading-meter-bar"></div>
+        </div>
+        <div id="loadslipImportOverlaySub" class="ev-import-loading-sub">Please wait while we prepare and import your file.</div>
     </div>
 </div>
+
+<div class="ev-page">
+<div class="ev-header">
+    <div class="ev-loadslip">
+        <form id="loadslipImportForm" method="post" action="{{ path('evaluation_set_loadslip_import') }}" enctype="multipart/form-data" class="d-flex align-items-center gap-2 flex-wrap">
+            <input type="hidden" name="_token" value="{{ csrf_token('import_set_loadslip') }}">
+            <input id="loadslipFileInput" class="form-control ev-loadslip-file" type="file" name="loadslip_file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" required>
+            <button type="submit" class="btn btn-primary ev-loadslip-btn">
+                <span class="ev-btn-spinner" aria-hidden="true"></span>
+                <i class="bi bi-upload me-1"></i>
+                <span class="ev-btn-label">Import Loadslip</span>
+            </button>
+            <button
+                type="button"
+                class="ev-instruction-trigger"
+                data-bs-toggle="modal"
+                data-bs-target="#loadslipInstructionModal"
+                aria-label="Open loadslip instruction modal"
+                title="Loadslip import instruction"
+            >
+                <i class="bi bi-lightbulb"></i>
+            </button>
+        </form>
+        {% if loadslipImportedCount|default(0) > 0 %}
+            <form method="post" action="{{ path('evaluation_set_loadslip_clear') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('clear_set_loadslip') }}">
+                <button type="submit" class="btn btn-outline-secondary ev-loadslip-btn">
+                    <i class="bi bi-x-circle me-1"></i> Clear
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="modal fade" id="loadslipInstructionModal" tabindex="-1" aria-labelledby="loadslipInstructionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loadslipInstructionModalLabel">
+                    <i class="bi bi-info-circle me-1 text-primary"></i> Loadslip Import Instruction
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Please check these before importing:</p>
+                <ul class="mb-2">
+                    <li>Allowed file types: JPG, JPEG, PNG only.</li>
+                    <li>Student ID, subject code, section, and schedule must be readable.</li>
+                    <li>Use a clear image without blur, glare, or cropped rows.</li>
+                    <li>If you selected the wrong file, click Clear then import again.</li>
+                </ul>
+                <p class="mb-0 text-muted small">Clearer images produce better OCR detection and matching.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if loadslipPreviewPath|default('') != '' %}
+<div id="loadslipPreviewWrap" class="ev-import-wrap has-image">
+    <div id="loadslipPreviewBox" class="ev-preview-box ev-preview-box-image">
+        <img id="loadslipPreviewImage" class="ev-preview-img" src="{{ asset(loadslipPreviewPath) }}" data-original-src="{{ asset(loadslipPreviewPath) }}" alt="Imported loadslip image preview">
+    </div>
+</div>
+{% else %}
+<div id="loadslipPreviewWrap" class="ev-import-wrap">
+    <div id="loadslipPreviewBox" class="ev-preview-box ev-preview-empty-box ev-preview-empty">
+        <i class="bi bi-card-image"></i>
+        <p class="ev-preview-empty-title">No loadslip imported yet</p>
+        <p class="ev-preview-empty-sub">Import a loadslip file to display the preview here.</p>
+    </div>
+</div>
+{% endif %}
+
+{% if canSeeOcrDebug|default(false) and ocrDebugPreview is not empty %}
+<details class="mb-3">
+    <summary class="small text-muted" style="cursor:pointer;">OCR Debug Preview (dev/admin)</summary>
+    <div class="alert alert-secondary mt-2 mb-0">
+        {% set passStats = ocrDebugPreview.passStats|default({}) %}
+        {% set preprocess = ocrDebugPreview.ocrPreprocess|default({}) %}
+        {% set scanDetection = ocrDebugPreview.scanDetection|default({}) %}
+        {% set psmTried = scanDetection.psmModesTried|default([]) %}
+        {% set psmSucceeded = scanDetection.psmModesSucceeded|default([]) %}
+        <div class="small mb-2"><strong>Pass Stats:</strong>
+            line={{ passStats.line|default(0) }},
+            line_pair={{ passStats.line_pair|default(0) }},
+            flat={{ passStats.flat|default(0) }},
+            segment={{ passStats.segment|default(0) }}
+        </div>
+        <div class="small mb-2"><strong>Image Preprocess:</strong> {{ preprocess.applied|default(false) ? 'enabled' : 'original' }}{% if preprocess.applied|default(false) %} ({{ preprocess.source|default('') }}, {{ preprocess.scale|default(1) }}x){% endif %}{% if preprocess.profile|default('') != '' %}, profile={{ preprocess.profile }}{% endif %}{% if preprocess.maxDimension|default(0) > 0 %}, maxDim={{ preprocess.maxDimension }}{% endif %}{% if preprocess.maxPixels|default(0) > 0 %}, maxPx={{ preprocess.maxPixels }}{% endif %}{% if preprocess.originalWidth|default(0) > 0 %}, size={{ preprocess.originalWidth }}x{{ preprocess.originalHeight|default(0) }}{% if preprocess.processedWidth|default(0) > 0 %} -> {{ preprocess.processedWidth }}x{{ preprocess.processedHeight|default(0) }}{% elseif preprocess.targetWidth|default(0) > 0 %} -> {{ preprocess.targetWidth }}x{{ preprocess.targetHeight|default(0) }}{% endif %}{% endif %}</div>
+        <div class="small mb-2"><strong>Scan Detection:</strong>
+            lines={{ scanDetection.lineCount|default(0) }},
+            lineScope={{ scanDetection.linePassCount|default(0) }},
+            tableWindow={{ scanDetection.tableWindowDetected|default(false) ? 'yes' : 'no' }}{% if scanDetection.tableWindowDetected|default(false) %} ({{ scanDetection.tableWindowStart|default('-') }}-{{ scanDetection.tableWindowEnd|default('-') }}){% endif %},
+            recovery={{ scanDetection.recoveryPassesEnabled|default(false) ? 'on' : 'off' }},
+            psm={{ psmSucceeded is not empty ? psmSucceeded|join('/') : 'none' }}/{{ psmTried is not empty ? psmTried|join('/') : 'none' }}{% if scanDetection.fallbackUsed|default(false) %}, fallback=on{% endif %}
+        </div>
+        <div class="small mb-2"><strong>Parsed Row Count:</strong> {{ ocrDebugPreview.rowCount|default(0) }}</div>
+        <div class="small mb-2"><strong>Valid Codes:</strong> {{ (ocrDebugPreview.validCodes|default([]))|join(', ')|default('None') }}</div>
+        <div class="small mb-2"><strong>Raw Candidates:</strong> {{ (ocrDebugPreview.rawCandidates|default([]))|join(', ')|default('None') }}</div>
+        {% set importTrace = ocrDebugPreview.importTrace|default(null) %}
+        {% if importTrace %}
+            <div class="small mb-2"><strong>Import Student ID:</strong> expected {{ importTrace.expectedStudentNumber|default('') }}, parsed {{ importTrace.importedStudentNumber|default('') }}</div>
+            <div class="small mb-2"><strong>Detected Rows (pre-filter):</strong> {{ importTrace.detectedRowCount|default(0) }}</div>
+            <div class="small mb-2"><strong>Valid Rows (post-filter):</strong> {{ importTrace.validRowCount|default(0) }}</div>
+            {% if importTrace.blurCheck is defined and importTrace.blurCheck %}
+                <div class="small mb-2"><strong>Image Readability:</strong> {{ importTrace.blurCheck.isReadable|default(true) ? 'readable' : 'not readable' }}, blur={{ importTrace.blurCheck.score|default(0) }}/{{ importTrace.blurCheck.threshold|default(0) }}, contrast={{ importTrace.blurCheck.contrastScore|default(0) }}/{{ importTrace.blurCheck.contrastThreshold|default(0) }}</div>
+            {% endif %}
+            {% if importTrace.readableRowCount is defined %}
+                <div class="small mb-2"><strong>Readable OCR Rows:</strong> {{ importTrace.readableRowCount|default(0) }}</div>
+            {% endif %}
+            {% if importTrace.codeResolution is defined and importTrace.codeResolution is not empty %}
+                <div class="small mb-1"><strong>Code Resolution:</strong></div>
+                <pre class="mb-2 small" style="white-space:pre-wrap;max-height:180px;overflow:auto;">{% for item in importTrace.codeResolution %}{{ item.input|default('') }} -> {{ item.resolved|default('dropped') }} ({{ item.status|default('') }})
+{% endfor %}</pre>
+            {% endif %}
+            {% if importTrace.rowResolution is defined and importTrace.rowResolution is not empty %}
+                <div class="small mb-1"><strong>Row Resolution:</strong></div>
+                <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for item in importTrace.rowResolution %}{{ item.inputCode|default('') }} -> {{ item.resolvedCode|default('dropped') }} | sec={{ item.section|default('') }} | sched={{ item.schedule|default('') }} | unit={{ item.units|default('') }} ({{ item.status|default('') }})
+desc={{ item.description|default('') }}
+{% endfor %}</pre>
+            {% endif %}
+        {% endif %}
+        {% if ocrDebugPreview.rowTrace|default([]) is not empty %}
+            <div class="small mb-1"><strong>OCR Row Trace:</strong></div>
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:240px;overflow:auto;">{% for row in ocrDebugPreview.rowTrace|slice(0, 12) %}[{{ row.pass|default('') }}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
+code={{ row.code|default('') }} | sec={{ row.section|default('') }} ({{ row.sectionSource|default('') }}) | sched={{ row.schedule|default('') }} | unit={{ row.units|default('') }}
+desc={{ row.description|default('') }} ({{ row.descriptionSource|default('') }})
+colmap: code={{ row.columnMap.code|default('-') }}, sec={{ row.columnMap.section|default('-') }}, desc={{ row.columnMap.description|default('-') }}, sched={{ row.columnMap.schedule|default('-') }}, unit={{ row.columnMap.units|default('-') }}
+colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
+{{ row.source|default('') }}
+
+{% endfor %}</pre>
+        {% endif %}
+        {% if ocrDebugPreview.subjectCodeTrace|default([]) is not empty %}
+            <div class="small mb-1"><strong>Subject Code Trace:</strong></div>
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.subjectCodeTrace|slice(0, 12) %}[{{ row.pass|default('') }}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
+{{ row.raw|default('') }} -> {{ row.normalized|default('') }} ({{ row.accepted ? 'accepted' : 'rejected' }}: {{ row.reason|default('') }})
+    sec={{ row.section|default('') }} [raw={{ row.rawSection|default('') }}, src={{ row.sectionSource|default('') }}] | units={{ row.units|default('') }}
+    sched={{ row.schedule|default('') }}
+    desc={{ row.description|default('') }} [raw={{ row.rawDescription|default('') }}, src={{ row.descriptionSource|default('') }}]
+    colmap: code={{ row.columnMap.code|default('-') }}, sec={{ row.columnMap.section|default('-') }}, desc={{ row.columnMap.description|default('-') }}, sched={{ row.columnMap.schedule|default('-') }}, unit={{ row.columnMap.units|default('-') }}
+    colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
+    {% endfor %}</pre>
+        {% endif %}
+        {% if ocrDebugPreview.rejectedTrace|default([]) is not empty %}
+            <div class="small mb-1"><strong>OCR Rejected Rows (sample):</strong></div>
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.rejectedTrace|slice(0, 60) %}[{{ row.pass|default('') }}] line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }} | {{ row.reason|default('') }}
+code={{ row.code|default('') }} | sec={{ row.section|default('') }} | sched={{ row.schedule|default('') }} | unit={{ row.units|default('') }}
+desc={{ row.description|default('') }}
+colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
+{{ row.source|default('') }}
+{% endfor %}</pre>
+        {% endif %}
+        <div class="small"><strong>OCR Text:</strong></div>
+        <pre class="mb-0 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{{ ocrDebugPreview.ocrText|default('') }}</pre>
+    </div>
+</details>
+{% endif %}
 
 {% if subjects|length > 0 %}
 <div class="ev-chips">
@@ -183,35 +463,407 @@
     </div>
 </div>
 
-{% else %}
-<div class="ev-panel mb-4">
-    <div class="ev-panel-head">
-        <div class="ev-panel-title"><i  class="bi bi-pencil-square"></i> Subjects to Evaluate</div>
-    </div>
-    <div class="ev-empty">
-        <div class="ev-empty-illustration">
-            <i  class="bi bi-clipboard-check"></i>
-        </div>
-        <div class="ev-empty-title">No evaluations available</div>
-        <div class="ev-empty-desc">Evaluations will appear here when an evaluation period is open and you are enrolled in subjects.</div>
-    </div>
-</div>
 {% endif %}
 
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+const initEvaluationSetIndexPage = () => {
     const input = document.getElementById('evSearch');
     const list = document.getElementById('evList');
+    const loadslipForm = document.getElementById('loadslipImportForm');
+    const loadslipInput = document.getElementById('loadslipFileInput');
+    const loadslipPreviewWrap = document.getElementById('loadslipPreviewWrap');
+    const loadslipPreviewBox = document.getElementById('loadslipPreviewBox');
+    const loadslipOverlay = document.getElementById('loadslipImportOverlay');
+    const loadslipOverlayTitle = document.getElementById('loadslipImportOverlayTitle');
+    let loadslipOverlayPercent = document.getElementById('loadslipImportOverlayPercent');
+    let loadslipOverlayBar = document.getElementById('loadslipImportOverlayBar');
+    const loadslipOverlaySub = document.getElementById('loadslipImportOverlaySub');
+
+    if (loadslipOverlay && (!loadslipOverlayPercent || !loadslipOverlayBar)) {
+        const overlayCard = loadslipOverlay.querySelector('.ev-import-loading-card');
+        if (overlayCard) {
+            if (!loadslipOverlayPercent) {
+                const percentEl = document.createElement('div');
+                percentEl.id = 'loadslipImportOverlayPercent';
+                percentEl.className = 'ev-import-loading-percent';
+                percentEl.textContent = '0%';
+                const titleEl = overlayCard.querySelector('.ev-import-loading-title');
+                if (titleEl && titleEl.nextSibling) {
+                    overlayCard.insertBefore(percentEl, titleEl.nextSibling);
+                } else {
+                    overlayCard.appendChild(percentEl);
+                }
+                loadslipOverlayPercent = percentEl;
+            }
+
+            if (!loadslipOverlayBar) {
+                const meterEl = document.createElement('div');
+                meterEl.className = 'ev-import-loading-meter';
+                meterEl.setAttribute('aria-hidden', 'true');
+
+                const barEl = document.createElement('div');
+                barEl.id = 'loadslipImportOverlayBar';
+                barEl.className = 'ev-import-loading-meter-bar';
+                meterEl.appendChild(barEl);
+
+                if (loadslipOverlayPercent && loadslipOverlayPercent.nextSibling) {
+                    overlayCard.insertBefore(meterEl, loadslipOverlayPercent.nextSibling);
+                } else {
+                    overlayCard.appendChild(meterEl);
+                }
+                loadslipOverlayBar = barEl;
+            }
+        }
+    }
+
+    let selectedPreviewUrl = null;
+    let loadslipOverlayProgress = 0;
+    let loadslipOverlayProgressTimer = null;
+    const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+
+    const clampOverlayProgress = (value) => Math.max(0, Math.min(100, Math.round(value)));
+
+    const setLoadslipOverlayProgress = (value) => {
+        loadslipOverlayProgress = clampOverlayProgress(value);
+        if (loadslipOverlayPercent) {
+            loadslipOverlayPercent.textContent = `${loadslipOverlayProgress}%`;
+        }
+        if (loadslipOverlayBar) {
+            loadslipOverlayBar.style.width = `${loadslipOverlayProgress}%`;
+        }
+    };
+
+    const stopLoadslipOverlayProgress = (finalValue = null) => {
+        if (loadslipOverlayProgressTimer) {
+            window.clearInterval(loadslipOverlayProgressTimer);
+            loadslipOverlayProgressTimer = null;
+        }
+        if (isFiniteNumber(finalValue)) {
+            setLoadslipOverlayProgress(finalValue);
+        }
+    };
+
+    const startLoadslipOverlayProgress = (start = 0, max = 95, step = 1, intervalMs = 120) => {
+        stopLoadslipOverlayProgress();
+        setLoadslipOverlayProgress(start);
+
+        const maxProgress = clampOverlayProgress(max);
+        if (loadslipOverlayProgress >= maxProgress) {
+            return;
+        }
+
+        loadslipOverlayProgressTimer = window.setInterval(() => {
+            if (loadslipOverlayProgress >= maxProgress) {
+                stopLoadslipOverlayProgress();
+                return;
+            }
+            setLoadslipOverlayProgress(Math.min(maxProgress, loadslipOverlayProgress + step));
+        }, intervalMs);
+    };
+
+    const showLoadslipOverlay = (title, subtitle, progress = null) => {
+        if (!loadslipOverlay) {
+            return;
+        }
+
+        if (loadslipOverlayTitle && title) {
+            loadslipOverlayTitle.textContent = title;
+        }
+        if (loadslipOverlaySub && subtitle) {
+            loadslipOverlaySub.textContent = subtitle;
+        }
+        if (isFiniteNumber(progress)) {
+            setLoadslipOverlayProgress(progress);
+        }
+
+        loadslipOverlay.classList.add('is-visible');
+        loadslipOverlay.setAttribute('aria-hidden', 'false');
+    };
+
+    const hideLoadslipOverlay = () => {
+        if (!loadslipOverlay) {
+            return;
+        }
+        stopLoadslipOverlayProgress(0);
+        loadslipOverlay.classList.remove('is-visible');
+        loadslipOverlay.setAttribute('aria-hidden', 'true');
+    };
+
+    const isSupportedLoadslipImage = (file) => {
+        if (!(file instanceof File)) {
+            return false;
+        }
+
+        if (/^image\/(jpeg|png)$/i.test(file.type)) {
+            return true;
+        }
+
+        return /\.(jpe?g|png)$/i.test(file.name || '');
+    };
+
+    const renderSelectedLoadslipPreview = (file) => {
+        if (!(file instanceof File) || !loadslipPreviewWrap || !loadslipPreviewBox) {
+            return;
+        }
+
+        if (!isSupportedLoadslipImage(file)) {
+            return;
+        }
+
+        if (selectedPreviewUrl) {
+            URL.revokeObjectURL(selectedPreviewUrl);
+            selectedPreviewUrl = null;
+        }
+
+        const mountPreview = (src) => {
+            if (!src) {
+                return;
+            }
+
+            loadslipPreviewWrap.classList.add('has-image');
+            loadslipPreviewBox.classList.remove('ev-preview-empty-box', 'ev-preview-empty');
+            loadslipPreviewBox.classList.add('ev-preview-box-image');
+            loadslipPreviewBox.textContent = '';
+
+            const previewImage = document.createElement('img');
+            previewImage.id = 'loadslipPreviewImage';
+            previewImage.className = 'ev-preview-img';
+            previewImage.src = src;
+            previewImage.alt = 'Selected loadslip image preview';
+            loadslipPreviewBox.appendChild(previewImage);
+        };
+
+        if (typeof FileReader !== 'undefined') {
+            const reader = new FileReader();
+            reader.onload = () => {
+                mountPreview(typeof reader.result === 'string' ? reader.result : '');
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        selectedPreviewUrl = URL.createObjectURL(file);
+        mountPreview(selectedPreviewUrl);
+    };
+
+    if (loadslipInput) {
+        if (typeof loadslipInput.__evLoadslipChangeHandler === 'function') {
+            loadslipInput.removeEventListener('change', loadslipInput.__evLoadslipChangeHandler);
+        }
+
+        const onLoadslipInputChange = () => {
+            const selected = loadslipInput.files && loadslipInput.files[0] ? loadslipInput.files[0] : null;
+            if (selected) {
+                renderSelectedLoadslipPreview(selected);
+            }
+        };
+
+        loadslipInput.__evLoadslipChangeHandler = onLoadslipInputChange;
+        loadslipInput.addEventListener('change', onLoadslipInputChange);
+    }
+
+    if (typeof window.__evLoadslipBeforeUnloadHandler === 'function') {
+        window.removeEventListener('beforeunload', window.__evLoadslipBeforeUnloadHandler);
+    }
+    const onLoadslipBeforeUnload = () => {
+        if (selectedPreviewUrl) {
+            URL.revokeObjectURL(selectedPreviewUrl);
+            selectedPreviewUrl = null;
+        }
+    };
+    window.__evLoadslipBeforeUnloadHandler = onLoadslipBeforeUnload;
+    window.addEventListener('beforeunload', onLoadslipBeforeUnload);
+
+    if (typeof window.__evLoadslipPageShowHandler === 'function') {
+        window.removeEventListener('pageshow', window.__evLoadslipPageShowHandler);
+    }
+    const onLoadslipPageShow = () => {
+        hideLoadslipOverlay();
+    };
+    window.__evLoadslipPageShowHandler = onLoadslipPageShow;
+    window.addEventListener('pageshow', onLoadslipPageShow);
+
+    const preprocessLoadslipImage = (file, scale = 2.4) => new Promise((resolve, reject) => {
+        if (!(file instanceof File)) {
+            resolve(null);
+            return;
+        }
+
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        image.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(null);
+                    return;
+                }
+
+                let adaptiveScale = Number.isFinite(scale) ? Math.max(0.5, scale) : 2.4;
+                const maxDimension = 3200;
+                const maxPixels = 9500000;
+                const baseWidth = Math.max(1, image.width || 1);
+                const baseHeight = Math.max(1, image.height || 1);
+                const largestSide = Math.max(baseWidth, baseHeight);
+                const basePixels = baseWidth * baseHeight;
+
+                if (largestSide > 0) {
+                    adaptiveScale = Math.min(adaptiveScale, maxDimension / largestSide);
+                }
+                if (basePixels > 0) {
+                    adaptiveScale = Math.min(adaptiveScale, Math.sqrt(maxPixels / basePixels));
+                }
+                adaptiveScale = Math.max(0.5, adaptiveScale);
+
+                canvas.width = Math.max(1, Math.round(baseWidth * adaptiveScale));
+                canvas.height = Math.max(1, Math.round(baseHeight * adaptiveScale));
+
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const pixels = imageData.data;
+                const contrast = 45;
+                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+                for (let i = 0; i < pixels.length; i += 4) {
+                    const gray = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+                    const adjusted = Math.max(0, Math.min(255, factor * (gray - 128) + 128));
+                    pixels[i] = adjusted;
+                    pixels[i + 1] = adjusted;
+                    pixels[i + 2] = adjusted;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+
+                canvas.toBlob((blob) => {
+                    URL.revokeObjectURL(objectUrl);
+                    if (!blob) {
+                        resolve(null);
+                        return;
+                    }
+
+                    const ext = file.type === 'image/png' ? 'png' : 'jpg';
+                    const baseName = file.name.replace(/\.(png|jpe?g)$/i, '');
+                    const processedFile = new File([blob], `${baseName}_ocr.${ext}`, {
+                        type: blob.type || (file.type === 'image/png' ? 'image/png' : 'image/jpeg'),
+                        lastModified: Date.now(),
+                    });
+                    resolve(processedFile);
+                }, file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.95);
+            } catch (error) {
+                URL.revokeObjectURL(objectUrl);
+                reject(error);
+            }
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Unable to preprocess loadslip image.'));
+        };
+
+        image.src = objectUrl;
+    });
+
+
     if (input && list) {
-        input.addEventListener('input', () => {
+        if (typeof input.__evSearchInputHandler === 'function') {
+            input.removeEventListener('input', input.__evSearchInputHandler);
+        }
+
+        const onSearchInput = () => {
             const term = input.value.trim().toLowerCase();
             list.querySelectorAll('.ev-item').forEach(item => {
                 item.style.display = !term || (item.dataset.search || '').toLowerCase().includes(term) ? '' : 'none';
             });
-        });
+        };
+
+        input.__evSearchInputHandler = onSearchInput;
+        input.addEventListener('input', onSearchInput);
     }
-});
+
+    if (loadslipForm && loadslipInput) {
+        let submittingWithProcessedImage = false;
+        const importSubmitButton = loadslipForm.querySelector('button[type="submit"]');
+        const importSubmitLabel = importSubmitButton ? importSubmitButton.querySelector('.ev-btn-label') : null;
+        const setImportButtonLoading = (loading, text = 'Import Loadslip') => {
+            if (!importSubmitButton) {
+                return;
+            }
+            importSubmitButton.disabled = loading;
+            importSubmitButton.classList.toggle('is-loading', loading);
+            if (importSubmitLabel) {
+                importSubmitLabel.textContent = text;
+            }
+        };
+
+        if (typeof loadslipForm.__evLoadslipSubmitHandler === 'function') {
+            loadslipForm.removeEventListener('submit', loadslipForm.__evLoadslipSubmitHandler);
+        }
+
+        const onLoadslipFormSubmit = async (event) => {
+            if (submittingWithProcessedImage) {
+                return;
+            }
+
+            const selected = loadslipInput.files && loadslipInput.files[0] ? loadslipInput.files[0] : null;
+            if (!selected || !isSupportedLoadslipImage(selected)) {
+                return;
+            }
+
+            showLoadslipOverlay('Preparing loadslip image...', 'Applying high-resolution enhancement and trace scan detection before OCR import.', 12);
+            startLoadslipOverlayProgress(12, 46, 1, 100);
+            setImportButtonLoading(true, 'Scanning...');
+
+            if (!window.DataTransfer) {
+                event.preventDefault();
+                showLoadslipOverlay('Scanning loadslip...', 'Uploading high-resolution scan and running OCR trace detection.', 55);
+                startLoadslipOverlayProgress(55, 95, 1, 130);
+                submittingWithProcessedImage = true;
+                window.requestAnimationFrame(() => {
+                    loadslipForm.submit();
+                });
+                return;
+            }
+
+            event.preventDefault();
+
+            try {
+                const processed = await preprocessLoadslipImage(selected, 2.4);
+                if (processed) {
+                    const dt = new DataTransfer();
+                    dt.items.add(processed);
+                    loadslipInput.files = dt.files;
+                }
+            } catch (error) {
+                console.warn('Loadslip preprocessing skipped:', error);
+            }
+
+            showLoadslipOverlay('Scanning loadslip...', 'Uploading high-resolution scan and running OCR trace detection.', 60);
+            startLoadslipOverlayProgress(60, 95, 1, 130);
+
+            submittingWithProcessedImage = true;
+            window.requestAnimationFrame(() => {
+                loadslipForm.submit();
+            });
+        };
+
+        loadslipForm.__evLoadslipSubmitHandler = onLoadslipFormSubmit;
+        loadslipForm.addEventListener('submit', onLoadslipFormSubmit);
+    }
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEvaluationSetIndexPage, { once: true });
+} else {
+    initEvaluationSetIndexPage();
+}
+
+document.addEventListener('turbo:load', initEvaluationSetIndexPage);
 </script>
 {% endblock %}

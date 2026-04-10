@@ -36,6 +36,10 @@
     white-space: normal;
     word-break: break-word;
 }
+.sup-privacy-card { border: 1px solid #dbe3ef; border-radius: 12px; overflow: hidden; margin: 14px 18px; }
+.sup-privacy-head { background: linear-gradient(135deg,#1e3a8a,#2563eb); color: #fff; padding: 12px 16px; }
+.sup-privacy-body { background: #fff; color: #1f2937; padding: 16px; font-size: .9rem; line-height: 1.65; }
+.sup-privacy-choice { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -75,6 +79,35 @@
     <div style="text-align:center;padding:12px 32px 14px;background:#fff;border-bottom:1px solid #e2e8f0;">
         <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(Performance Evaluation Instrument for Administrative Leaders)</div>
         <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">Please evaluate the performance of the {{ evaluateeRoleLabel }} honestly based on your observations and interactions. All responses are confidential.</p>
+    </div>
+
+    <div class="sup-privacy-card">
+        <div class="sup-privacy-head">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-shield-lock-fill"></i>
+                <div>
+                    <div class="fw-bold">Data Privacy Disclaimer</div>
+                    <small class="opacity-75">Please read before proceeding</small>
+                </div>
+            </div>
+        </div>
+        <div class="sup-privacy-body">
+            <div>{{ privacyDisclaimerHtml|raw }}</div>
+            {% if not isReadOnly %}
+            <hr class="my-3">
+            <div class="mb-2 fw-semibold">Do you agree to the Data Privacy Disclaimer? <span class="text-danger">*</span></div>
+            <div class="sup-privacy-choice">
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyAgree" value="agree">
+                    <label class="form-check-label" for="supPrivacyAgree">Agree</label>
+                </div>
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyDisagree" value="disagree">
+                    <label class="form-check-label" for="supPrivacyDisagree">Disagree</label>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
     {# Evaluatee Info #}

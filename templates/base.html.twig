@@ -101,16 +101,27 @@
 
                 {# ── Student: SET Evaluation ── #}
                 {% if not app.user.isFaculty and not app.user.isStaff and not app.user.isAdmin %}
+                    <div class="sidebar-header">Enrollment</div>
+                    <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['evaluation_set_index','evaluation_set_form'] %}active{% endif %}"
+                       href="{{ path('evaluation_set_index') }}">
+                        <i class="sidebar-icon bi bi-journal-bookmark"></i> Loadslip
+                    </a>
+                    <div class="sidebar-header">Evaluation</div>
                     <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('evaluation_history') }}">
-                        <i class="sidebar-icon bi bi-clock-history"></i> Evaluation History
+                        <i class="sidebar-icon bi bi-clock-history"></i> History
+                    </a>
+                    <div class="sidebar-header">System Logs</div>
+                    <a class="nav-link {% if 'student_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('student_audit_log') }}">
+                        <i class="sidebar-icon bi bi-journal-text"></i> Audit Log
                     </a>
 
                 {% endif %}
 
                 {# ── Faculty: Management ── #}
                 {% if app.user.isFaculty and not app.user.isAdmin and not _is_assigned_superior %}
-                    <div class="sidebar-header">Subject Management</div>
+                    <div class="sidebar-header">Enrollment</div>
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['faculty_subjects','faculty_subject_detail','faculty_department_detail'] %}active{% endif %}"
                        href="{{ path('faculty_subjects') }}">
                         <i class="sidebar-icon bi bi-book"></i> Subject Load
@@ -150,7 +161,7 @@
                 {% endif %}
             </nav>
 
-            <div class="sidebar-header">SYSTEM LOGS</div>
+            <div class="sidebar-header">System Logs</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_audit_log') }}">
@@ -178,7 +189,7 @@
                 </a>
             </nav>
 
-            <div class="sidebar-header">SYSTEM LOGS</div>
+            <div class="sidebar-header">System Logs</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'faculty_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('faculty_audit_log') }}">
@@ -263,9 +274,13 @@
                     {% set notifCount = unread_message_notifications() %}
                     {% if sc.faculty_messages > 0 or notifCount > 0 %}<span class="sidebar-count" style="background:#dc3545;color:#fff">{{ (sc.faculty_messages + notifCount) }}</span>{% endif %}
                 </a>
+                <a class="nav-link {% if 'staff_announcements' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('staff_announcements') }}">
+                    <i class="sidebar-icon bi bi-megaphone"></i> Announcement
+                </a>
             </nav>
 
-            <div class="sidebar-header">SYSTEM LOGS</div>
+            <div class="sidebar-header">System Logs</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'staff_audit_log' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('staff_audit_log') }}">
@@ -309,7 +324,7 @@
                 </a>
             </nav>
 
-            <div class="sidebar-header">Subject Management</div>
+            <div class="sidebar-header">Enrollment</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_curricul' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('admin_curricula') }}">
@@ -337,7 +352,7 @@
                 </a>
             </nav>
 
-            <div class="sidebar-header">SYSTEM LOGS</div>
+            <div class="sidebar-header">System Logs</div>
             <nav class="nav flex-column">
                 <a class="nav-link {% if 'admin_audit_log' == app.request.attributes.get('_route') %}active{% endif %}"
                    href="{{ path('admin_audit_log') }}">
@@ -363,13 +378,19 @@
                     </div>
                     <div class="sidebar-user-info">
                         <span class="sidebar-user-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
-                        <span class="sidebar-user-role">
+                        <span class="sidebar-user-role" style="display:flex;align-items:center;width:100%;">
                             {% if app.user.isAdmin %}Administrator
                             {% elseif app.user.hasAssignedRole('ROLE_SUPERIOR') %}Superior
                             {% elseif app.user.isFaculty %}Faculty
                             {% elseif app.user.isStaff %}Staff
                             {% elseif app.user.isSuperior %}Superior
-                            {% else %}Student{% endif %}
+                            {% else %}
+                                {% set _studentVerified = app.session.get('student_loadslip_verified', false) or (app.session.get('student_loadslip_codes', [])|length > 0) %}
+                                Student
+                                <span style="margin-left:auto;color:{{ _studentVerified ? '#16A34A' : '#DC2626' }};font-weight:700;">
+                                    {{ _studentVerified ? 'Verified' : 'Unverified' }}
+                                </span>
+                            {% endif %}
                         </span>
                     </div>
                 </div>
@@ -613,19 +634,346 @@
 
         {# ── MAIN CONTENT ── #}
         <div class="{% if app.user %}main-content{% else %}main-content-full{% endif %}"{% if not app.user %} style="padding-top: 56px;"{% endif %}>            {# Non-success flash messages (error, warning, info) #}
-            {% for label, messages in app.flashes(['error', 'warning', 'info', 'danger']) %}
+            {% set nonSuccessFlashes = app.flashes(['error', 'warning', 'info', 'danger']) %}
+            {% set studentMismatchMessages = [] %}
+            {% set loadslipClearedMessages = [] %}
+            {% set loadslipNoCodesMessages = [] %}
+            {% set loadslipNotVerifiedMessages = [] %}
+            {% set loadslipAlreadyVerifiedMessages = [] %}
+            {% set studentIdNotFoundMessages = [] %}
+            {% set loadslipStudentIdMissingMessages = [] %}
+            {% for label, messages in nonSuccessFlashes %}
                 {% for message in messages %}
-                    <div class="{% if app.user %}px-0{% else %}container{% endif %} mt-3">
-                        <div class="alert alert-{{ label }} alert-dismissible fade show">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    {% if label == 'danger' and message starts with 'Student ID mismatch' %}
+                        {% set studentMismatchMessages = studentMismatchMessages|merge([message]) %}
+                    {% elseif label == 'danger' and message starts with 'Student ID not found.' %}
+                        {% set studentIdNotFoundMessages = studentIdNotFoundMessages|merge([message]) %}
+                    {% elseif label == 'warning' and message starts with 'Could not extract Student ID from loadslip.' %}
+                        {% set loadslipStudentIdMissingMessages = loadslipStudentIdMissingMessages|merge([message]) %}
+                    {% elseif label == 'info' and message starts with 'Imported loadslip filter cleared.' %}
+                        {% set loadslipClearedMessages = loadslipClearedMessages|merge([message]) %}
+                    {% elseif label == 'warning' and (
+                        message starts with 'No valid subject codes were found from the uploaded image.'
+                        or message starts with 'Image is not readable for OCR'
+                        or message starts with 'Image text is not readable enough for OCR.'
+                    ) %}
+                        {% set loadslipNoCodesMessages = loadslipNoCodesMessages|merge([message]) %}
+                    {% elseif label == 'warning' and message starts with 'Loadslip is not verified for this Student ID.' %}
+                        {% set loadslipNotVerifiedMessages = loadslipNotVerifiedMessages|merge([message]) %}
+                    {% elseif label == 'warning' and message starts with 'Loadslip is already verified.' %}
+                        {% set loadslipAlreadyVerifiedMessages = loadslipAlreadyVerifiedMessages|merge([message]) %}
+                    {% else %}
+                        <div class="{% if app.user %}px-0{% else %}container{% endif %} mt-3">
+                            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
                 {% endfor %}
             {% endfor %}
 
+            {% if studentMismatchMessages|length > 0 %}
+                <div class="modal fade" id="studentIdMismatchModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #DC2626;">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Student ID Mismatch</h5>
+                                {% for message in studentMismatchMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showStudentMismatchModal() {
+                        var modalEl = document.getElementById('studentIdMismatchModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showStudentMismatchModal);
+                    document.addEventListener('turbo:load', showStudentMismatchModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if loadslipClearedMessages|length > 0 %}
+                <div class="modal fade" id="loadslipClearedModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 430px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #0EA5E9;">
+                                    <i class="bi bi-info-circle"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Cleared</h5>
+                                {% for message in loadslipClearedMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showLoadslipClearedModal() {
+                        var modalEl = document.getElementById('loadslipClearedModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showLoadslipClearedModal);
+                    document.addEventListener('turbo:load', showLoadslipClearedModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if loadslipNoCodesMessages|length > 0 %}
+                <div class="modal fade" id="loadslipNoCodesModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Not Readable</h5>
+                                {% for message in loadslipNoCodesMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showLoadslipNoCodesModal() {
+                        var modalEl = document.getElementById('loadslipNoCodesModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showLoadslipNoCodesModal);
+                    document.addEventListener('turbo:load', showLoadslipNoCodesModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if studentIdNotFoundMessages|length > 0 %}
+                <div class="modal fade" id="studentIdNotFoundModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #DC2626;">
+                                    <i class="bi bi-person-exclamation"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Student ID Not Found</h5>
+                                {% for message in studentIdNotFoundMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showStudentIdNotFoundModal() {
+                        var modalEl = document.getElementById('studentIdNotFoundModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showStudentIdNotFoundModal);
+                    document.addEventListener('turbo:load', showStudentIdNotFoundModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if loadslipStudentIdMissingMessages|length > 0 %}
+                <div class="modal fade" id="loadslipStudentIdMissingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
+                                    <i class="bi bi-person-exclamation"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Student ID Missing</h5>
+                                {% for message in loadslipStudentIdMissingMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showLoadslipStudentIdMissingModal() {
+                        var modalEl = document.getElementById('loadslipStudentIdMissingModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        if (typeof window.playErrorModalSound === 'function') {
+                            window.playErrorModalSound();
+                        }
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showLoadslipStudentIdMissingModal);
+                    document.addEventListener('turbo:load', showLoadslipStudentIdMissingModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if loadslipNotVerifiedMessages|length > 0 %}
+                <div class="modal fade" id="loadslipNotVerifiedModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Not Verified</h5>
+                                {% for message in loadslipNotVerifiedMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showLoadslipNotVerifiedModal() {
+                        var modalEl = document.getElementById('loadslipNotVerifiedModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showLoadslipNotVerifiedModal);
+                    document.addEventListener('turbo:load', showLoadslipNotVerifiedModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if loadslipAlreadyVerifiedMessages|length > 0 %}
+                <div class="modal fade" id="loadslipAlreadyVerifiedModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 460px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
+                                    <i class="bi bi-shield-exclamation"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Already Verified</h5>
+                                {% for message in loadslipAlreadyVerifiedMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showLoadslipAlreadyVerifiedModal() {
+                        var modalEl = document.getElementById('loadslipAlreadyVerifiedModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showLoadslipAlreadyVerifiedModal);
+                    document.addEventListener('turbo:load', showLoadslipAlreadyVerifiedModal);
+                })();
+                </script>
+            {% endif %}
+
             {% block body %}{% endblock %}
         </div>
+
+        <audio
+            id="errorModalSound"
+            preload="auto"
+            data-preferred-src="{{ asset('sounds/universfield-error-05-199276.mp3') }}"
+            data-fallback-src="{{ asset('sounds/successed-295058.mp3') }}">
+        </audio>
+        <script>
+        (function() {
+            window.playErrorModalSound = function() {
+                var audio = document.getElementById('errorModalSound');
+                if (!audio) return;
+                try {
+                    if (audio.dataset.initialized !== '1') {
+                        audio.dataset.initialized = '1';
+                        if (audio.dataset.preferredSrc) {
+                            audio.src = audio.dataset.preferredSrc;
+                            audio.load();
+                        }
+                    }
+
+                    audio.currentTime = 0;
+                    var playPromise = audio.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(function() {
+                            var fallback = audio.dataset.fallbackSrc;
+                            if (!fallback || audio.src.indexOf(fallback) !== -1) return;
+                            try {
+                                audio.src = fallback;
+                                audio.load();
+                                audio.currentTime = 0;
+                                var retry = audio.play();
+                                if (retry && typeof retry.catch === 'function') {
+                                    retry.catch(function() {});
+                                }
+                            } catch (e2) {}
+                        });
+                    }
+                } catch (e) {}
+            };
+
+            function bindErrorModalSound() {
+                document.querySelectorAll('.modal[data-error-modal="1"]').forEach(function(modalEl) {
+                    if (modalEl.dataset.errorSoundBound === '1') return;
+                    modalEl.dataset.errorSoundBound = '1';
+                    modalEl.addEventListener('show.bs.modal', function() {
+                        if (typeof window.playErrorModalSound === 'function') {
+                            window.playErrorModalSound();
+                        }
+                    });
+                });
+            }
+
+            bindErrorModalSound();
+            document.addEventListener('DOMContentLoaded', bindErrorModalSound);
+            document.addEventListener('turbo:load', bindErrorModalSound);
+        })();
+        </script>
 
         <audio id="successModalSound" preload="auto">
             <source src="{{ asset('sounds/successed-295058.mp3') }}" type="audio/mpeg">

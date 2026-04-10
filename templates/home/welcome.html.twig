@@ -16,6 +16,10 @@
 <div class="fes-page">
     {% include 'home/_fes_header.html.twig' with {active: currentHeroView} %}
 
+    <button type="button" class="fes-hero-announcement-wrap fes-hero-announcement-trigger" id="announcementTrigger" aria-label="Open announcement">
+        <span class="fes-hero-announcement-tab"><i class="bi bi-megaphone-fill"></i><span>Announcement</span></span>
+    </button>
+
     {# ── Hero Section ── #}
     <section class="fes-hero" id="hero">
         <div class="container">
@@ -159,6 +163,42 @@
     {% include 'home/_fes_footer.html.twig' %}
 </div>
 
+<div class="fes-announcement-overlay" id="announcementOverlay" aria-hidden="true">
+    <div class="fes-announcement-panel" role="dialog" aria-modal="true" aria-labelledby="announcementPanelTitle">
+        <div class="fes-announcement-panel-header">
+            <div>
+                <h2 class="mb-0 fw-bold" id="announcementPanelTitle">Announcement</h2>
+                <small>Latest updates for the SET-SEF Evaluation System</small>
+            </div>
+            <button type="button" class="btn-close btn-close-white" id="announcementClose" aria-label="Close announcement"></button>
+        </div>
+        <div class="fes-announcement-panel-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="fes-hero-announcement-kicker"><i class="bi bi-megaphone-fill"></i>Announcement</span>
+            </div>
+            <h3 class="fes-hero-announcement-title">{{ systemAnnouncementTitle|default('New evaluation schedules and updates are now available.') }}</h3>
+            <p class="fes-hero-announcement-text">{{ systemAnnouncementBodyHtml|default('Please check your evaluation period, assigned subjects, and reminders before submitting. All notices will be posted here for students, faculty, and staff.')|raw }}</p>
+            {% if systemAnnouncementUpdatedAt or systemAnnouncementUpdatedBy %}
+            <div class="text-muted mt-2" style="font-size:.8rem;">
+                <i class="bi bi-clock-history me-1"></i>
+                {% if systemAnnouncementUpdatedAt %}
+                    Updated {{ systemAnnouncementUpdatedAt|date('M d, Y h:i A') }}
+                {% else %}
+                    Updated recently
+                {% endif %}
+                {% if systemAnnouncementUpdatedBy %} by {{ systemAnnouncementUpdatedBy }}{% endif %}
+            </div>
+            {% endif %}
+            <div class="fes-hero-announcement-links">
+                <a href="{{ path('app_login') }}" class="fes-hero-announcement-link">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    View Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 (function() {
     'use strict';
@@ -239,6 +279,38 @@
     } else {
         initCountUp();
     }
+
+    function initAnnouncementOverlay() {
+        var trigger = document.getElementById('announcementTrigger');
+        var overlay = document.getElementById('announcementOverlay');
+        var closeBtn = document.getElementById('announcementClose');
+        if (!trigger || !overlay || !closeBtn) return;
+
+        function openOverlay() {
+            overlay.classList.add('is-open');
+            overlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeOverlay() {
+            overlay.classList.remove('is-open');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        trigger.addEventListener('click', openOverlay);
+        closeBtn.addEventListener('click', closeOverlay);
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closeOverlay();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('is-open')) {
+                closeOverlay();
+            }
+        });
+    }
+
+    initAnnouncementOverlay();
 })();
 </script>
 {% endblock %}

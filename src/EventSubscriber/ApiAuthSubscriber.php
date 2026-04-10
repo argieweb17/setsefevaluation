@@ -2,7 +2,9 @@
 
 namespace App\EventSubscriber;
 
+use App\Entity\User;
 use App\Repository\UserRepository;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -41,13 +43,14 @@ class ApiAuthSubscriber implements EventSubscriberInterface
 
     public function __construct(
         private UserRepository $userRepo,
+        private Security $security,
     ) {}
 
     public static function getSubscribedEvents(): array
     {
         return [
-            // Run after CORS (250) but before the controller
-            KernelEvents::REQUEST => ['onKernelRequest', 200],
+            // Run after router and firewall so session-authenticated users are available.
+            KernelEvents::REQUEST => ['onKernelRequest', 0],
         ];
     }
 
@@ -99,7 +102,15 @@ class ApiAuthSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // ── Authenticate via Bearer token ──
+        // ── Authenticate via existing web session first, then Bearer token ──
+        $sessionUser = $this->security->getUser();
+        if ($sessionUser instanceof User) {
+            $request->attributes->set('_api_user', $sessionUser);
+            $this->authorizeRoute($request, $sessionUser, $event);
+            return;
+        }
+
+        // Fallback: authenticate via Bearer token
         $auth = $request->headers->get('Authorization', '');
         if (!str_starts_with($auth, 'Bearer ')) {
             $event->setResponse(new JsonResponse(
@@ -122,6 +133,16 @@ class ApiAuthSubscriber implements EventSubscriberInterface
 
         // Store the authenticated user on the request for controllers
         $request->attributes->set('_api_user', $user);
+
+        $this->authorizeRoute($request, $user, $event);
+    }
+
+    private function authorizeRoute(
+        \Symfony\Component\HttpFoundation\Request $request,
+        User $user,
+        RequestEvent $event
+    ): void {
+        $routeName = $request->attributes->get('_route', '');
 
         // ── Authorize: check role requirements ──
         $requiredRoles = self::ROUTE_ROLES[$routeName] ?? null;

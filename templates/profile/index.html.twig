@@ -12,6 +12,8 @@
 .pf-chip-student{color:#2563EB}
 .pf-chip-active{color:#16A34A}
 .pf-chip-inactive{color:#64748B}
+.pf-chip-verified{color:#16A34A}
+.pf-chip-unverified{color:#DC2626}
 </style>
 {% endblock %}
 
@@ -108,6 +110,16 @@
                         <tr>
                             <td class="text-muted"><i  class="bi bi-person-vcard me-2"></i>Student ID</td>
                             <td class="fw-semibold">{{ user.schoolId ?? '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted"><i  class="bi bi-patch-check me-2"></i>Verification</td>
+                            <td>
+                                {% if isStudentVerified|default(false) %}
+                                    <span class="pf-chip pf-chip-verified">Verified</span>
+                                {% else %}
+                                    <span class="pf-chip pf-chip-unverified">Unverified</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-muted"><i  class="bi bi-mortarboard me-2"></i>Year Level</td>

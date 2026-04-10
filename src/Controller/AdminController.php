@@ -85,6 +85,12 @@ class AdminController extends AbstractController
             $this->audit->log(AuditLog::ACTION_DELETE_USER, 'User', $user->getId(),
                 'Rejected registration for ' . $user->getFullName());
 
+            // Remove dependent enrollments first to satisfy FK(student_id -> user.id).
+            $em->getConnection()->executeStatement(
+                'DELETE FROM enrollment WHERE student_id = :studentId',
+                ['studentId' => $user->getId()]
+            );
+
             $em->remove($user);
             $em->flush();
 
@@ -118,6 +124,9 @@ class AdminController extends AbstractController
                 if (isset($roleMap[$r])) {
                     $roles[] = $roleMap[$r];
                 }
+            }
+            if (empty($roles)) {
+                $roles[] = 'ROLE_STUDENT';
             }
             $user->setRoles($roles);
 
@@ -176,6 +185,9 @@ class AdminController extends AbstractController
                 if (isset($roleMap[$r])) {
                     $roles[] = $roleMap[$r];
                 }
+            }
+            if (empty($roles)) {
+                $roles[] = 'ROLE_STUDENT';
             }
             $user->setRoles($roles);
 
@@ -265,6 +277,12 @@ class AdminController extends AbstractController
                 ->setParameter('user', $user)
                 ->execute();
 
+            // Remove dependent enrollments first to satisfy FK(student_id -> user.id).
+            $em->getConnection()->executeStatement(
+                'DELETE FROM enrollment WHERE student_id = :studentId',
+                ['studentId' => $user->getId()]
+            );
+
             $em->remove($user);
             $em->flush();
             $this->addFlash('success', 'User deleted.');
@@ -306,7 +324,7 @@ class AdminController extends AbstractController
                 'faculty' => ['ROLE_FACULTY'],
                 'superior' => ['ROLE_SUPERIOR'],
                 'staff' => ['ROLE_STAFF'],
-                'student' => [],
+                'student' => ['ROLE_STUDENT'],
             ];
             $user->setRoles($roleMap[strtolower(trim($role))] ?? []);
 
@@ -452,7 +470,7 @@ class AdminController extends AbstractController
             'faculty' => ['ROLE_FACULTY'],
             'superior' => ['ROLE_SUPERIOR'],
             'staff' => ['ROLE_STAFF'],
-            'student' => [],
+            'student' => ['ROLE_STUDENT'],
         ];
 
         $count = 0;
@@ -1320,12 +1338,16 @@ class AdminController extends AbstractController
         $questions = $repo->findByType($type);
         $categories = $repo->findCategories($type);
         $categoryDescriptions = $descRepo->findDescriptionsByType($type);
+        $questionnaireDisclaimerText = $descRepo->getDisclaimerText($type);
+        $questionnaireDisclaimerHtml = $descRepo->getDisclaimerHtml($type);
 
         return $this->render('admin/questions.html.twig', [
             'questions' => $questions,
             'categories' => $categories,
             'selectedType' => $type,
             'categoryDescriptions' => $categoryDescriptions,
+            'questionnaireDisclaimerText' => $questionnaireDisclaimerText,
+            'questionnaireDisclaimerHtml' => $questionnaireDisclaimerHtml,
         ]);
     }
 
@@ -1425,6 +1447,33 @@ class AdminController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Section description updated.');
         }
+        return $this->redirectToRoute('admin_questions', ['type' => $type]);
+    }
+
+    #[Route('/questions/disclaimer', name: 'admin_question_disclaimer', methods: ['POST'])]
+    public function saveQuestionnaireDisclaimer(Request $request, EntityManagerInterface $em, QuestionCategoryDescriptionRepository $descRepo): Response
+    {
+        $type = $request->request->get('evaluationType', 'SET');
+        $description = trim((string) $request->request->get('description', ''));
+
+        if ($this->isCsrfTokenValid('question_disclaimer', $request->request->get('_token'))) {
+            $entity = $descRepo->findOneBy([
+                'category' => QuestionCategoryDescriptionRepository::DISCLAIMER_CATEGORY,
+                'evaluationType' => $type,
+            ]);
+
+            if (!$entity) {
+                $entity = new QuestionCategoryDescription();
+                $entity->setCategory(QuestionCategoryDescriptionRepository::DISCLAIMER_CATEGORY);
+                $entity->setEvaluationType($type);
+                $em->persist($entity);
+            }
+
+            $entity->setDescription($description !== '' ? $description : null);
+            $em->flush();
+            $this->addFlash('success', 'Questionnaire disclaimer updated.');
+        }
+
         return $this->redirectToRoute('admin_questions', ['type' => $type]);
     }
 

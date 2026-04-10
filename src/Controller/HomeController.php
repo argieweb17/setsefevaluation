@@ -18,6 +18,7 @@ use App\Repository\DepartmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\MessageNotificationRepository;
+use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
 use App\Repository\SuperiorEvaluationRepository;
@@ -45,6 +46,7 @@ class HomeController extends AbstractController
 
         $facultyName = mb_strtolower(trim($faculty->getFirstName() . ' ' . $faculty->getLastName()));
         $facultyLastFirst = mb_strtolower(trim($faculty->getLastName() . ', ' . $faculty->getFirstName()));
+        $facultyFirstName = mb_strtolower(trim($faculty->getFirstName()));
         $facultyLastName = mb_strtolower(trim($faculty->getLastName()));
 
         $normalizeCode = static function (?string $value): string {
@@ -76,13 +78,20 @@ class HomeController extends AbstractController
             }
 
             $evalFaculty = mb_strtolower(trim((string) ($eval->getFaculty() ?? '')));
-            if (
-                $evalFaculty !== '' &&
-                $evalFaculty !== $facultyName &&
-                $evalFaculty !== $facultyLastFirst &&
-                !str_contains($evalFaculty, $facultyLastName)
-            ) {
-                continue;
+            if ($evalFaculty !== '') {
+                $matchesFaculty =
+                    $evalFaculty === $facultyName ||
+                    $evalFaculty === $facultyLastFirst ||
+                    (
+                        $facultyFirstName !== '' &&
+                        $facultyLastName !== '' &&
+                        str_contains($evalFaculty, $facultyFirstName) &&
+                        str_contains($evalFaculty, $facultyLastName)
+                    );
+
+                if (!$matchesFaculty) {
+                    continue;
+                }
             }
 
             $evalSection = $normalizeSection($eval->getSection());
@@ -101,12 +110,9 @@ class HomeController extends AbstractController
             $evalSubjectNorm = $normalizeText($evalSubject);
 
             $matchesByCode = $evalCode !== '' && $evalCode === $subjectCode;
-            $matchesByText = ($evalSubjectNorm !== '' && (
-                str_contains($evalSubjectNorm, $subjectCode) ||
-                str_contains($evalSubjectNorm, $subjectName)
-            ));
+            $matchesByNameOnly = $evalCode === '' && $evalSubjectNorm !== '' && $subjectName !== '' && $evalSubjectNorm === $subjectName;
 
-            if ($matchesByCode || $matchesByText) {
+            if ($matchesByCode || $matchesByNameOnly) {
                 return true;
             }
         }
@@ -170,7 +176,12 @@ class HomeController extends AbstractController
     }
 
     #[Route('/', name: 'app_home')]
-    public function index(Request $request, UserRepository $userRepo, EvaluationResponseRepository $responseRepo): Response
+    public function index(
+        Request $request,
+        UserRepository $userRepo,
+        EvaluationResponseRepository $responseRepo,
+        QuestionCategoryDescriptionRepository $descRepo,
+    ): Response
     {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_dashboard');
@@ -203,12 +214,17 @@ class HomeController extends AbstractController
             ->getSingleScalarResult();
             
         $evaluationCount = $responseRepo->count([]);
+        $announcementMeta = $descRepo->getSystemAnnouncementMeta();
         
         return $this->render('home/welcome.html.twig', [
             'studentCount' => $studentCount,
             'facultyCount' => $facultyCount,
             'staffCount' => $staffCount,
             'evaluationCount' => $evaluationCount,
+            'systemAnnouncementTitle' => $descRepo->getSystemAnnouncementTitle(),
+            'systemAnnouncementBodyHtml' => $descRepo->getSystemAnnouncementBodyHtml(),
+            'systemAnnouncementUpdatedBy' => $announcementMeta['updatedBy'] ?? '',
+            'systemAnnouncementUpdatedAt' => $announcementMeta['updatedAt'] ?? '',
             'heroView' => $heroView,
         ]);
     }
@@ -573,6 +589,7 @@ class HomeController extends AbstractController
                 'IDENTITY(r.faculty) as facultyId',
                 'IDENTITY(r.subject) as subjectId',
                 'COUNT(DISTINCT r.evaluator) as evaluatorCount',
+                'MAX(r.section) as responseSection',
                 'MAX(r.submittedAt) as lastSubmitted'
             )
             ->where('r.isDraft = false')
@@ -599,10 +616,9 @@ class HomeController extends AbstractController
         }
 
         $completedEvalMap = [];
-        $now = new \DateTimeImmutable();
         foreach ($submissions as $sub) {
             $ep   = $epMap[$sub['epId']] ?? null;
-            if (!$ep || !$ep->isStatus() || $ep->getStartDate() > $now || $ep->getEndDate() < $now) {
+            if (!$ep) {
                 continue;
             }
             $fac  = $uMap[$sub['facultyId']] ?? null;
@@ -2432,6 +2448,42 @@ class HomeController extends AbstractController
         $totalPages = (int) ceil($totalLogs / $limit);
 
         return $this->render('home/staff/audit_log.html.twig', [
+            'logs' => $logs,
+            'currentPage' => $page,
+            'totalPages' => $totalPages,
+            'totalLogs' => $totalLogs,
+        ]);
+    }
+
+    #[Route('/student/audit-log', name: 'student_audit_log')]
+    #[IsGranted('ROLE_USER')]
+    public function studentAuditLog(
+        AuditLogRepository $auditRepo,
+        Request $request,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // Restrict this route to student users only.
+        if ($user->isFaculty() || $user->isStaff() || $user->isAdmin()) {
+            throw $this->createAccessDeniedException('Only students can access this page.');
+        }
+
+        $page = max(1, $request->query->getInt('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        $qb = $auditRepo->createQueryBuilder('a')
+            ->where('a.performedBy = :user')
+            ->setParameter('user', $user)
+            ->orderBy('a.createdAt', 'DESC');
+
+        $totalLogs = (clone $qb)->select('COUNT(a.id)')->getQuery()->getSingleScalarResult();
+        $logs = $qb->setFirstResult($offset)->setMaxResults($limit)->getQuery()->getResult();
+
+        $totalPages = (int) ceil($totalLogs / $limit);
+
+        return $this->render('home/student/audit_log.html.twig', [
             'logs' => $logs,
             'currentPage' => $page,
             'totalPages' => $totalPages,
