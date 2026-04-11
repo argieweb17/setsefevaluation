@@ -656,6 +656,10 @@
                         message starts with 'No valid subject codes were found from the uploaded image.'
                         or message starts with 'Image is not readable for OCR'
                         or message starts with 'Image text is not readable enough for OCR.'
+                        or message starts with 'Upload rejected: image color does not match the instruction sample'
+                        or message starts with 'Upload rejected: image does not match the required loadslip format shown in the instruction'
+                        or message starts with 'Upload rejected: loadslip semester mismatch.'
+                        or message starts with 'Upload rejected: loadslip school year mismatch.'
                     ) %}
                         {% set loadslipNoCodesMessages = loadslipNoCodesMessages|merge([message]) %}
                     {% elseif label == 'warning' and message starts with 'Loadslip is not verified for this Student ID.' %}
@@ -749,7 +753,7 @@
                                 <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
                                     <i class="bi bi-exclamation-triangle"></i>
                                 </div>
-                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Not Readable</h5>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Loadslip Import Rejected</h5>
                                 {% for message in loadslipNoCodesMessages %}
                                     <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
                                 {% endfor %}

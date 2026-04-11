@@ -57,6 +57,62 @@
     line-height: 1;
 }
 .ev-loadslip .ev-instruction-trigger:hover { background: #dbeafe; color: #1d4ed8; }
+.ev-instruction-sample {
+    margin-top: .7rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+}
+.ev-instruction-sample img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+    object-fit: contain;
+    background: #f8fafc;
+}
+.ev-instruction-sample-caption {
+    margin: 0;
+    padding: .5rem .7rem;
+    border-top: 1px solid #e2e8f0;
+    font-size: .75rem;
+    color: #475569;
+    background: #f8fafc;
+}
+.ev-instruction-sample .carousel-inner { background: #f8fafc; }
+.ev-instruction-sample .carousel-item { height: clamp(220px, 45vh, 360px); }
+.ev-instruction-sample .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    margin: 0 auto;
+}
+.ev-instruction-sample .carousel-control-prev,
+.ev-instruction-sample .carousel-control-next {
+    width: 12%;
+    top: 0;
+    bottom: 24px;
+}
+.ev-instruction-sample .carousel-control-prev-icon,
+.ev-instruction-sample .carousel-control-next-icon {
+    width: 2rem;
+    height: 2rem;
+    background-size: 58% 58%;
+    border-radius: 50%;
+    background-color: rgba(15, 23, 42, 0.62);
+}
+.ev-instruction-sample .carousel-indicators { margin-bottom: .4rem; }
+.ev-instruction-sample .carousel-indicators [data-bs-target] {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: 0;
+    margin: 0 .2rem;
+    background-color: #94a3b8;
+    opacity: .9;
+}
+.ev-instruction-sample .carousel-indicators .active { background-color: #2563eb; }
 .ev-import-wrap { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:1rem; }
 .ev-import-wrap.has-image { width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto; }
 .ev-import-head { padding:.8rem 1rem; border-bottom:1px solid #f1f5f9; font-size:.82rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:.4rem; }
@@ -190,7 +246,52 @@
     .ev-item { padding: .75rem 1rem; }
     .ev-item-desc { max-width: 180px; }
     .ev-search-wrap input { width: 150px; }
-    .ev-loadslip .ev-loadslip-btn { width: 128px; }
+    .ev-loadslip {
+        --ev-mobile-file-width: 130px;
+        --ev-mobile-main-btn-width: 110px;
+        --ev-mobile-info-btn-width: 34px;
+        --ev-mobile-clear-btn-width: 90px;
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        overflow-x: auto;
+        padding-bottom: .2rem;
+    }
+    .ev-loadslip form {
+        width: auto;
+        max-width: none;
+        flex: 0 0 auto;
+    }
+    .ev-loadslip #loadslipImportForm {
+        display: flex !important;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: .3rem;
+    }
+    .ev-loadslip #loadslipImportForm .ev-loadslip-file {
+        width: var(--ev-mobile-file-width);
+        font-size: .7rem;
+    }
+    .ev-loadslip #loadslipImportForm .ev-loadslip-btn {
+        width: var(--ev-mobile-main-btn-width);
+        font-size: .72rem;
+    }
+    .ev-loadslip #loadslipImportForm .ev-instruction-trigger {
+        width: var(--ev-mobile-info-btn-width);
+        height: var(--ev-mobile-info-btn-width);
+    }
+    .ev-loadslip .ev-loadslip-clear-form {
+        display: inline-flex;
+        justify-content: center;
+    }
+    .ev-loadslip .ev-loadslip-clear-form .ev-loadslip-btn {
+        width: var(--ev-mobile-clear-btn-width);
+        font-size: .72rem;
+    }
+    .ev-instruction-sample .carousel-item { height: clamp(190px, 42vh, 280px); }
     .ev-preview-empty-box { height: 360px; }
     .ev-preview-img { max-height: 520px; }
 }
@@ -244,7 +345,7 @@
             </button>
         </form>
         {% if loadslipImportedCount|default(0) > 0 %}
-            <form method="post" action="{{ path('evaluation_set_loadslip_clear') }}">
+            <form method="post" action="{{ path('evaluation_set_loadslip_clear') }}" class="ev-loadslip-clear-form">
                 <input type="hidden" name="_token" value="{{ csrf_token('clear_set_loadslip') }}">
                 <button type="submit" class="btn btn-outline-secondary ev-loadslip-btn">
                     <i class="bi bi-x-circle me-1"></i> Clear
@@ -268,10 +369,37 @@
                 <ul class="mb-2">
                     <li>Allowed file types: JPG, JPEG, PNG only.</li>
                     <li>Student ID, subject code, section, and schedule must be readable.</li>
+                    <li>Semester in the loadslip must match the active term: <strong>FIRST</strong> for 1st semester, <strong>SECOND</strong> for 2nd semester.</li>
+                    <li>School year (SY) in the loadslip (example: 2025-2026) must match the active academic year.</li>
                     <li>Use a clear image without blur, glare, or cropped rows.</li>
                     <li>If you selected the wrong file, click Clear then import again.</li>
                 </ul>
-                <p class="mb-0 text-muted small">Clearer images produce better OCR detection and matching.</p>
+                <div class="ev-instruction-sample">
+                    <div id="loadslipInstructionCarousel" class="carousel slide" data-bs-interval="false">
+                        <div class="carousel-indicators">
+                            <button type="button" data-bs-target="#loadslipInstructionCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Variation 1"></button>
+                            <button type="button" data-bs-target="#loadslipInstructionCarousel" data-bs-slide-to="1" aria-label="Variation 2"></button>
+                        </div>
+                        <div class="carousel-inner">
+                            <div class="carousel-item active">
+                                <img src="{{ asset('images/Screenshot 2026-04-09 113300.png') }}" class="d-block w-100" alt="Example of a clear loadslip image for import variation 1">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="{{ asset('images/loadslip-clear-sample-variation.png') }}" class="d-block w-100" alt="Example of a clear loadslip image for import variation 2">
+                            </div>
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#loadslipInstructionCarousel" data-bs-slide="prev" aria-label="Previous sample image">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#loadslipInstructionCarousel" data-bs-slide="next" aria-label="Next sample image">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                    <p class="ev-instruction-sample-caption">Example clear images: use the arrows or swipe to view different acceptable variations.</p>
+                </div>
+                <p class="mb-0 text-muted small">Imports are validated by image clarity, semester label, and school year matching.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
@@ -468,6 +596,14 @@ colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
 </div>
 
 <script>
+const shouldAutoShowLoadslipInstruction = {{ (
+    app.user
+    and app.user.isStudent
+    and loadslipImportedCount|default(0) == 0
+    and loadslipRows|default([])|length == 0
+    and loadslipPreviewPath|default('') == ''
+) ? 'true' : 'false' }};
+
 const initEvaluationSetIndexPage = () => {
     const input = document.getElementById('evSearch');
     const list = document.getElementById('evList');
@@ -480,6 +616,7 @@ const initEvaluationSetIndexPage = () => {
     let loadslipOverlayPercent = document.getElementById('loadslipImportOverlayPercent');
     let loadslipOverlayBar = document.getElementById('loadslipImportOverlayBar');
     const loadslipOverlaySub = document.getElementById('loadslipImportOverlaySub');
+    const loadslipInstructionModalEl = document.getElementById('loadslipInstructionModal');
 
     if (loadslipOverlay && (!loadslipOverlayPercent || !loadslipOverlayBar)) {
         const overlayCard = loadslipOverlay.querySelector('.ev-import-loading-card');
@@ -685,6 +822,14 @@ const initEvaluationSetIndexPage = () => {
     window.__evLoadslipPageShowHandler = onLoadslipPageShow;
     window.addEventListener('pageshow', onLoadslipPageShow);
 
+    if (shouldAutoShowLoadslipInstruction && loadslipInstructionModalEl && window.bootstrap && window.bootstrap.Modal) {
+        if (!loadslipInstructionModalEl.dataset.autoOpened) {
+            loadslipInstructionModalEl.dataset.autoOpened = '1';
+            const instructionModal = window.bootstrap.Modal.getOrCreateInstance(loadslipInstructionModalEl);
+            instructionModal.show();
+        }
+    }
+
     const preprocessLoadslipImage = (file, scale = 2.4) => new Promise((resolve, reject) => {
         if (!(file instanceof File)) {
             resolve(null);
@@ -725,21 +870,6 @@ const initEvaluationSetIndexPage = () => {
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const pixels = imageData.data;
-                const contrast = 45;
-                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
-
-                for (let i = 0; i < pixels.length; i += 4) {
-                    const gray = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-                    const adjusted = Math.max(0, Math.min(255, factor * (gray - 128) + 128));
-                    pixels[i] = adjusted;
-                    pixels[i + 1] = adjusted;
-                    pixels[i + 2] = adjusted;
-                }
-
-                ctx.putImageData(imageData, 0, 0);
 
                 canvas.toBlob((blob) => {
                     URL.revokeObjectURL(objectUrl);

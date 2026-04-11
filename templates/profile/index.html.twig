@@ -14,10 +14,240 @@
 .pf-chip-inactive{color:#64748B}
 .pf-chip-verified{color:#16A34A}
 .pf-chip-unverified{color:#DC2626}
+
+.sp-wrap { max-width: 980px; margin: 0 auto; }
+.sp-head { margin-bottom: 1rem; }
+.sp-title { margin: 0; font-size: 1.55rem; font-weight: 800; color: #1f2937; letter-spacing: -.01em; }
+.sp-sub { margin: .15rem 0 0; color: #6b7280; font-size: .88rem; }
+.sp-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+.sp-main {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.sp-person {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: .9rem;
+    text-align: center;
+    background: #f8fafc;
+}
+.sp-avatar {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 1px #dbeafe;
+    margin-bottom: .55rem;
+}
+.sp-name { margin: 0; font-weight: 700; color: #0f172a; font-size: .95rem; }
+.sp-id { margin-top: .2rem; color: #64748b; font-size: .78rem; }
+.sp-badge {
+    display: inline-flex;
+    margin-top: .45rem;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+}
+.sp-badge.is-verified { color: #166534; background: #dcfce7; }
+.sp-badge.is-unverified { color: #b91c1c; background: #fee2e2; }
+.sp-upload-form { margin-top: .65rem; }
+.sp-upload-form .form-control { font-size: .74rem; }
+
+.sp-general { border: 1px solid #e5e7eb; border-radius: 12px; padding: .9rem; }
+.sp-section-title { margin: 0 0 .75rem; font-size: .9rem; font-weight: 700; color: #334155; }
+.sp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .7rem;
+}
+.sp-field-label { display: block; font-size: .7rem; color: #64748b; margin-bottom: .2rem; font-weight: 600; }
+.sp-input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #0f172a;
+    height: 38px;
+    padding: .45rem .65rem;
+    font-size: .82rem;
+}
+.sp-general-actions { margin-top: .75rem; }
+
+.sp-details { padding: 1rem; margin-bottom: 1rem; }
+.sp-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .7rem;
+    margin-top: .45rem;
+}
+
+.sp-security { padding: 1rem; }
+.sp-security-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .7rem;
+    margin-top: .45rem;
+}
+.sp-sec-label { display: block; font-size: .7rem; color: #64748b; margin-bottom: .2rem; font-weight: 600; }
+.sp-sec-value {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: .35rem .65rem;
+    font-size: .82rem;
+    color: #1e293b;
+    background: #f8fafc;
+}
+.sp-actions {
+    margin-top: .8rem;
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+    .sp-main { grid-template-columns: 1fr; }
+    .sp-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sp-security-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+    .sp-detail-grid { grid-template-columns: 1fr; }
+}
 </style>
 {% endblock %}
 
 {% block body %}
+{% if user.isStudent %}
+<div class="sp-wrap">
+    <div class="sp-head">
+        <h4 class="sp-title">User profile</h4>
+        <p class="sp-sub">Manage your details, view your tier status and change your password.</p>
+    </div>
+
+    <div class="sp-card sp-main">
+        <div class="sp-person">
+            <img src="{{ asset('images/' ~ user.profilePictureOrDefault) }}" alt="{{ user.fullName }}" class="sp-avatar">
+            <p class="sp-name">{{ user.fullName }}</p>
+            <p class="sp-id">{{ user.schoolId ?? 'No student ID yet' }}</p>
+            {% if isStudentVerified|default(false) %}
+                <span class="sp-badge is-verified">Verified</span>
+            {% else %}
+                <span class="sp-badge is-unverified">Unverified</span>
+            {% endif %}
+
+            <form method="post" action="{{ path('app_profile_upload_picture') }}" enctype="multipart/form-data" class="sp-upload-form">
+                <input type="file" name="profilePicture" accept="image/*" class="form-control form-control-sm mb-2">
+                <button type="submit" class="btn btn-outline-norsu btn-sm w-100">
+                    <i class="bi bi-camera me-1"></i>Update photo
+                </button>
+            </form>
+        </div>
+
+        <div class="sp-general">
+            <h6 class="sp-section-title">General information</h6>
+            <div class="sp-grid">
+                <label>
+                    <span class="sp-field-label">First name</span>
+                    <input class="sp-input" value="{{ user.firstName }}" readonly>
+                </label>
+                <label>
+                    <span class="sp-field-label">Last name</span>
+                    <input class="sp-input" value="{{ user.lastName }}" readonly>
+                </label>
+                <label>
+                    <span class="sp-field-label">Campus</span>
+                    <input class="sp-input" value="{{ user.campus ?? '—' }}" readonly>
+                </label>
+                <label>
+                    <span class="sp-field-label">Year level</span>
+                    <input class="sp-input" value="{{ user.yearLevel ?? '—' }}" readonly>
+                </label>
+            </div>
+            <div class="sp-general-actions">
+                <a href="{{ path('app_profile_edit') }}" class="btn btn-norsu btn-sm">Update</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="sp-card sp-details">
+        <h6 class="sp-section-title mb-1">Student details</h6>
+        <div class="sp-detail-grid">
+            <div>
+                <span class="sp-sec-label">Verification</span>
+                <div class="sp-sec-value">{{ isStudentVerified|default(false) ? 'Verified' : 'Unverified' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Student ID</span>
+                <div class="sp-sec-value">{{ user.schoolId ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Year level</span>
+                <div class="sp-sec-value">{{ user.yearLevel ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Campus</span>
+                <div class="sp-sec-value">{{ user.campus ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">College</span>
+                <div class="sp-sec-value">{{ user.department and user.department.collegeName ? user.department.collegeName : '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Department</span>
+                <div class="sp-sec-value">{{ user.department ? user.department.departmentName : '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Account status</span>
+                <div class="sp-sec-value">{{ user.accountStatus == 'active' ? 'Active' : 'Inactive' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Registered</span>
+                <div class="sp-sec-value">{{ user.createdAt|date('M d, Y') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sp-card sp-security">
+        <h6 class="sp-section-title mb-1">Security</h6>
+        <div class="sp-security-grid">
+            <div>
+                <span class="sp-sec-label">Email</span>
+                <div class="sp-sec-value">{{ user.email ?? '—' }}</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Password</span>
+                <div class="sp-sec-value">••••••••</div>
+            </div>
+            <div>
+                <span class="sp-sec-label">Role</span>
+                <div class="sp-sec-value">Student</div>
+            </div>
+        </div>
+        <div class="sp-actions">
+            <a href="{{ path('app_profile_change_password') }}" class="btn btn-outline-norsu btn-sm">
+                <i class="bi bi-key me-1"></i>Change password
+            </a>
+            <a href="{{ path('app_profile_edit') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-pencil-square me-1"></i>Edit profile
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not user.isStudent %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold mb-0"><i  class="bi bi-person-circle me-2"></i>My Profile</h4>
     <div class="page-header-actions">
@@ -182,4 +412,5 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}

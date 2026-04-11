@@ -191,27 +191,29 @@ class HomeController extends AbstractController
         $allowedViews = ['home', 'about', 'faq', 'contact'];
         $heroView = in_array($requestedView, $allowedViews, true) ? $requestedView : 'home';
         
-        // Get counts for stats using LIKE query for JSON array roles
-        $studentCount = $userRepo->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->where('u.roles LIKE :role')
-            ->setParameter('role', '%ROLE_STUDENT%')
-            ->getQuery()
-            ->getSingleScalarResult();
-            
-        $facultyCount = $userRepo->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->where('u.roles LIKE :role')
-            ->setParameter('role', '%ROLE_FACULTY%')
-            ->getQuery()
-            ->getSingleScalarResult();
-            
-        $staffCount = $userRepo->createQueryBuilder('u')
-            ->select('COUNT(u.id)')
-            ->where('u.roles LIKE :role')
-            ->setParameter('role', '%ROLE_STAFF%')
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Count by effective roles so legacy rows without stored ROLE_STUDENT are included.
+        $allUsers = $userRepo->findAll();
+        $studentCount = 0;
+        $facultyCount = 0;
+        $staffCount = 0;
+
+        foreach ($allUsers as $user) {
+            $roles = $user->getRoles();
+
+            if (in_array('ROLE_FACULTY', $roles, true)) {
+                $facultyCount++;
+                continue;
+            }
+
+            if (in_array('ROLE_STAFF', $roles, true)) {
+                $staffCount++;
+                continue;
+            }
+
+            if (!in_array('ROLE_ADMIN', $roles, true) && !in_array('ROLE_SUPERIOR', $roles, true)) {
+                $studentCount++;
+            }
+        }
             
         $evaluationCount = $responseRepo->count([]);
         $announcementMeta = $descRepo->getSystemAnnouncementMeta();

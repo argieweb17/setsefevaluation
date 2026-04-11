@@ -527,6 +527,20 @@ class EvaluationController extends AbstractController
             if ($matched) {
                 // Self-heal stale sessions where the boolean flag may be missing.
                 $session->set('student_loadslip_verified', true);
+
+                // If preview path is missing/invalid but verification data exists, restore it from persisted JSON.
+                $sessionPreviewPath = $this->normalizeLoadslipPreviewPath((string) $session->get('student_loadslip_preview_path', ''));
+                if ($sessionPreviewPath === '' || !$this->loadslipPreviewPathExists($sessionPreviewPath)) {
+                    $persisted = $this->readLoadslipVerificationData($schoolId);
+                    if ($persisted !== null) {
+                        $persistedPreviewPath = $this->normalizeLoadslipPreviewPath((string) ($persisted['previewPath'] ?? ''));
+                        if ($persistedPreviewPath !== '' && $this->loadslipPreviewPathExists($persistedPreviewPath)) {
+                            $session->set('student_loadslip_preview_path', $persistedPreviewPath);
+                        } else {
+                            $session->remove('student_loadslip_preview_path');
+                        }
+                    }
+                }
             }
             return $matched;
         }
@@ -2296,6 +2310,114 @@ class EvaluationController extends AbstractController
         return $meta;
     }
 
+    /**
+     * Estimate whether the upload keeps the colored loadslip appearance shown in instruction samples.
+     *
+     * @return array{colorfulness: float, threshold: float, grayRatio: float, isColoredEnough: bool, sampledWidth: int, sampledHeight: int}|null
+     */
+    private function detectLoadslipColorProfile(string $path, ?array &$meta = null): ?array
+    {
+        if (!extension_loaded('gd') || !is_file($path)) {
+            return null;
+        }
+
+        $imageInfo = @getimagesize($path);
+        if (!is_array($imageInfo)) {
+            return null;
+        }
+
+        $imageType = (int) ($imageInfo[2] ?? 0);
+        if (!in_array($imageType, [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+            return null;
+        }
+
+        $source = $imageType === IMAGETYPE_JPEG
+            ? @imagecreatefromjpeg($path)
+            : @imagecreatefrompng($path);
+        if ($source === false) {
+            return null;
+        }
+
+        $width = imagesx($source);
+        $height = imagesy($source);
+        if ($width <= 0 || $height <= 0) {
+            imagedestroy($source);
+            return null;
+        }
+
+        $targetMaxSide = 420;
+        $scale = min(1.0, $targetMaxSide / max($width, $height));
+        $sampledWidth = max(2, (int) round($width * $scale));
+        $sampledHeight = max(2, (int) round($height * $scale));
+
+        $sample = imagecreatetruecolor($sampledWidth, $sampledHeight);
+        if ($sample === false) {
+            imagedestroy($source);
+            return null;
+        }
+
+        imagecopyresampled($sample, $source, 0, 0, 0, 0, $sampledWidth, $sampledHeight, $width, $height);
+        imagedestroy($source);
+
+        $count = max(1, $sampledWidth * $sampledHeight);
+        $rgSum = 0.0;
+        $rgSqSum = 0.0;
+        $ybSum = 0.0;
+        $ybSqSum = 0.0;
+        $grayLikeCount = 0;
+        $graySpreadThreshold = 10;
+
+        for ($y = 0; $y < $sampledHeight; $y++) {
+            for ($x = 0; $x < $sampledWidth; $x++) {
+                $rgb = imagecolorat($sample, $x, $y);
+                $r = (float) (($rgb >> 16) & 0xFF);
+                $g = (float) (($rgb >> 8) & 0xFF);
+                $b = (float) ($rgb & 0xFF);
+
+                $rg = $r - $g;
+                $yb = (0.5 * ($r + $g)) - $b;
+
+                $rgSum += $rg;
+                $rgSqSum += $rg * $rg;
+                $ybSum += $yb;
+                $ybSqSum += $yb * $yb;
+
+                $maxChannel = max($r, $g, $b);
+                $minChannel = min($r, $g, $b);
+                if (($maxChannel - $minChannel) <= $graySpreadThreshold) {
+                    $grayLikeCount++;
+                }
+            }
+        }
+
+        imagedestroy($sample);
+
+        $rgMean = $rgSum / $count;
+        $ybMean = $ybSum / $count;
+        $rgStd = sqrt(max(0.0, ($rgSqSum / $count) - ($rgMean * $rgMean)));
+        $ybStd = sqrt(max(0.0, ($ybSqSum / $count) - ($ybMean * $ybMean)));
+
+        // Hasler-Suesstrunk colorfulness metric.
+        $colorfulness = sqrt(($rgStd * $rgStd) + ($ybStd * $ybStd))
+            + (0.3 * sqrt(($rgMean * $rgMean) + ($ybMean * $ybMean)));
+        $grayRatio = $grayLikeCount / $count;
+
+        // Calibrated against current instruction samples: grayscale ~0.0, colored samples ~16+.
+        $colorfulnessThreshold = 8.5;
+        $isColoredEnough = $colorfulness >= $colorfulnessThreshold;
+
+        $meta = [
+            'colorfulness' => round($colorfulness, 3),
+            'threshold' => $colorfulnessThreshold,
+            'grayRatio' => round($grayRatio, 4),
+            'isColoredEnough' => $isColoredEnough,
+            'sampledWidth' => $sampledWidth,
+            'sampledHeight' => $sampledHeight,
+        ];
+
+        return $meta;
+    }
+
     private function removeStoredLoadslipPreview(Request $request): void
     {
         $current = $this->normalizeLoadslipPreviewPath((string) $request->getSession()->get('student_loadslip_preview_path', ''));
@@ -2642,16 +2764,194 @@ class EvaluationController extends AbstractController
     }
 
     /**
+     * Check whether OCR output matches the expected loadslip instruction format.
+     *
+     * @return array{isMatch: bool, score: int, readableRows: int, checks: array<string, bool>, reason: string}
+     */
+    private function evaluateLoadslipInstructionSignature(string $ocrText, array $rows): array
+    {
+        $normalized = strtoupper((string) preg_replace('/\s+/u', ' ', trim($ocrText)));
+
+        $uiNoiseTerms = [
+            'GUIDE FOR SMS',
+            'CURRICULUM',
+            'ACTIVE SCHOOLYEAR',
+            'ACTIVE SEMESTER',
+            'WELCOME,',
+            ' LOGOUT',
+            ' SMS.NORSU.ONLINE/LOADSLIP',
+        ];
+        $uiNoiseHitCount = 0;
+        foreach ($uiNoiseTerms as $term) {
+            if (str_contains($normalized, $term)) {
+                $uiNoiseHitCount++;
+            }
+        }
+        $portalUiScreenshotDetected = $uiNoiseHitCount >= 2;
+
+        $checks = [
+            'title' => (bool) preg_match('/\bENROLLMENT\s+LOAD\s+SLIP\b/u', $normalized),
+            'studentNumberLabel' => (bool) preg_match('/\bSTUDENT\s*NUMBER\b/u', $normalized),
+            'nameLabel' => (bool) preg_match('/\bNAME\b/u', $normalized),
+            'courseLabel' => (bool) preg_match('/\bCOLLEGE\s*\/\s*COURSE\b|\bCOURSE\b/u', $normalized),
+            'yearLevelStatusLabel' => (bool) preg_match('/\bYEAR\s+LEVEL\s+AND\s+STATUS\b/u', $normalized),
+            'tableHeader' => (bool) preg_match('/\bSUBJECT\b.*\bSECTION\b.*\bDESCRIPTION\b.*\bSCHEDULE\b/u', $normalized),
+            'tableTailHeader' => (bool) preg_match('/\bROOM\b.*\bUNITS?\b/u', $normalized),
+            'termLabel' => (bool) preg_match('/\b(FIRST|SECOND|SUMMER)\s+SY\b/u', $normalized),
+            'registrarOffice' => (bool) preg_match('/\bOFFICE\s+OF\s+THE\s+UNIVERSITY\s+REGISTRAR\b/u', $normalized),
+            'schoolSignature' => (bool) preg_match('/\bNEGROS\s+ORIENTAL\s+STATE\s+UNIVERSITY\b|\bNORSU\b/u', $normalized),
+            'encodedPrinted' => (bool) preg_match('/\bENCODED\s+BY\b.*\bPRINTED\s+BY\b/u', $normalized),
+            'dateEnrolled' => (bool) preg_match('/\bDATE\s+ENROLLED\b/u', $normalized),
+            'refundNote' => (bool) preg_match('/\bNO\s+REFUND\s+FOR\s+WITHDRAWAL\b/u', $normalized),
+            'totalSubjects' => (bool) preg_match('/\bTOTAL\s+SUBJECTS?\b/u', $normalized),
+            'totalUnits' => (bool) preg_match('/\bTOTAL\s+UNITS?\b/u', $normalized),
+            'portalUiNoise' => $portalUiScreenshotDetected,
+        ];
+
+        $score = 0;
+        foreach ($checks as $passed) {
+            if ($passed) {
+                $score++;
+            }
+        }
+
+        $readableRows = 0;
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $code = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+            $schedule = trim((string) ($row['schedule'] ?? ''));
+            if ($code !== '' && $schedule !== '') {
+                $readableRows++;
+            }
+        }
+
+        // Keep core checks strict enough for layout validation, but tolerant of OCR misses
+        // on secondary labels.
+        $coreMatched = $checks['title']
+            && $checks['studentNumberLabel']
+            && $checks['tableHeader'];
+        $schoolMatched = $checks['schoolSignature'] || $checks['registrarOffice'];
+        $rowShapeMatched = $readableRows >= 2;
+        $designAnchorCount =
+            ((int) $checks['termLabel'])
+            + ((int) $checks['dateEnrolled'])
+            + ((int) $checks['totalSubjects'])
+            + ((int) $checks['totalUnits']);
+        $designAnchorsMatched = $designAnchorCount >= 3;
+        $isMatch = $coreMatched
+            && $schoolMatched
+            && $rowShapeMatched
+            && $designAnchorsMatched
+            && !$portalUiScreenshotDetected
+            && $score >= 6;
+
+        $reasonParts = [];
+        if (!$coreMatched) {
+            $reasonParts[] = 'missing required instruction-layout labels';
+        }
+        if (!$schoolMatched) {
+            $reasonParts[] = 'missing NORSU/registrar header text';
+        }
+        if (!$rowShapeMatched) {
+            $reasonParts[] = 'not enough readable subject rows';
+        }
+        if (!$designAnchorsMatched) {
+            $reasonParts[] = 'missing required loadslip layout anchors';
+        }
+        if ($portalUiScreenshotDetected) {
+            $reasonParts[] = 'detected portal/app UI screenshot noise';
+        }
+        if ($score < 6) {
+            $reasonParts[] = 'format signature score too low';
+        }
+
+        return [
+            'isMatch' => $isMatch,
+            'score' => $score,
+            'readableRows' => $readableRows,
+            'checks' => $checks,
+            'reason' => empty($reasonParts) ? 'ok' : implode('; ', $reasonParts),
+        ];
+    }
+
+    private function normalizeSemesterLabel(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(1ST|FIRST)\b/u', $normalized)) {
+            return 'FIRST';
+        }
+        if (preg_match('/\b(2ND|SECOND)\b/u', $normalized)) {
+            return 'SECOND';
+        }
+        if (preg_match('/\b(3RD|THIRD|SUMMER)\b/u', $normalized)) {
+            return 'SUMMER';
+        }
+
+        return '';
+    }
+
+    private function normalizeSchoolYearLabel(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(20\d{2})\s*[-\/]\s*(20\d{2})\b/u', $normalized, $m)) {
+            return (string) ($m[1] ?? '') . '-' . (string) ($m[2] ?? '');
+        }
+
+        return '';
+    }
+
+    /**
+     * @return array{semester: string, schoolYear: string}
+     */
+    private function extractLoadslipAcademicTermFromText(string $ocrText): array
+    {
+        $normalized = strtoupper((string) preg_replace('/\s+/u', ' ', trim($ocrText)));
+        if ($normalized === '') {
+            return ['semester' => '', 'schoolYear' => ''];
+        }
+
+        $semester = '';
+        $schoolYear = '';
+
+        if (preg_match('/\b(FIRST|SECOND|SUMMER|1ST|2ND|3RD)\s+(?:SY|SEMESTER)\b/u', $normalized, $mSem)) {
+            $semester = $this->normalizeSemesterLabel((string) ($mSem[1] ?? ''));
+        } elseif (preg_match('/\bSEMESTER\s*[:\-]?\s*(FIRST|SECOND|SUMMER|1ST|2ND|3RD)\b/u', $normalized, $mSem)) {
+            $semester = $this->normalizeSemesterLabel((string) ($mSem[1] ?? ''));
+        }
+
+        if (preg_match('/\b(?:SY|SCHOOL\s*YEAR)\s*[:\-]?\s*(20\d{2}\s*[-\/]\s*20\d{2})\b/u', $normalized, $mSy)) {
+            $schoolYear = $this->normalizeSchoolYearLabel((string) ($mSy[1] ?? ''));
+        } elseif (preg_match('/\b(20\d{2}\s*[-\/]\s*20\d{2})\b/u', $normalized, $mSy)) {
+            $schoolYear = $this->normalizeSchoolYearLabel((string) ($mSy[1] ?? ''));
+        }
+
+        return [
+            'semester' => $semester,
+            'schoolYear' => $schoolYear,
+        ];
+    }
+
+    /**
      * Extract subject codes from OCR by tracing only the subject table rows.
      * Expected row pattern: subject code, section, description, schedule, unit(s).
      * Also extracts student number from top of document.
      *
-     * @return array{codes: string[], studentNumber: ?string}
+     * @return array{codes: string[], studentNumber: ?string, formatMatched: bool, formatReason: string, semester: string, schoolYear: string}
      */
     private function parseLoadslipImage(string $path, ?array &$debugData = null, ?array &$rows = null, ?string $expectedStudentNumber = null): array
     {
         if (!class_exists(TesseractOCR::class)) {
-            return ['codes' => [], 'studentNumber' => null];
+            return ['codes' => [], 'studentNumber' => null, 'formatMatched' => false, 'formatReason' => 'ocr_engine_unavailable', 'semester' => '', 'schoolYear' => ''];
         }
 
         $ocrPreprocessMeta = null;
@@ -2704,12 +3004,12 @@ class EvaluationController extends AbstractController
                 }
             } catch (\Throwable) {
                 $cleanupEnhancedPath($enhancedPath);
-                return ['codes' => [], 'studentNumber' => null];
+                return ['codes' => [], 'studentNumber' => null, 'formatMatched' => false, 'formatReason' => 'no_ocr_text_detected', 'semester' => '', 'schoolYear' => ''];
             }
 
             if (empty($texts)) {
                 $cleanupEnhancedPath($enhancedPath);
-                return ['codes' => [], 'studentNumber' => null];
+                return ['codes' => [], 'studentNumber' => null, 'formatMatched' => false, 'formatReason' => 'no_ocr_text_detected', 'semester' => '', 'schoolYear' => ''];
             }
         }
 
@@ -2718,6 +3018,9 @@ class EvaluationController extends AbstractController
         $parsedRows = [];
         $studentNumber = null;
         $text = strtoupper(implode("\n", array_filter($texts)));
+        $termDetection = $this->extractLoadslipAcademicTermFromText($text);
+        $detectedSemester = $this->normalizeSemesterLabel((string) ($termDetection['semester'] ?? ''));
+        $detectedSchoolYear = $this->normalizeSchoolYearLabel((string) ($termDetection['schoolYear'] ?? ''));
         $lines = preg_split('/\R/u', $text) ?: [];
         $tableWindow = $this->detectLoadslipTableWindow($lines, $schedulePattern);
         $linePassIndexes = [];
@@ -3315,6 +3618,8 @@ class EvaluationController extends AbstractController
                 $previewText = mb_substr($previewText, 0, 4000) . "\n... [truncated]";
             }
 
+            $signatureCheck = $this->evaluateLoadslipInstructionSignature($text, $parsedRows);
+
             $scanDetection = [
                 'lineCount' => count($lines),
                 'linePassCount' => count($linePassIndexes),
@@ -3339,10 +3644,15 @@ class EvaluationController extends AbstractController
                 'passStats' => $passStats,
                 'rowCount' => count($parsedRows),
                 'studentNumber' => $studentNumber,
+                'semester' => $detectedSemester,
+                'schoolYear' => $detectedSchoolYear,
+                'instructionSignature' => $signatureCheck,
                 'tableWindow' => is_array($tableWindow) ? $tableWindow : null,
                 'scanDetection' => $scanDetection,
             ];
         }
+
+        $signatureCheck = $this->evaluateLoadslipInstructionSignature($text, $parsedRows);
 
         if ($rows !== null) {
             $rows = $parsedRows;
@@ -3353,6 +3663,10 @@ class EvaluationController extends AbstractController
         return [
             'codes' => array_keys($codes),
             'studentNumber' => $studentNumber,
+            'formatMatched' => (bool) ($signatureCheck['isMatch'] ?? false),
+            'formatReason' => (string) ($signatureCheck['reason'] ?? ''),
+            'semester' => $detectedSemester,
+            'schoolYear' => $detectedSchoolYear,
         ];
     }
 
@@ -3774,7 +4088,7 @@ class EvaluationController extends AbstractController
 
     #[Route('/set/loadslip/import', name: 'evaluation_set_loadslip_import', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function importSetLoadslip(Request $request, SubjectRepository $subjectRepo, CurriculumRepository $curriculumRepo): Response
+    public function importSetLoadslip(Request $request, SubjectRepository $subjectRepo, CurriculumRepository $curriculumRepo, EvaluationPeriodRepository $evalRepo, AcademicYearRepository $ayRepo): Response
     {
         if (!$this->isCsrfTokenValid('import_set_loadslip', (string) $request->request->get('_token'))) {
             $this->addFlash('danger', 'Invalid request token. Please try again.');
@@ -3839,6 +4153,22 @@ class EvaluationController extends AbstractController
             return $this->redirectToRoute('evaluation_set_index');
         }
 
+        $colorMeta = null;
+        $colorCheck = $this->detectLoadslipColorProfile($path, $colorMeta);
+        if (is_array($colorCheck) && !(bool) ($colorCheck['isColoredEnough'] ?? true)) {
+            $this->removeStoredLoadslipPreview($request);
+            $request->getSession()->remove('student_loadslip_preview_path');
+            $request->getSession()->remove('student_loadslip_codes');
+            $request->getSession()->remove('student_loadslip_rows');
+            $request->getSession()->remove('student_loadslip_ocr_debug');
+            $request->getSession()->remove('student_loadslip_student_number');
+            $request->getSession()->remove('student_loadslip_verified');
+
+            $this->addFlash('warning', 'Upload rejected: image does not match the required loadslip format shown in the instruction. Please upload a loadslip image similar to the instruction examples.');
+
+            return $this->redirectToRoute('evaluation_set_index');
+        }
+
         $ocrDebugData = null;
         $parsedRows = [];
         $expectedStudentNumber = $this->normalizeStudentNumber((string) $student->getSchoolId());
@@ -3846,15 +4176,100 @@ class EvaluationController extends AbstractController
 
         $codes = $importData['codes'] ?? [];
         $importedStudentNumber = $this->normalizeStudentNumber((string) ($importData['studentNumber'] ?? ''));
+        $formatMatched = (bool) ($importData['formatMatched'] ?? true);
+        $formatReason = trim((string) ($importData['formatReason'] ?? ''));
+        $importedSemester = $this->normalizeSemesterLabel((string) ($importData['semester'] ?? ''));
+        $importedSchoolYear = $this->normalizeSchoolYearLabel((string) ($importData['schoolYear'] ?? ''));
+
+        $activeSetPeriods = $evalRepo->findOpen('SET');
+        if (empty($activeSetPeriods)) {
+            $activeSetPeriods = $evalRepo->findActive('SET');
+        }
+
+        $currentAcademicYear = $ayRepo->findCurrent() ?? $ayRepo->findLatestBySequence();
+        $expectedAcademicYear = $this->normalizeSchoolYearLabel((string) ($currentAcademicYear?->getYearLabel() ?? ''));
+        $expectedAcademicSemester = $this->normalizeSemesterLabel((string) ($currentAcademicYear?->getSemester() ?? ''));
+
+        $expectedSemesterMap = [];
+        $expectedSchoolYearMap = [];
+        foreach ($activeSetPeriods as $activeSetPeriod) {
+            $periodSemester = $this->normalizeSemesterLabel((string) ($activeSetPeriod->getSemester() ?? ''));
+            if ($periodSemester !== '') {
+                $expectedSemesterMap[$periodSemester] = true;
+            }
+
+            $periodSchoolYear = $this->normalizeSchoolYearLabel((string) ($activeSetPeriod->getSchoolYear() ?? ''));
+            if ($periodSchoolYear !== '') {
+                $expectedSchoolYearMap[$periodSchoolYear] = true;
+            }
+        }
+        if ($expectedAcademicSemester !== '') {
+            $expectedSemesterMap[$expectedAcademicSemester] = true;
+        }
+        if ($expectedAcademicYear !== '') {
+            $expectedSchoolYearMap[$expectedAcademicYear] = true;
+        }
+        $expectedSemesters = array_keys($expectedSemesterMap);
+        $expectedSchoolYears = array_keys($expectedSchoolYearMap);
 
         if (is_array($ocrDebugData)) {
             $ocrDebugData['importTrace'] = [
                 'expectedStudentNumber' => $expectedStudentNumber,
                 'importedStudentNumber' => $importedStudentNumber,
+                'formatMatched' => $formatMatched,
+                'formatReason' => $formatReason,
+                'importedSemester' => $importedSemester,
+                'importedSchoolYear' => $importedSchoolYear,
+                'expectedSemesters' => $expectedSemesters,
+                'expectedSchoolYears' => $expectedSchoolYears,
+                'expectedAcademicYear' => $expectedAcademicYear,
+                'expectedAcademicSemester' => $expectedAcademicSemester,
                 'detectedCodes' => array_values(array_map(fn($code) => $this->normalizeSubjectCode((string) $code), $codes)),
                 'detectedRowCount' => count($parsedRows),
                 'blurCheck' => is_array($blurCheck) ? $blurCheck : null,
+                'colorCheck' => is_array($colorCheck) ? $colorCheck : null,
             ];
+        }
+
+        if (!$formatMatched) {
+            $this->removeStoredLoadslipPreview($request);
+            $request->getSession()->remove('student_loadslip_preview_path');
+            $request->getSession()->remove('student_loadslip_codes');
+            $request->getSession()->remove('student_loadslip_rows');
+            $request->getSession()->remove('student_loadslip_ocr_debug');
+            $request->getSession()->remove('student_loadslip_student_number');
+            $request->getSession()->remove('student_loadslip_verified');
+
+            $this->addFlash('warning', 'Upload rejected: image does not match the required loadslip format shown in the instruction. Please upload a loadslip image similar to the instruction examples.');
+            return $this->redirectToRoute('evaluation_set_index');
+        }
+
+        if (!empty($expectedSemesters) && ($importedSemester === '' || !isset($expectedSemesterMap[$importedSemester]))) {
+            $this->removeStoredLoadslipPreview($request);
+            $request->getSession()->remove('student_loadslip_preview_path');
+            $request->getSession()->remove('student_loadslip_codes');
+            $request->getSession()->remove('student_loadslip_rows');
+            $request->getSession()->remove('student_loadslip_ocr_debug');
+            $request->getSession()->remove('student_loadslip_student_number');
+            $request->getSession()->remove('student_loadslip_verified');
+
+            $detectedSemesterLabel = $importedSemester !== '' ? $importedSemester : 'UNKNOWN';
+            $this->addFlash('warning', 'Upload rejected: loadslip semester mismatch. Detected ' . $detectedSemesterLabel . ' but active evaluation semester is ' . implode('/', $expectedSemesters) . '.');
+            return $this->redirectToRoute('evaluation_set_index');
+        }
+
+        if (!empty($expectedSchoolYears) && ($importedSchoolYear === '' || !isset($expectedSchoolYearMap[$importedSchoolYear]))) {
+            $this->removeStoredLoadslipPreview($request);
+            $request->getSession()->remove('student_loadslip_preview_path');
+            $request->getSession()->remove('student_loadslip_codes');
+            $request->getSession()->remove('student_loadslip_rows');
+            $request->getSession()->remove('student_loadslip_ocr_debug');
+            $request->getSession()->remove('student_loadslip_student_number');
+            $request->getSession()->remove('student_loadslip_verified');
+
+            $detectedSchoolYearLabel = $importedSchoolYear !== '' ? $importedSchoolYear : 'UNKNOWN';
+            $this->addFlash('warning', 'Upload rejected: loadslip school year mismatch. Detected ' . $detectedSchoolYearLabel . ' but active academic year is ' . implode('/', $expectedSchoolYears) . '.');
+            return $this->redirectToRoute('evaluation_set_index');
         }
 
         // Verify student ID matches

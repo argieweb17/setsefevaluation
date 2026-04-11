@@ -433,7 +433,7 @@
 
 </div>
 
-{% if showMismatchModal %}
+{% if showMismatchModal|default(false) %}
 <div class="modal fade" id="loadslipMismatchModal" tabindex="-1" aria-labelledby="loadslipMismatchModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:12px;overflow:hidden;">
@@ -457,7 +457,7 @@
 </div>
 {% endif %}
 
-{% if showNoAccountModal %}
+{% if showNoAccountModal|default(false) %}
 <div class="modal fade" id="studentNotFoundModal" tabindex="-1" aria-labelledby="studentNotFoundModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:12px;overflow:hidden;">
@@ -481,7 +481,7 @@
 </div>
 {% endif %}
 
-{% if showUnverifiedModal %}
+{% if showUnverifiedModal|default(false) %}
 <div class="modal fade" id="loadslipUnverifiedModal" tabindex="-1" aria-labelledby="loadslipUnverifiedModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:12px;overflow:hidden;">

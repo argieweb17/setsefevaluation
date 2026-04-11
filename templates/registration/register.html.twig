@@ -1560,11 +1560,11 @@ a.rg-contact-item:hover {
                                     {{ form_errors(registrationForm.lastName) }}
                                 </div>
                             </div>
-                            <div class="mt-3 role-field" data-for="faculty staff superior" id="emailField" style="display:none">
+                            <div class="mt-3 role-field" data-for="student faculty staff superior" id="emailField" style="display:none">
                                 <label class="rg-label">Email Address <span class="text-danger">*</span></label>
                                 <div class="rg-input-wrap">
                                     <i class="bi bi-envelope"></i>
-                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input'}}) }}
+                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input', 'required': 'required'}}) }}
                                 </div>
                                 {{ form_errors(registrationForm.email) }}
                             </div>
@@ -1592,6 +1592,19 @@ a.rg-contact-item:hover {
                                         {{ form_widget(registrationForm.yearLevel, {'attr': {'class': 'form-select rg-select', 'required': 'required'}}) }}
                                     </div>
                                     {{ form_errors(registrationForm.yearLevel) }}
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="rg-label">Campus</label>
+                                    <div class="rg-input-wrap">
+                                        <i class="bi bi-geo-alt"></i>
+                                        <select id="studentCampus" class="form-select rg-select" name="{{ registrationForm.campus.vars.full_name }}" required>
+                                            <option value="">Select campus</option>
+                                            {% for choice in registrationForm.campus.vars.choices %}
+                                                <option value="{{ choice.value }}" {{ registrationForm.campus.vars.value == choice.value ? 'selected' : '' }}>{{ choice.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {{ form_errors(registrationForm.campus) }}
                                 </div>
                             </div>
                             <div class="row g-3 mt-0">
