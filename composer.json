@@ -87,6 +87,7 @@
             "importmap:install": "symfony-cmd"
         },
         "run:vercel": "npx vercel dev",
+        "deploy:vercel": "npx vercel --prod",
         "post-install-cmd": [
             "@auto-scripts"
         ],

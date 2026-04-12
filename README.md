@@ -76,3 +76,22 @@ reports, and correspondence ID tracking with saved PDF artifacts.
 ```bash
 composer run run:vercel
 ```
+
+## Deploy To Vercel
+
+- This project now includes [vercel.json](vercel.json) and [api/index.php](api/index.php) for Symfony routing on Vercel.
+- Set these environment variables in your Vercel project:
+	- APP_ENV=prod
+	- APP_DEBUG=0
+	- APP_SECRET=<your-secret>
+	- DATABASE_URL=<your-mysql-or-postgres-dsn>
+	- TRUSTED_PROXIES=*
+	- DEFAULT_URI=https://<your-vercel-domain>
+	- APP_SHARE_DIR=/tmp/share
+- Deploy from the project root:
+
+```bash
+composer run deploy:vercel
+```
+
+- Note: OCR features that rely on system Tesseract may not be available on Vercel serverless runtime.
