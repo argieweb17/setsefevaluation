@@ -5,17 +5,30 @@
       "runtime": "vercel-php@0.7.4"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
+      "source": "/assets/:path*",
+      "destination": "/public/assets/:path*"
     },
     {
-      "handle": "filesystem"
+      "source": "/images/:path*",
+      "destination": "/public/images/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/api/index.php"
+      "source": "/sounds/:path*",
+      "destination": "/public/sounds/:path*"
+    },
+    {
+      "source": "/uploads/:path*",
+      "destination": "/public/uploads/:path*"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/public/favicon.ico"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/api/index.php"
     }
   ]
 }

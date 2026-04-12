@@ -95,3 +95,12 @@ composer run deploy:vercel
 ```
 
 - Note: OCR features that rely on system Tesseract may not be available on Vercel serverless runtime.
+
+## Troubleshooting: Still Seeing The Static GitHub Pages Page
+
+- If the browser still shows the static entry page, your domain is still resolving to GitHub Pages and not Vercel.
+- In GitHub repository settings, disable GitHub Pages for this repository.
+- In DNS, remove GitHub Pages records and point the domain to Vercel:
+	- apex/root: A record to 76.76.21.21
+	- www: CNAME to cname.vercel-dns.com
+- In Vercel project settings, add the same custom domain and wait for DNS propagation.
