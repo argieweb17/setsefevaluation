@@ -86,20 +86,20 @@
 /* Code cell */
 .sb-code-cell{display:flex;align-items:center;gap:10px;}
 .sb-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
-.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
+.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#000;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 /* Name */
-.sb-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
+.sb-subject-name{font-weight:600;color:#000;font-size:.82rem;}
 
 /* Pills */
 .sb-pill{display:inline-flex;align-items:center;padding:0;border-radius:0;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.sb-pill-sem{background:transparent;color:#059669;}
+.sb-pill-sem{background:transparent;color:#000;}
 
 /* Text helpers */
 .sb-empty{color:#cbd5e1;font-size:.78rem;}
 
 /* Units badge */
-.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#b45309;font-weight:800;font-size:.78rem;padding:0;}
+.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#000;font-weight:800;font-size:.78rem;padding:0;}
 
 /* Inline inputs for section/schedule */
 .sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;}
@@ -121,7 +121,7 @@
 .sb-row.is-loaded{background:#f0fdf4;}
 .sb-row.is-loaded:hover{background:#dcfce7;}
 .sb-row.is-loaded .sb-code-avatar{background:linear-gradient(135deg,#a7f3d0,#6ee7b7);color:#065f46;}
-.sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#065f46;}
+.sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#000;}
 
 /* Action buttons */
 .sb-action-btns{display:flex;gap:4px;justify-content:center;align-items:center;}
@@ -471,7 +471,7 @@
 <div class="modal fade" id="pickAgainModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;overflow:hidden;">
-            <form method="post" action="{{ path('faculty_subject_pick_again') }}" data-turbo="false">
+            <form method="post" action="{{ path('faculty_subject_pick_again') }}" data-turbo="false" id="pickAgainForm">
                 <input type="hidden" name="_token" value="{{ csrf_token('pick_again_subject') }}">
                 <input type="hidden" name="subject_id" id="pickAgainSubjectId">
                 <div class="modal-header border-0 pb-0" style="background:linear-gradient(135deg,#059669,#10b981);padding:20px 24px 16px;">
@@ -487,15 +487,16 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" style="padding:20px 24px;">
-                    <p class="text-muted small mb-3">Add another section/schedule for this subject.</p>
+                    <p class="text-muted small mb-1">Add another section/schedule for this subject.</p>
+                    <p class="text-muted small mb-3" id="pickAgainCurrentMeta" style="font-size:.72rem;display:none;"></p>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold" style="font-size:.75rem;">Section <span class="text-danger">*</span></label>
-                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. B" required style="border-radius:8px;font-size:.82rem;text-transform:uppercase;">
+                            <input type="text" id="pickAgainSectionInput" name="section" class="form-control form-control-sm" placeholder="e.g. B" required style="border-radius:8px;font-size:.82rem;text-transform:uppercase;">
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold" style="font-size:.75rem;">Schedule/Time</label>
-                            <select name="schedule" class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
+                            <label class="form-label fw-semibold" style="font-size:.75rem;">Schedule/Time <span class="text-danger">*</span></label>
+                            <select id="pickAgainScheduleInput" name="schedule" required class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
                                 <option value="">— Select —</option>
                                 {% set schedOpts = [
                                     'MWF 7:00 - 8:00 AM','MWF 8:00 - 9:00 AM','MWF 9:00 - 10:00 AM','MWF 10:00 - 11:00 AM','MWF 11:00 - 12:00 PM','MWF 12:00 - 1:00 PM','MWF 1:00 - 2:00 PM','MWF 2:00 - 3:00 PM','MWF 3:00 - 4:00 PM','MWF 4:00 - 5:00 PM','MWF 5:00 - 6:00 PM','MWF 6:00 - 7:00 PM','MWF 7:00 - 8:00 PM','MWF 8:00 - 9:00 PM',
@@ -518,7 +519,7 @@
                 </div>
                 <div class="modal-footer border-0 pt-0" style="padding:0 24px 20px;">
                     <button type="button" class="btn btn-sm btn-light rounded-pill px-4 fw-semibold" data-bs-dismiss="modal" style="font-size:.78rem;">Cancel</button>
-                    <button type="submit" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:linear-gradient(135deg,#059669,#10b981);">
+                    <button type="submit" id="pickAgainSubmitBtn" class="btn btn-sm rounded-pill px-4 fw-bold text-white" style="font-size:.78rem;background:linear-gradient(135deg,#059669,#10b981);">
                         <i class="bi bi-plus-circle-fill me-1"></i>Add Section
                     </button>
                 </div>
@@ -872,9 +873,43 @@ function quickLoadSubject(subjectId) {
 
 /* ── Pick Again Modal ── */
 function openPickAgainModal(subjectId, subjectCode, subjectName) {
-    document.getElementById('pickAgainSubjectId').value = subjectId;
-    document.getElementById('pickAgainSubjectLabel').textContent = subjectCode + ' — ' + subjectName;
-    new bootstrap.Modal(document.getElementById('pickAgainModal')).show();
+    const modalEl = document.getElementById('pickAgainModal');
+    const subjectIdField = document.getElementById('pickAgainSubjectId');
+    const subjectLabel = document.getElementById('pickAgainSubjectLabel');
+    const sectionField = document.getElementById('pickAgainSectionInput');
+    const scheduleField = document.getElementById('pickAgainScheduleInput');
+    const currentMeta = document.getElementById('pickAgainCurrentMeta');
+
+    const row = document.querySelector('tr.sb-row[data-subject-id="' + subjectId + '"]:not(.sb-extra-section)') ||
+        document.querySelector('tr.sb-row[data-subject-id="' + subjectId + '"]');
+    const rowSectionInput = row ? row.querySelector('.sb-section-input') : null;
+    const rowScheduleSelect = row ? row.querySelector('.sb-inline-select') : null;
+    const currentSection = rowSectionInput ? rowSectionInput.value.trim().toUpperCase() : '';
+    const currentSchedule = rowScheduleSelect ? rowScheduleSelect.value.trim() : '';
+
+    if (subjectIdField) subjectIdField.value = subjectId;
+    if (subjectLabel) subjectLabel.textContent = subjectCode + ' — ' + subjectName;
+
+    if (sectionField) {
+        sectionField.value = '';
+        sectionField.placeholder = currentSection ? ('Current: ' + currentSection + ' | e.g. B') : 'e.g. B';
+    }
+    if (scheduleField) {
+        scheduleField.value = currentSchedule || '';
+    }
+
+    if (currentMeta) {
+        const details = [];
+        if (currentSection) details.push('Current section: ' + currentSection);
+        if (currentSchedule) details.push('Current schedule: ' + currentSchedule);
+        currentMeta.textContent = details.join(' | ');
+        currentMeta.style.display = details.length ? '' : 'none';
+    }
+
+    if (modalEl) {
+        modalEl.setAttribute('data-current-section', currentSection);
+        new bootstrap.Modal(modalEl).show();
+    }
 }
 
 /* ── Remove additional FSL entry ── */
@@ -987,6 +1022,106 @@ function initializeEventListeners() {
                 alert('Please fill in the Section for all selected subjects.');
                 return false;
             }
+        });
+    }
+
+    /* Pick-again modal: normalize payload and prevent accidental double-submit */
+    var pickAgainForm = document.getElementById('pickAgainForm');
+    var pickAgainModalEl = document.getElementById('pickAgainModal');
+    if (pickAgainForm && !pickAgainForm.dataset.bound) {
+        pickAgainForm.dataset.bound = '1';
+        pickAgainForm.addEventListener('submit', function(e) {
+            var subjectIdField = document.getElementById('pickAgainSubjectId');
+            var sectionField = document.getElementById('pickAgainSectionInput');
+            var scheduleField = document.getElementById('pickAgainScheduleInput');
+            var submitBtn = document.getElementById('pickAgainSubmitBtn');
+
+            if (!subjectIdField || !subjectIdField.value) {
+                e.preventDefault();
+                alert('Unable to identify the selected subject. Please reopen the Pick Again modal.');
+                return false;
+            }
+
+            if (!sectionField) {
+                return true;
+            }
+
+            var normalizedSection = sectionField.value.trim().toUpperCase();
+            sectionField.value = normalizedSection;
+
+            if (!normalizedSection) {
+                e.preventDefault();
+                sectionField.style.borderColor = '#ef4444';
+                sectionField.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+                sectionField.focus();
+                alert('Please enter a section.');
+                return false;
+            }
+
+            if (!scheduleField || !scheduleField.value.trim()) {
+                e.preventDefault();
+                if (scheduleField) {
+                    scheduleField.style.borderColor = '#ef4444';
+                    scheduleField.style.boxShadow = '0 0 0 3px rgba(239,68,68,.15)';
+                    scheduleField.focus();
+                }
+                alert('Please select a schedule.');
+                return false;
+            }
+
+            var currentSection = pickAgainModalEl ? (pickAgainModalEl.getAttribute('data-current-section') || '').trim().toUpperCase() : '';
+            if (currentSection && normalizedSection === currentSection) {
+                var proceed = confirm('Section ' + normalizedSection + ' matches your current section. Continue? It will only be treated as duplicate when both section and schedule are the same.');
+                if (!proceed) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+
+            if (submitBtn) {
+                if (!submitBtn.getAttribute('data-original-html')) {
+                    submitBtn.setAttribute('data-original-html', submitBtn.innerHTML);
+                }
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Saving...';
+            }
+        });
+    }
+
+    if (pickAgainModalEl && !pickAgainModalEl.dataset.bound) {
+        pickAgainModalEl.dataset.bound = '1';
+        pickAgainModalEl.addEventListener('hidden.bs.modal', function() {
+            var pickAgainFormEl = document.getElementById('pickAgainForm');
+            var sectionField = document.getElementById('pickAgainSectionInput');
+            var currentMeta = document.getElementById('pickAgainCurrentMeta');
+            var submitBtn = document.getElementById('pickAgainSubmitBtn');
+
+            if (pickAgainFormEl) {
+                pickAgainFormEl.reset();
+            }
+            if (sectionField) {
+                sectionField.placeholder = 'e.g. B';
+                sectionField.style.borderColor = '';
+                sectionField.style.boxShadow = '';
+            }
+            var scheduleField = document.getElementById('pickAgainScheduleInput');
+            if (scheduleField) {
+                scheduleField.style.borderColor = '';
+                scheduleField.style.boxShadow = '';
+            }
+            if (currentMeta) {
+                currentMeta.textContent = '';
+                currentMeta.style.display = 'none';
+            }
+            if (submitBtn) {
+                var originalHtml = submitBtn.getAttribute('data-original-html');
+                submitBtn.disabled = false;
+                if (originalHtml) {
+                    submitBtn.innerHTML = originalHtml;
+                }
+            }
+
+            pickAgainModalEl.removeAttribute('data-current-section');
         });
     }
 

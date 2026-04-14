@@ -47,7 +47,9 @@
 .student-id-input{height:44px;border-radius:10px;border-color:#cbd5e1;font-size:1rem;font-weight:600;letter-spacing:.02em;}
 .student-id-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
 .student-verify-btn{height:44px;border-radius:10px;}
-.student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:10px;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;text-align:center;}
+.student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:10px;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.student-verified-name{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.student-verified-icon{font-size:1rem;line-height:1;flex-shrink:0;}
 .student-guide-box{background:#f8fafc;border-color:#dbe3ef;}
 .student-guide-title{font-size:.96rem;font-weight:700;color:#1e40af;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
 .student-guide-list{list-style:none;padding:0;margin:0;counter-reset:verifyStep;}
@@ -181,7 +183,8 @@
                             </button>
                             {% else %}
                             <div class="student-verified-chip">
-                                <i class="bi bi-patch-check-fill me-1"></i> Verified: {{ verifiedStudent.fullName }}
+                                <span class="student-verified-name">{{ verifiedStudent.fullName }}</span>
+                                <i class="bi bi-check-circle-fill student-verified-icon" title="Verified student" aria-label="Verified student"></i>
                             </div>
                             {% endif %}
                         </div>

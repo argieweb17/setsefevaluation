@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: FacultySubjectLoadRepository::class)]
 #[ORM\Table(name: 'faculty_subject_load')]
-#[ORM\UniqueConstraint(name: 'unique_faculty_subject_section_ay', columns: ['faculty_id', 'subject_id', 'section', 'academic_year_id'])]
+#[ORM\UniqueConstraint(name: 'unique_faculty_subject_section_schedule_ay', columns: ['faculty_id', 'subject_id', 'section', 'schedule', 'academic_year_id'])]
 class FacultySubjectLoad
 {
     #[ORM\Id]

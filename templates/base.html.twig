@@ -17,6 +17,7 @@
     <body class="{% block body_class %}{% endblock %}">
         {# ── TOP NAVBAR ── #}
         {% if app.user %}
+        {% set _studentVerified = app.user.isStudent and (app.session.get('student_loadslip_verified', false) or (app.session.get('student_loadslip_codes', [])|length > 0)) %}
         {# Mobile-only slim navbar for sidebar toggle #}
         <nav class="navbar navbar-dark navbar-norsu navbar-mobile-only fixed-top d-lg-none">
             <div class="container-fluid px-3">
@@ -377,7 +378,12 @@
                         >
                     </div>
                     <div class="sidebar-user-info">
-                        <span class="sidebar-user-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                        <span class="sidebar-user-name user-name-with-verify">
+                            <span class="user-name-text">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                            {% if app.user.isStudent and _studentVerified %}
+                                <i class="bi bi-check-circle-fill student-verified-name-icon" title="Verified student" aria-label="Verified student"></i>
+                            {% endif %}
+                        </span>
                         <span class="sidebar-user-role" style="display:flex;align-items:center;width:100%;">
                             {% if app.user.isAdmin %}Administrator
                             {% elseif app.user.hasAssignedRole('ROLE_SUPERIOR') %}Superior
@@ -385,7 +391,6 @@
                             {% elseif app.user.isStaff %}Staff
                             {% elseif app.user.isSuperior %}Superior
                             {% else %}
-                                {% set _studentVerified = app.session.get('student_loadslip_verified', false) or (app.session.get('student_loadslip_codes', [])|length > 0) %}
                                 Student
                                 <span style="margin-left:auto;color:{{ _studentVerified ? '#16A34A' : '#DC2626' }};font-weight:700;">
                                     {{ _studentVerified ? 'Verified' : 'Unverified' }}
@@ -500,7 +505,12 @@
                         <img src="{{ asset('images/' ~ app.user.profilePictureOrDefault) }}" alt="Profile" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
                     </div>
                     <div class="topbar-profile-info">
-                        <span class="topbar-profile-name">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                        <span class="topbar-profile-name user-name-with-verify">
+                            <span class="user-name-text">{{ app.user.firstName }} {{ app.user.lastName }}</span>
+                            {% if app.user.isStudent and _studentVerified %}
+                                <i class="bi bi-check-circle-fill student-verified-name-icon" title="Verified student" aria-label="Verified student"></i>
+                            {% endif %}
+                        </span>
                         <span class="topbar-profile-role">
                             {% if app.user.isAdmin %}Administrator
                             {% elseif app.user.hasAssignedRole('ROLE_SUPERIOR') %}Superior

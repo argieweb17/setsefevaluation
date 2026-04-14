@@ -49,6 +49,8 @@
     margin-bottom: .55rem;
 }
 .sp-name { margin: 0; font-weight: 700; color: #0f172a; font-size: .95rem; }
+.sp-name-row { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.sp-verified-name-icon { color: #16A34A; font-size: .9rem; line-height: 1; flex-shrink: 0; }
 .sp-id { margin-top: .2rem; color: #64748b; font-size: .78rem; }
 .sp-badge {
     display: inline-flex;
@@ -140,7 +142,12 @@
     <div class="sp-card sp-main">
         <div class="sp-person">
             <img src="{{ asset('images/' ~ user.profilePictureOrDefault) }}" alt="{{ user.fullName }}" class="sp-avatar">
-            <p class="sp-name">{{ user.fullName }}</p>
+            <p class="sp-name sp-name-row">
+                <span>{{ user.fullName }}</span>
+                {% if isStudentVerified|default(false) %}
+                    <i class="bi bi-check-circle-fill sp-verified-name-icon" title="Verified student" aria-label="Verified student"></i>
+                {% endif %}
+            </p>
             <p class="sp-id">{{ user.schoolId ?? 'No student ID yet' }}</p>
             {% if isStudentVerified|default(false) %}
                 <span class="sp-badge is-verified">Verified</span>

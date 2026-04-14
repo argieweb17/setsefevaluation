@@ -179,7 +179,7 @@ class HomeController extends AbstractController
     public function index(
         Request $request,
         UserRepository $userRepo,
-        EvaluationResponseRepository $responseRepo,
+        QuestionRepository $questionRepo,
         QuestionCategoryDescriptionRepository $descRepo,
     ): Response
     {
@@ -215,14 +215,14 @@ class HomeController extends AbstractController
             }
         }
             
-        $evaluationCount = $responseRepo->count([]);
+        $questionnaireCount = $questionRepo->count(['isActive' => true]);
         $announcementMeta = $descRepo->getSystemAnnouncementMeta();
         
         return $this->render('home/welcome.html.twig', [
             'studentCount' => $studentCount,
             'facultyCount' => $facultyCount,
             'staffCount' => $staffCount,
-            'evaluationCount' => $evaluationCount,
+            'questionnaireCount' => $questionnaireCount,
             'systemAnnouncementTitle' => $descRepo->getSystemAnnouncementTitle(),
             'systemAnnouncementBodyHtml' => $descRepo->getSystemAnnouncementBodyHtml(),
             'systemAnnouncementImageUrl' => $descRepo->getSystemAnnouncementImageUrl(),
@@ -1539,13 +1539,62 @@ class HomeController extends AbstractController
             if (!$subject) continue;
 
             $newSection = isset($sections[$sid]) ? ($sections[$sid] ?: null) : null;
+            if (is_string($newSection)) {
+                $newSection = strtoupper(trim($newSection));
+                if ($newSection == '') {
+                    $newSection = null;
+                }
+            }
             $newSchedule = isset($schedules[$sid]) ? ($schedules[$sid] ?: null) : null;
+            if (is_string($newSchedule)) {
+                $newSchedule = trim($newSchedule);
+                if ($newSchedule == '') {
+                    $newSchedule = null;
+                }
+            }
 
             if (isset($existingBySubject[$sid]) && count($existingBySubject[$sid]) > 0) {
                 // Update the first (primary) entry
-                $primaryFsl = $existingBySubject[$sid][0];
-                $primaryFsl->setSection($newSection);
-                $primaryFsl->setSchedule($newSchedule);
+                $fslList = $existingBySubject[$sid];
+                $primaryFsl = $fslList[0];
+
+                // If the requested section+schedule already exists in another entry,
+                // merge instead of updating primary into a duplicate key.
+                $matchingSectionScheduleFsl = null;
+                foreach ($fslList as $candidateFsl) {
+                    if ($candidateFsl->getId() === $primaryFsl->getId()) {
+                        continue;
+                    }
+
+                    $candidateSection = $candidateFsl->getSection();
+                    if (is_string($candidateSection)) {
+                        $candidateSection = strtoupper(trim($candidateSection));
+                    }
+
+                    $candidateSchedule = $candidateFsl->getSchedule();
+                    if (is_string($candidateSchedule)) {
+                        $candidateSchedule = trim($candidateSchedule);
+                        if ($candidateSchedule == '') {
+                            $candidateSchedule = null;
+                        }
+                    }
+
+                    if ($candidateSection === $newSection && $candidateSchedule === $newSchedule) {
+                        $matchingSectionScheduleFsl = $candidateFsl;
+                        break;
+                    }
+                }
+
+                if ($matchingSectionScheduleFsl) {
+                    $em->remove($primaryFsl);
+                    $existingBySubject[$sid] = array_values(array_filter(
+                        $fslList,
+                        static fn(FacultySubjectLoad $entry): bool => $entry->getId() !== $primaryFsl->getId()
+                    ));
+                } else {
+                    $primaryFsl->setSection($newSection);
+                    $primaryFsl->setSchedule($newSchedule);
+                }
                 // Additional entries (index 1+) are preserved as-is
             } else {
                 // No existing entry — create a new one
@@ -1558,7 +1607,12 @@ class HomeController extends AbstractController
                 $em->persist($fsl);
             }
         }
-        $em->flush();
+        try {
+            $em->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+            $this->addFlash('danger', 'Duplicate subject load detected for the same section, schedule, and academic year. Please refresh and try again.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
 
         $messages = [];
         if ($count > 0) {
@@ -1581,6 +1635,7 @@ class HomeController extends AbstractController
         SubjectRepository $subjectRepo,
         EntityManagerInterface $em,
         AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -1592,10 +1647,16 @@ class HomeController extends AbstractController
 
         $subjectId = (int) $request->request->get('subject_id');
         $section = trim($request->request->get('section', ''));
-        $schedule = $request->request->get('schedule', '');
+        $section = strtoupper($section);
+        $schedule = trim((string) $request->request->get('schedule', ''));
 
         if (!$subjectId || !$section) {
             $this->addFlash('danger', 'Subject and section are required.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        if ($schedule === '') {
+            $this->addFlash('danger', 'Schedule is required.');
             return $this->redirectToRoute('faculty_subjects');
         }
 
@@ -1606,9 +1667,33 @@ class HomeController extends AbstractController
         }
 
         $currentAY = $ayRepo->findCurrent();
-        $activeSemester = $this->normalizeAcademicSemester($currentAY?->getSemester());
-        if (!$this->subjectAllowedForActiveAcademicSemester($subject, $activeSemester)) {
-            $this->addFlash('danger', 'Cannot pick this subject because active academic year semester is ' . ($activeSemester ?? 'not set') . '.');
+
+        // Allow pick-again for subjects already loaded by this faculty even if AY semester changed.
+        $isDirectOwner = $subject->getFaculty() && $subject->getFaculty()->getId() === $user->getId();
+        $existingAnyLoad = $fslRepo->findOneBy([
+            'faculty' => $user,
+            'subject' => $subject,
+            'academicYear' => $currentAY,
+        ]);
+        $alreadyLoadedByFaculty = $isDirectOwner || $existingAnyLoad !== null;
+
+        if (!$alreadyLoadedByFaculty) {
+            $this->addFlash('danger', 'Subject not assigned to your load.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
+
+        $existingLoad = $fslRepo->findOneBy([
+            'faculty' => $user,
+            'subject' => $subject,
+            'academicYear' => $currentAY,
+            'section' => $section,
+            'schedule' => $schedule ?: null,
+        ]);
+
+        if ($existingLoad) {
+            $existingLoad->setSchedule($schedule ?: null);
+            $em->flush();
+            $this->addFlash('info', 'Section and schedule already exist in your load.');
             return $this->redirectToRoute('faculty_subjects');
         }
 
@@ -1619,7 +1704,12 @@ class HomeController extends AbstractController
         $fsl->setSection($section);
         $fsl->setSchedule($schedule ?: null);
         $em->persist($fsl);
-        $em->flush();
+        try {
+            $em->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+            $this->addFlash('danger', 'That section and schedule are already in your load for this academic year.');
+            return $this->redirectToRoute('faculty_subjects');
+        }
 
         $this->addFlash('success', 'Subject "' . $subject->getSubjectCode() . ' — Section ' . strtoupper($section) . '" added to your load.');
         return $this->redirectToRoute('faculty_subjects');
