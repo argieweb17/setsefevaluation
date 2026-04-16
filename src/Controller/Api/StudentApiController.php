@@ -32,6 +32,12 @@ class StudentApiController extends AbstractController
                 'POST /api/register',
                 'GET /api/active-evaluations',
             ],
+            'protectedEndpoints' => [
+                'GET /api/qr/evaluations',
+                'GET /api/qr/evaluations/{id}',
+                'GET /api/questionnaire/evaluations/{id}',
+                'GET /api/questionnaire/type/{evaluationType}',
+            ],
             'auth' => 'Use Authorization: Bearer <token> for protected /api endpoints.',
         ]);
     }

@@ -367,7 +367,7 @@
 .ses-subject-card {
     display: flex;
     align-items: center;
-    gap: .75rem;
+    gap: .5rem;
     padding: .75rem 1rem;
     border: 1.5px solid #e5e7eb;
     border-radius: 12px;
@@ -375,18 +375,6 @@
     background: #fff;
 }
 .ses-subject-card:hover { border-color: #bfdbfe; background: #f8faff; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-.ses-subject-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: .72rem;
-    font-weight: 800;
-    color: #fff;
-}
 .ses-subject-card-body { flex: 1; min-width: 0; }
 .ses-subject-card-top { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .ses-subject-card-code { font-weight: 700; font-size: .82rem; color: #1e40af; }
@@ -575,14 +563,9 @@
 
         {# ── Card View ── #}
         <div class="ses-subject-cards d-none" id="enrolledCardView">
-            {% set colors = ['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#4f46e5','#c026d3'] %}
             {% for enrollment in enrollments %}
                 {% set subject = enrollment.subject %}
-                {% set colorIdx = loop.index0 % colors|length %}
                 <div class="ses-subject-card" data-search="{{ subject.subjectCode }} {{ subject.subjectName }} {{ enrollment.section ?: subject.section ?: '' }} {{ enrollment.schedule ?: subject.schedule ?: '' }} {{ subject.units ?: '' }} {{ enrollment.status }}">
-                    <div class="ses-subject-card-icon" style="background:{{ colors[colorIdx] }};">
-                        {{ subject.subjectCode[:2]|upper }}
-                    </div>
                     <div class="ses-subject-card-body">
                         <div class="ses-subject-card-top">
                             <span class="ses-subject-card-code">{{ subject.subjectCode }}</span>

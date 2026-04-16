@@ -355,10 +355,20 @@ class AdminController extends AbstractController
     public function students(UserRepository $repo, DepartmentRepository $deptRepo): Response
     {
         $all = $repo->findBy([], ['createdAt' => 'DESC']);
-        $students = array_filter($all, fn(User $u) => !in_array('ROLE_ADMIN', $u->getRoles()) && !in_array('ROLE_SUPERIOR', $u->getRoles()) && !in_array('ROLE_FACULTY', $u->getRoles()) && !in_array('ROLE_STAFF', $u->getRoles()));
+        $students = array_values(array_filter($all, fn(User $u) => !in_array('ROLE_ADMIN', $u->getRoles()) && !in_array('ROLE_SUPERIOR', $u->getRoles()) && !in_array('ROLE_FACULTY', $u->getRoles()) && !in_array('ROLE_STAFF', $u->getRoles())));
+
+        $studentVerification = [];
+        foreach ($students as $student) {
+            $studentId = $student->getId();
+            if ($studentId === null) {
+                continue;
+            }
+            $studentVerification[$studentId] = $this->isStudentLoadslipVerified($student->getSchoolId());
+        }
 
         return $this->render('admin/students.html.twig', [
-            'users' => array_values($students),
+            'users' => $students,
+            'studentVerification' => $studentVerification,
             'departments' => $deptRepo->findAllOrdered(),
         ]);
     }
@@ -1495,6 +1505,67 @@ class AdminController extends AbstractController
         }
 
         return array_values(array_unique($items));
+    }
+
+    private function normalizeStudentNumber(string $value): string
+    {
+        $value = strtoupper(trim($value));
+        $value = str_replace(
+            ['O', 'Q', 'D', 'I', 'L', '|', '!', 'S', 'B', 'Z', 'G'],
+            ['0', '0', '0', '1', '1', '1', '1', '5', '8', '2', '6'],
+            $value
+        );
+
+        return (string) preg_replace('/[^0-9]/', '', $value);
+    }
+
+    private function isStudentLoadslipVerified(?string $schoolId): bool
+    {
+        $normalizedSchoolId = $this->normalizeStudentNumber((string) ($schoolId ?? ''));
+        if ($normalizedSchoolId === '') {
+            return false;
+        }
+
+        $path = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/')
+            . DIRECTORY_SEPARATOR . 'var'
+            . DIRECTORY_SEPARATOR . 'loadslip-verifications'
+            . DIRECTORY_SEPARATOR . $normalizedSchoolId . '.json';
+
+        if (!is_file($path)) {
+            return false;
+        }
+
+        $raw = @file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
+            return false;
+        }
+
+        try {
+            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        if (!is_array($data)) {
+            return false;
+        }
+
+        $studentNumber = $this->normalizeStudentNumber((string) ($data['studentNumber'] ?? ''));
+        if ($studentNumber === '' || $studentNumber !== $normalizedSchoolId) {
+            return false;
+        }
+
+        $codes = array_values(array_filter(array_map(
+            static fn($v): string => strtoupper(trim((string) $v)),
+            (array) ($data['codes'] ?? [])
+        )));
+        $rows = array_values(array_filter((array) ($data['rows'] ?? []), static fn($row): bool => is_array($row)));
+
+        if (empty($codes) && empty($rows)) {
+            return false;
+        }
+
+        return (bool) ($data['verified'] ?? true);
     }
 
     // ════════════════════════════════════════════════

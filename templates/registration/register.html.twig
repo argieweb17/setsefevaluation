@@ -262,19 +262,19 @@
     transform: translateX(0);
 }
 .rg-role-icon-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 0.75rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 0.625rem;
     background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
+    font-size: 1.1rem;
     flex-shrink: 0;
     transition: transform 0.2s;
 }
 .rg-role-card:hover .rg-role-icon-wrap {
-    transform: scale(1.08);
+    transform: scale(1.03);
 }
 .rg-role-student {
     background: transparent;
@@ -1450,7 +1450,7 @@ a.rg-contact-item:hover {
                     <div class="rg-role-grid">
                         <button type="button" class="rg-role-card" data-role="student" onclick="selectRole('student')">
                             <div class="rg-role-icon-wrap rg-role-student">
-                                <i class="bi bi-mortarboard-fill"></i>
+                                <i class="bi bi-mortarboard"></i>
                             </div>
                             <div class="rg-role-info">
                                 <h4>Student</h4>
@@ -1461,7 +1461,7 @@ a.rg-contact-item:hover {
 
                         <button type="button" class="rg-role-card" data-role="faculty" onclick="selectRole('faculty')">
                             <div class="rg-role-icon-wrap rg-role-faculty">
-                                <i class="bi bi-person-workspace"></i>
+                                <i class="bi bi-person"></i>
                             </div>
                             <div class="rg-role-info">
                                 <h4>Faculty</h4>
@@ -1472,7 +1472,7 @@ a.rg-contact-item:hover {
 
                         <button type="button" class="rg-role-card" data-role="staff" onclick="selectRole('staff')">
                             <div class="rg-role-icon-wrap rg-role-staff">
-                                <i class="bi bi-clipboard2-check-fill"></i>
+                                <i class="bi bi-clipboard2-check"></i>
                             </div>
                             <div class="rg-role-info">
                                 <h4>Staff</h4>
@@ -1483,7 +1483,7 @@ a.rg-contact-item:hover {
 
                         <button type="button" class="rg-role-card" data-role="superior" onclick="selectRole('superior')">
                             <div class="rg-role-icon-wrap rg-role-superior">
-                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star"></i>
                             </div>
                             <div class="rg-role-info">
                                 <h4>Superior</h4>
@@ -2085,10 +2085,10 @@ a.rg-contact-item:hover {
     var stepsEl      = document.getElementById('rgSteps');
 
     var roleConfig = {
-        student: { label: 'Student', icon: 'bi-mortarboard-fill', color: '#1E40AF', bg: '#1E3A8A' },
-        faculty: { label: 'Faculty', icon: 'bi-person-workspace', color: '#059669', bg: '#1E3A8A' },
-        staff:    { label: 'Staff',    icon: 'bi-clipboard2-check-fill', color: '#D97706', bg: '#1E3A8A' },
-        superior: { label: 'Superior', icon: 'bi-star-fill',             color: '#7C3AED', bg: '#1E3A8A' }
+        student: { label: 'Student', icon: 'bi-mortarboard', color: '#1E40AF', bg: '#1E3A8A' },
+        faculty: { label: 'Faculty', icon: 'bi-person', color: '#059669', bg: '#1E3A8A' },
+        staff:    { label: 'Staff',    icon: 'bi-clipboard2-check', color: '#D97706', bg: '#1E3A8A' },
+        superior: { label: 'Superior', icon: 'bi-star',             color: '#7C3AED', bg: '#1E3A8A' }
     };
 
     /* ── Step progress helpers ── */

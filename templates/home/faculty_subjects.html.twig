@@ -84,8 +84,7 @@
 .sb-check,.sb-check-all{margin:0!important;width:16px;height:16px;cursor:pointer;border-radius:4px!important;}
 
 /* Code cell */
-.sb-code-cell{display:flex;align-items:center;gap:10px;}
-.sb-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.sb-code-cell{display:flex;align-items:center;gap:0;}
 .sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#000;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 /* Name */
@@ -120,7 +119,6 @@
 /* Row states */
 .sb-row.is-loaded{background:#f0fdf4;}
 .sb-row.is-loaded:hover{background:#dcfce7;}
-.sb-row.is-loaded .sb-code-avatar{background:linear-gradient(135deg,#a7f3d0,#6ee7b7);color:#065f46;}
 .sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#000;}
 
 /* Action buttons */
@@ -265,9 +263,7 @@
             <table class="sb-table">
                 <thead>
                     <tr>
-                        <th class="sb-th-check">
-                            <input type="checkbox" class="form-check-input sb-check-all" data-dept="{{ dept.id }}" title="Select all">
-                        </th>
+                        <th class="sb-th-check"></th>
                         <th class="sb-th-code">Code</th>
                         <th class="sb-th-name">Subject Name</th>
                         <th class="sb-th-sem">Semester</th>
@@ -297,7 +293,6 @@
                         </td>
                         <td class="sb-td-code">
                             <div class="sb-code-cell">
-                                <span class="sb-code-avatar">{{ subject.subjectCode|slice(0,2)|upper }}</span>
                                 <code class="sb-code-text">{{ subject.subjectCode }}</code>
                             </div>
                         </td>
@@ -380,7 +375,6 @@
                             <td class="sb-td-check"></td>
                             <td class="sb-td-code">
                                 <div class="sb-code-cell">
-                                    <span class="sb-code-avatar" style="opacity:.5;">{{ subject.subjectCode|slice(0,2)|upper }}</span>
                                     <code class="sb-code-text" style="opacity:.7;">{{ subject.subjectCode }}</code>
                                 </div>
                             </td>

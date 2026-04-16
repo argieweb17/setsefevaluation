@@ -1,11 +1,36 @@
 {# Header partial for FES pages #}
 <header class="fes-header">
+    <a href="https://norsu.edu.ph" target="_blank" rel="noopener noreferrer" class="fes-topbar-link" aria-label="Visit official NORSU website">
+        <div class="fes-topbar">
+            <div class="fes-topbar-left">
+                <img src="{{ asset('images/homeHeader/logonor.png') }}" alt="Negros Oriental State University seal" class="fes-topbar-seal">
+                <h2 class="fes-topbar-title">
+                    <span class="fes-topbar-highlight">N</span>EGROS
+                    <span class="fes-topbar-highlight">OR</span>IENTAL
+                    <span class="fes-topbar-highlight">S</span>TATE
+                    <span class="fes-topbar-highlight">U</span>NIVERSITY
+                </h2>
+            </div>
+            {% set topbarLogos = [
+                { src: asset('images/homeHeader/SEAL2.png'), alt: 'Philippine Transparency Seal' },
+                { src: asset('images/homeHeader/FREEDOM2.png'), alt: 'Freedom of Information Philippines' },
+                { src: asset('images/homeHeader/CGI2.png'), alt: 'GCL UKAS ISO Certification', class: 'is-cgi2' },
+                { src: asset('images/homeHeader/Bagong_Pilipinas_logo2.png'), alt: 'Bagong Pilipinas' }
+            ] %}
+            <div class="fes-topbar-right">
+                {% for logo in topbarLogos %}
+                <span class="fes-topbar-logo-item{{ logo.class is defined ? ' ' ~ logo.class : '' }}">
+                    <img src="{{ logo.src }}" alt="{{ logo.alt }}" class="fes-topbar-logo{{ logo.class is defined ? ' ' ~ logo.class : '' }}" loading="eager" decoding="async">
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </a>
     <div class="container">
         <a href="{{ path('app_home') }}" class="fes-logo">
             <img src="{{ asset('images/norsu1logo.png') }}" alt="NORSU Logo" class="fes-logo-img">
             <div class="fes-logo-text">
                 <span class="fes-logo-title">SET - SEF Evaluation System</span>
-                <span class="fes-logo-subtitle">Negros Oriental State University</span>
             </div>
         </a>
         <nav class="fes-nav">

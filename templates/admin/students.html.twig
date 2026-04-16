@@ -107,6 +107,7 @@
                     <th class="fw-semibold">College</th>
                     <th class="fw-semibold">Department</th>
                     <th class="fw-semibold text-center">Status</th>
+                    <th class="fw-semibold text-center">Verify</th>
                     <th class="fw-semibold text-end pe-3">Actions</th>
                 </tr>
             </thead>
@@ -140,6 +141,14 @@
                             <span class="rl-status-badge status-inactive"><i  class="bi bi-pause-circle-fill me-1"></i>Inactive</span>
                         {% endif %}
                     </td>
+                    <td class="text-center">
+                        {% set isVerified = studentVerification[user.id]|default(false) %}
+                        {% if isVerified %}
+                            <span class="rl-status-badge status-verified"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
+                        {% else %}
+                            <span class="rl-status-badge status-unverified"><i class="bi bi-patch-exclamation me-1"></i>Unverified</span>
+                        {% endif %}
+                    </td>
                     <td class="text-end pe-3">
                         <div class="d-flex gap-1 justify-content-end">
                             <a href="{{ path('admin_user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary rl-action-btn" title="Edit"><i  class="bi bi-pencil-square"></i></a>
@@ -157,7 +166,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="9" class="text-center py-5">
+                <tr><td colspan="10" class="text-center py-5">
                     <i  class="bi bi-backpack display-4 text-muted d-block mb-2"></i>
                     <span class="text-muted">No students found.</span>
                 </td></tr>
