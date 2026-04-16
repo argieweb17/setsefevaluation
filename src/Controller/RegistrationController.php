@@ -5,9 +5,11 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Repository\DepartmentRepository;
+use App\Repository\UserRepository;
 use App\Service\AuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -22,6 +24,7 @@ class RegistrationController extends AbstractController
         EntityManagerInterface $em,
         AuditLogger $audit,
         DepartmentRepository $deptRepo,
+        UserRepository $userRepo,
     ): Response {
         if ($this->getUser()) {
             return $this->redirectToRoute('app_dashboard');
@@ -88,6 +91,41 @@ class RegistrationController extends AbstractController
                 ];
                 $user->setRoles($roleMap[$role] ?? []);
 
+                $email = mb_strtolower(trim((string) $user->getEmail()));
+                $user->setEmail($email !== '' ? $email : null);
+
+                $schoolId = $this->resolveRoleIdentifier($request, $user, $role);
+                $hasCredentialError = false;
+
+                if (!$this->isNorsuEmail($email)) {
+                    $form->get('email')->addError(new FormError('Email address must end with @norsu.edu.ph.'));
+                    $securityError = 'Email address must end with @norsu.edu.ph.';
+                    $hasCredentialError = true;
+                }
+
+                if ($this->requiresInstitutionalCredentials($role)) {
+                    if ($schoolId === '') {
+                        $form->get('schoolId')->addError(new FormError('Employee/Staff ID is required for Faculty, Staff, and Superior accounts.'));
+                        if (!$securityError) {
+                            $securityError = 'Employee/Staff ID is required for Faculty, Staff, and Superior accounts.';
+                        }
+                        $hasCredentialError = true;
+                    }
+                }
+
+                if ($schoolId !== '') {
+                    $existingWithId = $userRepo->findOneBy(['schoolId' => $schoolId]);
+                    if ($existingWithId !== null) {
+                        $form->get('schoolId')->addError(new FormError('This ID is already registered.'));
+                        if (!$securityError) {
+                            $securityError = 'The provided ID is already registered.';
+                        }
+                        $hasCredentialError = true;
+                    } else {
+                        $user->setSchoolId($schoolId);
+                    }
+                }
+
                 if ($role === 'superior') {
                     $position = trim((string) $request->request->get('_position', ''));
                     $user->setPosition($position !== '' ? $position : null);
@@ -104,6 +142,17 @@ class RegistrationController extends AbstractController
                     $user->setAccountStatus('active');
                 } else {
                     $user->setAccountStatus('pending');
+                }
+
+                if ($hasCredentialError) {
+                    return $this->render('registration/register.html.twig', [
+                        'registrationForm' => $form,
+                        'registrationSuccess' => false,
+                        'registeredRole' => null,
+                        'colleges' => $colleges,
+                        'deptCollegeMap' => $deptCollegeMap,
+                        'securityError' => $securityError,
+                    ]);
                 }
 
                 $em->persist($user);
@@ -134,6 +183,29 @@ class RegistrationController extends AbstractController
             'deptCollegeMap' => $deptCollegeMap,
             'securityError' => $securityError,
         ]);
+    }
+
+    private function resolveRoleIdentifier(Request $request, User $user, ?string $role): string
+    {
+        if ($role === 'staff') {
+            return trim((string) $request->request->get('_staff_id', ''));
+        }
+
+        if ($role === 'faculty' || $role === 'superior') {
+            return trim((string) $request->request->get('_employee_id', ''));
+        }
+
+        return trim((string) $user->getSchoolId());
+    }
+
+    private function requiresInstitutionalCredentials(?string $role): bool
+    {
+        return in_array($role, ['faculty', 'staff', 'superior'], true);
+    }
+
+    private function isNorsuEmail(string $email): bool
+    {
+        return str_ends_with(mb_strtolower(trim($email)), '@norsu.edu.ph');
     }
 
     private function normalizeSuperiorEmploymentStatus(string $position): string

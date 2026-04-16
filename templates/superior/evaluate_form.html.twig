@@ -92,7 +92,7 @@
             </div>
         </div>
         <div class="sup-privacy-body">
-            <div>{{ privacyDisclaimerHtml|raw }}</div>
+            <div>{{ privacyDisclaimerHtml|default('')|raw }}</div>
             {% if not isReadOnly %}
             <hr class="my-3">
             <div class="mb-2 fw-semibold">Do you agree to the Data Privacy Disclaimer? <span class="text-danger">*</span></div>

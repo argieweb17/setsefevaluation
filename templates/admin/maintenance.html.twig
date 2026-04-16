@@ -1,0 +1,163 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Maintenance Mode | SET-SEF Evaluation{% endblock %}
+
+{% block stylesheets %}
+<style>
+.mm-wrap { max-width: 980px; margin: 0 auto; }
+.mm-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.mm-title { margin: 0; font-size: 1.35rem; font-weight: 800; color: #0f172a; }
+.mm-sub { margin: 4px 0 0; color: #64748b; font-size: 0.85rem; }
+
+.mm-status {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+}
+.mm-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.mm-status-on { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.mm-status-off { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+.mm-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 14px;
+}
+.mm-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 16px;
+}
+.mm-card h5 { margin: 0 0 10px; font-weight: 700; font-size: 0.95rem; color: #0f172a; }
+.mm-note {
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    margin-bottom: 12px;
+}
+
+.mm-form-label { display: block; font-size: 0.78rem; color: #334155; font-weight: 600; margin-bottom: 6px; }
+.mm-form-textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.84rem;
+    resize: vertical;
+}
+.mm-form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+.mm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+.mm-btn-on { background: #dc2626; color: #ffffff; }
+.mm-btn-off { background: #16a34a; color: #ffffff; }
+
+.mm-meta { list-style: none; margin: 0; padding: 0; }
+.mm-meta li { padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.83rem; color: #334155; }
+.mm-meta li:last-child { border-bottom: 0; }
+.mm-meta strong { color: #0f172a; }
+
+.mm-flash { border-radius: 10px; padding: 10px 12px; font-size: 0.83rem; margin-bottom: 10px; }
+.mm-flash-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.mm-flash-danger { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+@media (max-width: 900px) {
+    .mm-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="mm-wrap">
+    <div class="mm-header">
+        <div>
+            <h4 class="mm-title"><i class="bi bi-tools me-2"></i>System Maintenance</h4>
+            <p class="mm-sub">Toggle maintenance mode before and after system updates.</p>
+        </div>
+    </div>
+
+    {% for message in app.flashes('success') %}
+        <div class="mm-flash mm-flash-success"><i class="bi bi-check-circle me-1"></i>{{ message }}</div>
+    {% endfor %}
+    {% for message in app.flashes('danger') %}
+        <div class="mm-flash mm-flash-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ message }}</div>
+    {% endfor %}
+
+    <div class="mm-status">
+        {% if state.enabled %}
+            <span class="mm-status-pill mm-status-on"><i class="bi bi-exclamation-octagon"></i>Maintenance Mode: ON</span>
+        {% else %}
+            <span class="mm-status-pill mm-status-off"><i class="bi bi-check-circle"></i>Maintenance Mode: OFF</span>
+        {% endif %}
+    </div>
+
+    <div class="mm-grid">
+        <div class="mm-card">
+            {% if state.enabled %}
+                <h5>Disable Maintenance</h5>
+                <div class="mm-note">
+                    Public users are currently blocked. Disable maintenance mode when updates are complete.
+                </div>
+                <form method="post" action="{{ path('admin_maintenance_disable') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('maintenance_disable') }}">
+                    <button type="submit" class="mm-btn mm-btn-off">
+                        <i class="bi bi-toggle-off"></i> Disable Maintenance Mode
+                    </button>
+                </form>
+            {% else %}
+                <h5>Enable Maintenance</h5>
+                <div class="mm-note">
+                    Turn this on before running deployment, migration, or major fixes.
+                </div>
+                <form method="post" action="{{ path('admin_maintenance_enable') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('maintenance_enable') }}">
+                    <label class="mm-form-label" for="maintenance-message">Maintenance Message (shown to users)</label>
+                    <textarea id="maintenance-message" name="message" class="mm-form-textarea" placeholder="System update in progress. Please try again later."></textarea>
+                    <div style="margin-top: 12px;">
+                        <button type="submit" class="mm-btn mm-btn-on">
+                            <i class="bi bi-toggle-on"></i> Enable Maintenance Mode
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="mm-card">
+            <h5>Current State</h5>
+            <ul class="mm-meta">
+                <li><strong>Status:</strong> {{ state.enabled ? 'Enabled' : 'Disabled' }}</li>
+                <li><strong>Message:</strong> {{ state.message is not empty ? state.message : 'No maintenance message set.' }}</li>
+                <li><strong>Enabled At:</strong> {{ state.enabledAt ? state.enabledAt|date('M d, Y h:i A') : 'N/A' }}</li>
+                <li><strong>Enabled By:</strong> {{ state.enabledBy ?: 'N/A' }}</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

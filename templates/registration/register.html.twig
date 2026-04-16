@@ -864,20 +864,17 @@
     justify-content: center;
 }
 .rg-confirm-icon {
-    width: 64px;
-    height: 64px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
-    background: #1E3A8A;
+    background: linear-gradient(145deg, #1E40AF, #1E3A8A);
+    border: 2px solid #DBEAFE;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
-    color: #D97706;
-    animation: rgPulseIcon 2s ease-in-out infinite;
-}
-@keyframes rgPulseIcon {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(217,119,6,0.2); }
-    50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(217,119,6,0); }
+    font-size: 1.4rem;
+    color: #F59E0B;
+    box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);
 }
 .rg-confirm-info {
     text-align: left;
@@ -1567,6 +1564,7 @@ a.rg-contact-item:hover {
                                     {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input', 'required': 'required'}}) }}
                                 </div>
                                 {{ form_errors(registrationForm.email) }}
+                                <small class="text-muted mt-1 role-field" data-for="faculty staff superior" style="display:none">Email must end with @norsu.edu.ph.</small>
                             </div>
                         </div>
 
@@ -1686,7 +1684,7 @@ a.rg-contact-item:hover {
                                     <label class="rg-label">Employee ID</label>
                                     <div class="rg-input-wrap">
                                         <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" value="{{ app.request.request.get('_employee_id') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -1722,7 +1720,7 @@ a.rg-contact-item:hover {
                                     <label class="rg-label">Staff ID</label>
                                     <div class="rg-input-wrap">
                                         <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_staff_id" placeholder="e.g. STF-0001" required>
+                                        <input type="text" class="form-control rg-input" name="_staff_id" placeholder="e.g. STF-0001" value="{{ app.request.request.get('_staff_id') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -1765,7 +1763,7 @@ a.rg-contact-item:hover {
                                     <label class="rg-label">Employee ID</label>
                                     <div class="rg-input-wrap">
                                         <i class="bi bi-person-vcard"></i>
-                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" required>
+                                        <input type="text" class="form-control rg-input" name="_employee_id" placeholder="e.g. EMP-0001" value="{{ app.request.request.get('_employee_id') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
@@ -1883,7 +1881,7 @@ a.rg-contact-item:hover {
                             <i class="bi bi-info-circle-fill"></i>
                             <div>
                                 <strong>Admin Approval Required</strong>
-                                <p>Faculty, Staff, and Superior accounts require administrator approval before access is granted.</p>
+                                <p>Faculty, Staff, and Superior accounts require @norsu.edu.ph email, a registered ID, and administrator approval before access is granted.</p>
                             </div>
                         </div>
 
@@ -1921,7 +1919,7 @@ a.rg-contact-item:hover {
             <div class="modal-body text-center px-4 py-4 position-relative">
                 <div class="rg-confirm-icon-wrap mb-3">
                     <div class="rg-confirm-icon">
-                        <i class="bi bi-hourglass-split"></i>
+                        <i class="bi bi-shield-check"></i>
                     </div>
                 </div>
 
@@ -2081,6 +2079,7 @@ a.rg-contact-item:hover {
     var changeRoleBtn= document.getElementById('changeRoleBtn');
     var roleSelect   = document.getElementById('{{ registrationForm.role.vars.id }}');
     var regForm      = document.getElementById('regForm');
+    var emailInput   = document.getElementById('regEmail');
     var submitBtn    = document.getElementById('regSubmitBtn');
     var stepsEl      = document.getElementById('rgSteps');
 
@@ -2140,6 +2139,11 @@ a.rg-contact-item:hover {
                 }
             });
         });
+
+        if (emailInput) {
+            emailInput.setAttribute('pattern', '^[^\\s@]+@norsu\\.edu\\.ph$');
+            emailInput.setAttribute('title', 'Use your @norsu.edu.ph email address.');
+        }
 
         /* Prevent duplicate department field submission */
         if (hiddenDeptSelect) hiddenDeptSelect.disabled = true;

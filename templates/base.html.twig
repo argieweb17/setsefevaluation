@@ -351,6 +351,10 @@
                    href="{{ path('admin_migration') }}">
                     <i class="sidebar-icon bi bi-database"></i> Migration
                 </a>
+                <a class="nav-link {% if 'admin_maintenance' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                   href="{{ path('admin_maintenance') }}">
+                    <i class="sidebar-icon bi bi-tools"></i> Maintenance
+                </a>
             </nav>
 
             <div class="sidebar-header">System Logs</div>
@@ -465,7 +469,7 @@
                     {% endif %}
                 </a>
                 {% if app.user.isStaff %}
-                <a href="{{ topbarBellRoute }}" class="topbar-notif-btn{% if topbarBellCount > 0 %} has-unread{% endif %}" title="Evaluation Responses" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;text-decoration:none;">
+                <a href="{{ topbarBellRoute }}" class="topbar-message-btn topbar-bell-btn{% if topbarBellCount > 0 %} has-unread{% endif %}" title="Evaluation Responses" style="position:relative;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;text-decoration:none;">
                     <i class="topbar-notif-icon bi bi-bell{% if topbarBellCount > 0 %} topbar-bell-ring{% endif %}"></i>
                     {% if topbarBellCount > 0 %}
                         <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ topbarBellCount }}</span>
@@ -473,7 +477,7 @@
                 </a>
                 {% else %}
                 <div class="topbar-notif-wrap" id="topbarMessageNotifWrap" style="position:relative;">
-                    <button class="topbar-notif-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:none;border:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
+                    <button class="topbar-message-btn topbar-bell-btn{% if messageNotifCount > 0 %} has-unread{% endif %}" id="topbarMessageNotifBtn" type="button" title="Notifications" style="position:relative;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;-webkit-appearance:none;appearance:none;font-size:1.25rem;color:#64748B;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;">
                         <i class="topbar-notif-icon bi bi-bell{% if messageNotifCount > 0 %} topbar-bell-ring{% endif %}"></i>
                         {% if messageNotifCount > 0 %}
                             <span class="topbar-notif-badge notif-count-badge" style="position:absolute;top:-2px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1;background:#dc3545;color:#fff;">{{ messageNotifCount }}</span>
@@ -652,6 +656,7 @@
             {% set loadslipAlreadyVerifiedMessages = [] %}
             {% set studentIdNotFoundMessages = [] %}
             {% set loadslipStudentIdMissingMessages = [] %}
+            {% set dataPrivacyDisclaimerMessages = [] %}
             {% for label, messages in nonSuccessFlashes %}
                 {% for message in messages %}
                     {% if label == 'danger' and message starts with 'Student ID mismatch' %}
@@ -676,6 +681,8 @@
                         {% set loadslipNotVerifiedMessages = loadslipNotVerifiedMessages|merge([message]) %}
                     {% elseif label == 'warning' and message starts with 'Loadslip is already verified.' %}
                         {% set loadslipAlreadyVerifiedMessages = loadslipAlreadyVerifiedMessages|merge([message]) %}
+                    {% elseif label == 'danger' and message starts with 'Please select Agree or Disagree in the Data Privacy Disclaimer' %}
+                        {% set dataPrivacyDisclaimerMessages = dataPrivacyDisclaimerMessages|merge([message]) %}
                     {% else %}
                         <div class="{% if app.user %}px-0{% else %}container{% endif %} mt-3">
                             <div class="alert alert-{{ label }} alert-dismissible fade show">
@@ -924,6 +931,40 @@
                     }
                     document.addEventListener('DOMContentLoaded', showLoadslipAlreadyVerifiedModal);
                     document.addEventListener('turbo:load', showLoadslipAlreadyVerifiedModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if dataPrivacyDisclaimerMessages|length > 0 %}
+                <div class="modal fade" id="dataPrivacyDisclaimerModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #DC2626;">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Data Privacy Disclaimer Required</h5>
+                                {% for message in dataPrivacyDisclaimerMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showDataPrivacyDisclaimerModal() {
+                        var modalEl = document.getElementById('dataPrivacyDisclaimerModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showDataPrivacyDisclaimerModal);
+                    document.addEventListener('turbo:load', showDataPrivacyDisclaimerModal);
                 })();
                 </script>
             {% endif %}

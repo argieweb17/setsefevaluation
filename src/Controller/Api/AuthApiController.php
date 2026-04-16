@@ -89,6 +89,18 @@ class AuthApiController extends AbstractController
             return $this->json(['error' => 'Account is not active.'], 403);
         }
 
+        if (!$this->hasAllowedEmailDomain($user)) {
+            return $this->json([
+                'error' => 'Email address must end with @norsu.edu.ph.',
+            ], 403);
+        }
+
+        if ($this->requiresInstitutionalCredentialsForUser($user) && !$this->hasValidInstitutionalCredentials($user)) {
+            return $this->json([
+                'error' => 'Faculty, Staff, and Superior accounts must have an @norsu.edu.ph email and a registered ID. Please contact the administrator.',
+            ], 403);
+        }
+
         $token = hash('sha256', $user->getId() . $_ENV['APP_SECRET'] . date('Y-m-d'));
 
         return $this->json([
@@ -168,6 +180,11 @@ class AuthApiController extends AbstractController
                 'message' => 'Use POST /api/register to create an account.',
                 'required' => ['firstName', 'lastName', 'password'],
                 'optional' => ['email', 'schoolId', 'role', 'departmentId', 'courseId', 'campus', 'yearLevel', 'employmentStatus', 'position', 'academicRank'],
+                'roleRules' => [
+                    'faculty' => 'email must end with @norsu.edu.ph and schoolId is required',
+                    'staff' => 'email must end with @norsu.edu.ph and schoolId is required',
+                    'superior' => 'email must end with @norsu.edu.ph and schoolId is required',
+                ],
             ]);
         }
 
@@ -185,7 +202,7 @@ class AuthApiController extends AbstractController
         $password = (string) ($data['password'] ?? '');
         $role = strtolower(trim((string) ($data['role'] ?? 'student')));
         $email = strtolower(trim((string) ($data['email'] ?? '')));
-        $schoolId = trim((string) ($data['schoolId'] ?? ''));
+        $schoolId = $this->resolveSchoolId($data);
 
         if ($firstName === '' || $lastName === '' || $password === '') {
             return $this->json(['error' => 'firstName, lastName, and password are required.'], 400);
@@ -200,12 +217,26 @@ class AuthApiController extends AbstractController
             return $this->json(['error' => 'Invalid role. Allowed values: student, faculty, staff, superior.'], 400);
         }
 
+        $requiresInstitutionalCredentials = $this->requiresInstitutionalCredentialsForRole($role);
+
+        if ($requiresInstitutionalCredentials && $email === '') {
+            return $this->json(['error' => 'Email is required for Faculty, Staff, and Superior accounts.'], 400);
+        }
+
+        if ($requiresInstitutionalCredentials && $schoolId === '') {
+            return $this->json(['error' => 'ID is required for Faculty, Staff, and Superior accounts.'], 400);
+        }
+
         if ($email === '' && $schoolId === '') {
             return $this->json(['error' => 'Either email or schoolId is required.'], 400);
         }
 
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json(['error' => 'Invalid email format.'], 400);
+        }
+
+        if ($email !== '' && !$this->isNorsuEmail($email)) {
+            return $this->json(['error' => 'Email address must end with @norsu.edu.ph.'], 400);
         }
 
         if ($email !== '' && $userRepo->findOneBy(['email' => $email])) {
@@ -314,6 +345,58 @@ class AuthApiController extends AbstractController
             'profilePicture' => $user->getProfilePicture(),
             'accountStatus' => $user->getAccountStatus(),
         ];
+    }
+
+    private function resolveSchoolId(array $data): string
+    {
+        return trim((string) (
+            $data['schoolId']
+            ?? $data['school_id']
+            ?? $data['employeeId']
+            ?? $data['employee_id']
+            ?? $data['staffId']
+            ?? $data['staff_id']
+            ?? $data['id']
+            ?? ''
+        ));
+    }
+
+    private function requiresInstitutionalCredentialsForRole(string $role): bool
+    {
+        return in_array($role, ['faculty', 'staff', 'superior'], true);
+    }
+
+    private function requiresInstitutionalCredentialsForUser(User $user): bool
+    {
+        $roles = $user->getRoles();
+
+        return in_array('ROLE_FACULTY', $roles, true)
+            || in_array('ROLE_STAFF', $roles, true)
+            || in_array('ROLE_SUPERIOR', $roles, true);
+    }
+
+    private function hasValidInstitutionalCredentials(User $user): bool
+    {
+        $email = trim((string) $user->getEmail());
+        $schoolId = trim((string) $user->getSchoolId());
+
+        return $schoolId !== '' && $this->isNorsuEmail($email);
+    }
+
+    private function hasAllowedEmailDomain(User $user): bool
+    {
+        $email = trim((string) $user->getEmail());
+
+        if ($email === '') {
+            return true;
+        }
+
+        return $this->isNorsuEmail($email);
+    }
+
+    private function isNorsuEmail(string $email): bool
+    {
+        return str_ends_with(mb_strtolower(trim($email)), '@norsu.edu.ph');
     }
 
     private function normalizeSuperiorEmploymentStatus(string $position): string

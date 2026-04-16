@@ -1895,10 +1895,42 @@ a:hover {
 .mobile-notif-icon {
     color: currentColor !important;
 }
+.topbar-bell-btn,
+.topbar-bell-btn:hover,
+.topbar-bell-btn:focus {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    color: #64748B !important;
+    text-decoration: none;
+}
+button.topbar-bell-btn {
+    -webkit-appearance: none;
+    appearance: none;
+}
 .topbar-notif-btn,
 .topbar-notif-btn:hover,
 .topbar-notif-btn:focus {
     color: #64748B !important;
+}
+.topbar-notif-btn {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    height: auto !important;
+}
+.topbar-right #topbarMessageNotifBtn,
+.topbar-right a.topbar-notif-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    outline: none;
 }
 .topbar-notif-btn.has-unread {
     color: #64748B !important;
@@ -1971,7 +2003,7 @@ a:hover {
 .topbar-notif-item:hover {
     background: #F8FAFC;
 }
-.topbar-notif-icon {
+.topbar-notif-item .topbar-notif-icon {
     width: 32px;
     height: 32px;
     border-radius: 8px;

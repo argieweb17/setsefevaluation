@@ -2681,6 +2681,7 @@ class ReportController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
+        QuestionCategoryDescriptionRepository $descRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $evaluateeId = (int) $request->query->get('faculty', 0);
@@ -2736,6 +2737,7 @@ class ReportController extends AbstractController
             'evaluateeRole' => 'faculty',
             'evaluateeRoleLabel' => 'Faculty',
             'evaluateeSubjects' => [],
+            'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
             'generalComment' => $generalComment,

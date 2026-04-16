@@ -53,6 +53,8 @@ class AuditLog
     // System
     public const ACTION_LOGIN             = 'login';
     public const ACTION_LOGOUT            = 'logout';
+    public const ACTION_ENABLE_MAINTENANCE = 'enable_maintenance';
+    public const ACTION_DISABLE_MAINTENANCE = 'disable_maintenance';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -138,6 +140,8 @@ class AuditLog
             self::ACTION_EXPORT_REPORT     => 'Exported Report',
             self::ACTION_LOGIN             => 'Logged In',
             self::ACTION_LOGOUT            => 'Logged Out',
+            self::ACTION_ENABLE_MAINTENANCE => 'Enabled Maintenance Mode',
+            self::ACTION_DISABLE_MAINTENANCE => 'Disabled Maintenance Mode',
             default                        => ucfirst(str_replace('_', ' ', $this->action)),
         };
     }

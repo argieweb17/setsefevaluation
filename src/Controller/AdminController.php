@@ -110,7 +110,10 @@ class AdminController extends AbstractController
             $user = new User();
             $user->setFirstName($request->request->get('firstName', ''));
             $user->setLastName($request->request->get('lastName', ''));
-            $user->setEmail($request->request->get('email', '') ?: null);
+            $email = mb_strtolower(trim((string) $request->request->get('email', '')));
+            $user->setEmail($email !== '' ? $email : null);
+            $schoolId = trim((string) $request->request->get('schoolId', ''));
+            $user->setSchoolId($schoolId !== '' ? $schoolId : null);
 
             $selectedRoles = $request->request->all('roles');
             $roleMap = [
@@ -171,7 +174,10 @@ class AdminController extends AbstractController
         if ($request->isMethod('POST')) {
             $user->setFirstName($request->request->get('firstName', ''));
             $user->setLastName($request->request->get('lastName', ''));
-            $user->setEmail($request->request->get('email', '') ?: null);
+            $email = mb_strtolower(trim((string) $request->request->get('email', '')));
+            $user->setEmail($email !== '' ? $email : null);
+            $schoolId = trim((string) $request->request->get('schoolId', ''));
+            $user->setSchoolId($schoolId !== '' ? $schoolId : null);
 
             $selectedRoles = $request->request->all('roles');
             $roleMap = [
@@ -2826,6 +2832,7 @@ class AdminController extends AbstractController
         EvaluationPeriodRepository $evalRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
+        QuestionCategoryDescriptionRepository $descRepo,
     ): Response {
         $evalId = (int) $request->query->get('evaluation', 0);
         $evaluateeId = (int) $request->query->get('faculty', 0);
@@ -2881,6 +2888,7 @@ class AdminController extends AbstractController
             'evaluateeRole' => 'faculty',
             'evaluateeRoleLabel' => 'Faculty',
             'evaluateeSubjects' => [],
+            'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
             'generalComment' => $generalComment,

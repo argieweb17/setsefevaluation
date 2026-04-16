@@ -83,6 +83,12 @@
                            value="{{ realEmail }}">
                 </div>
                 <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-muted"><i  class="bi bi-person-vcard me-1"></i>School/Employee ID</label>
+                    <input type="text" name="schoolId" class="form-control"
+                           value="{{ isEdit ? user.schoolId : '' }}"
+                           placeholder="Required for Faculty/Staff/Superior logins">
+                </div>
+                <div class="col-md-6">
                     <label class="form-label fw-semibold small text-muted"><i  class="bi bi-shield me-1"></i>Roles</label>
                     <div class="uf-role-checkboxes">
                         {% set userRoles = isEdit ? user.roles : [] %}
@@ -130,7 +136,7 @@
                         <option value="Instructor" {{ empStatus == 'Instructor' ? 'selected' }}>Instructor</option>
                         <option value="Professor" {{ empStatus == 'Professor' ? 'selected' }}>Professor</option>
                     </select>
-                    <div class="form-text" style="font-size:.72rem;">Set to "Dean", "Department Head", or "Chair" for Superior evaluation targets.</div>
+                    <div class="form-text" style="font-size:.72rem;">Set to "Dean", "Department Head", or "Chair" for Superior evaluation targets. Faculty/Staff/Superior should use @norsu.edu.ph email plus School/Employee ID.</div>
                 </div>
                 {% if not isEdit %}
                 <div class="col-md-6">

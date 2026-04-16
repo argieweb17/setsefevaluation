@@ -46,8 +46,7 @@
 .ls-table tbody td{padding:10px 14px;vertical-align:middle;}
 
 /* Code cell */
-.ls-code-cell{display:flex;align-items:center;gap:10px;}
-.ls-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
+.ls-code-cell{display:flex;align-items:center;gap:0;}
 .ls-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#000;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 .ls-subject-name{font-weight:600;color:#000;font-size:.82rem;}
@@ -458,7 +457,6 @@
                 data-view-id="{{ s.subject.id }}">
                 <td>
                     <div class="ls-code-cell">
-                        <span class="ls-code-avatar">{{ s.subject.subjectCode|slice(0,2)|upper }}</span>
                         <code class="ls-code-text">{{ s.subject.subjectCode }}</code>
                     </div>
                 </td>

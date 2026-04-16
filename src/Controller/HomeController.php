@@ -200,6 +200,10 @@ class HomeController extends AbstractController
         foreach ($allUsers as $user) {
             $roles = $user->getRoles();
 
+            if (in_array('ROLE_SUPERIOR', $roles, true)) {
+                continue;
+            }
+
             if (in_array('ROLE_FACULTY', $roles, true)) {
                 $facultyCount++;
                 continue;
@@ -484,7 +488,7 @@ class HomeController extends AbstractController
         $facultyCount = 0;
         $studentCount = 0;
         foreach ($allUsers as $u) {
-            if ($u->isFaculty()) $facultyCount++;
+            if ($u->isFaculty() && !$u->isSuperior()) $facultyCount++;
             elseif (!$u->isAdmin() && !$u->isSuperior() && !$u->isStaff()) $studentCount++;
         }
 

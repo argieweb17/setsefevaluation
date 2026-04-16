@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Under Maintenance</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 45%, #e2e8f0 100%);
+            color: #0f172a;
+            padding: 20px;
+        }
+        .mx-wrap {
+            width: min(720px, 100%);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 28px 26px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+        }
+        .mx-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #fee2e2;
+            color: #991b1b;
+            margin-bottom: 10px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: clamp(1.4rem, 3.5vw, 1.9rem);
+            line-height: 1.2;
+        }
+        p {
+            margin: 0;
+            color: #334155;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .mx-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        .mx-time {
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+        .mx-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .mx-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            border: 1px solid #2563eb;
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .mx-btn:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+<div class="mx-wrap">
+    <span class="mx-badge">System Update</span>
+    <h1>We are currently performing maintenance.</h1>
+    <p>Some features are temporarily unavailable while we update the system. Please check back shortly.</p>
+
+    <div class="mx-box">
+        {{ message is not empty ? message : 'System update in progress. Please try again later.' }}
+    </div>
+
+    <div class="mx-actions">
+        <a class="mx-btn" href="{{ path('app_login') }}">Admin Login</a>
+    </div>
+
+    {% if enabledAt %}
+        <div class="mx-time">Maintenance started: {{ enabledAt|date('M d, Y h:i A') }}</div>
+    {% endif %}
+</div>
+</body>
+</html>
