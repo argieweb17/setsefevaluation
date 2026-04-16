@@ -157,7 +157,7 @@
                 {% if app.user.isDepartmentHeadFaculty and not app.user.isStaff and not app.user.isAdmin %}
                 <a class="nav-link {% if 'superior_evaluate' in app.request.attributes.get('_route')|default('') %}active{% endif %}"
                    href="{{ path('superior_evaluate_index') }}">
-                    <i class="sidebar-icon bi bi-diagram-3"></i> Superior Access
+                    <i class="sidebar-icon bi bi-diagram-3"></i> Superior
                 </a>
                 {% endif %}
             </nav>

@@ -52,8 +52,8 @@
 .sb-dept-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
 .sb-dept-icon{width:auto;height:auto;min-width:0;background:transparent;color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;box-shadow:none;}
 .sb-dept-info{display:flex;flex-direction:column;min-width:0;flex:1;}
-.sb-dept-name{font-size:.88rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sb-dept-meta{font-size:.68rem;color:#94a3b8;font-weight:500;}
+.sb-dept-name{font-size:.88rem;font-weight:600;color:#1e3a5f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-dept-meta{font-size:.68rem;color:#64748b;font-weight:500;}
 .sb-dept-header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .sb-dept-count{font-size:.72rem;font-weight:700;padding:0;border-radius:0;background:transparent;color:#1E40AF;border:none;}
 .sb-dept-chevron{font-size:.7rem;color:#94a3b8;transition:transform .25s ease;}
@@ -85,26 +85,26 @@
 
 /* Code cell */
 .sb-code-cell{display:flex;align-items:center;gap:0;}
-.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#000;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
+.sb-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:600;color:#334155;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 /* Name */
-.sb-subject-name{font-weight:600;color:#000;font-size:.82rem;}
+.sb-subject-name{font-weight:500;color:#1e3a5f;font-size:.82rem;}
 
 /* Pills */
 .sb-pill{display:inline-flex;align-items:center;padding:0;border-radius:0;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.sb-pill-sem{background:transparent;color:#000;}
+.sb-pill-sem{background:transparent;color:#334155;font-weight:500;}
 
 /* Text helpers */
 .sb-empty{color:#cbd5e1;font-size:.78rem;}
 
 /* Units badge */
-.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#000;font-weight:800;font-size:.78rem;padding:0;}
+.sb-units-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#1e3a5f;font-weight:600;font-size:.78rem;padding:0;}
 
 /* Inline inputs for section/schedule */
-.sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;}
+.sb-inline-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#334155;font-weight:500;}
 .sb-inline-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
 .sb-inline-input::placeholder{color:#cbd5e1;font-size:.72rem;}
-.sb-inline-select{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.72rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#1e293b;cursor:pointer;appearance:auto;}
+.sb-inline-select{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:5px 8px;font-size:.72rem;background:#fafbfc;outline:none;transition:border-color .15s,box-shadow .15s,background .15s;color:#334155;font-weight:500;cursor:pointer;appearance:auto;}
 .sb-inline-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
 .sb-td-section{width:110px;}
 .sb-td-schedule{width:180px;}
@@ -119,7 +119,7 @@
 /* Row states */
 .sb-row.is-loaded{background:#f0fdf4;}
 .sb-row.is-loaded:hover{background:#dcfce7;}
-.sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#000;}
+.sb-row.is-loaded .sb-code-text{background:transparent;border-color:transparent;color:#334155;}
 
 /* Action buttons */
 .sb-action-btns{display:flex;gap:4px;justify-content:center;align-items:center;}

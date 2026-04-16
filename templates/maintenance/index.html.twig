@@ -60,30 +60,6 @@
             color: #64748b;
             font-size: 0.8rem;
         }
-        .mx-actions {
-            margin-top: 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .mx-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            border: 1px solid #2563eb;
-            background: #2563eb;
-            color: #ffffff;
-            border-radius: 10px;
-            padding: 9px 14px;
-            font-size: 0.85rem;
-            font-weight: 700;
-        }
-        .mx-btn:hover {
-            background: #1d4ed8;
-            border-color: #1d4ed8;
-            color: #ffffff;
-        }
     </style>
 </head>
 <body>
@@ -94,10 +70,6 @@
 
     <div class="mx-box">
         {{ message is not empty ? message : 'System update in progress. Please try again later.' }}
-    </div>
-
-    <div class="mx-actions">
-        <a class="mx-btn" href="{{ path('app_login') }}">Admin Login</a>
     </div>
 
     {% if enabledAt %}
