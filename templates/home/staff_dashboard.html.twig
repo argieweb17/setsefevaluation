@@ -161,7 +161,12 @@
                 <td class="ev-td-meta">{{ row.college }}</td>
                 <td class="ev-td-meta">{{ row.department }}</td>
                 <td class="ev-td-response"><span class="ev-response-badge">{{ row.responseCount }}</span></td>
-                <td class="text-center"><a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a></td>
+                <td class="text-center">
+                    <div class="d-inline-flex gap-1">
+                        <a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-primary" title="View Results"><i class="bi bi-eye"></i></a>
+                        <a href="{{ path('staff_results_faculty_evaluations', {faculty: row.facultyId, evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-success" title="View Faculty Subject Evaluations"><i class="bi bi-plus-lg"></i></a>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

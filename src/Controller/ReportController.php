@@ -2531,6 +2531,7 @@ class ReportController extends AbstractController
         AcademicYearRepository $ayRepo,
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
+        $selectedEvalId = (int) $request->query->get('evaluation', 0);
         $faculty = $userRepo->find($facultyId);
 
         if (!$faculty) {
@@ -2543,13 +2544,21 @@ class ReportController extends AbstractController
         $totalEvaluators = 0;
         $sumAvg = 0;
         $openEvalIdMap = [];
-        foreach ($evalRepo->findOpen() as $openEval) {
-            $openEvalIdMap[$openEval->getId()] = true;
+        if ($selectedEvalId === 0) {
+            foreach ($evalRepo->findOpen() as $openEval) {
+                $openEvalIdMap[$openEval->getId()] = true;
+            }
         }
 
         foreach ($evalData as $row) {
             $evalId = (int) $row['evaluationPeriodId'];
-            if (!isset($openEvalIdMap[$evalId])) continue;
+            if ($selectedEvalId > 0) {
+                if ($evalId !== $selectedEvalId) {
+                    continue;
+                }
+            } elseif (!isset($openEvalIdMap[$evalId])) {
+                continue;
+            }
 
             $eval = $evalRepo->find($evalId);
             if (!$eval) continue;

@@ -1,6 +1,135 @@
 {# Footer partial for FES pages #}
 <footer class="fes-footer">
-    <div class="container">
-        <p>Copyright {{ 'now'|date('Y') }} Negros Oriental State University. ALL Rights Reserved. <a href="#">Privacy Notice</a> | <a href="#">Terms of Service</a></p>
+    {% set footerQuickLinks = [
+        { label: 'NORSU Logo', href: 'https://norsu.edu.ph/' },
+        { label: 'NORSU History', href: 'https://norsu.edu.ph/about-norsu/' },
+        { label: 'R.A. 9299 (NORSU CHARTER)', href: 'https://norsu.edu.ph/' },
+        { label: 'Annual Reports', href: 'https://norsu.edu.ph/' },
+        { label: 'PhilGEPS', href: 'https://notices.philgeps.gov.ph/' }
+    ] %}
+    {% set footerUsefulLinks = [
+        { label: 'Student Handbook', href: 'https://norsu.edu.ph/' },
+        { label: 'University Code', href: 'https://norsu.edu.ph/' },
+        { label: 'University Key Officials', href: 'https://norsu.edu.ph/' },
+        { label: 'University Calendar', href: 'https://norsu.edu.ph/' },
+        { label: 'Organizational Structure', href: 'https://norsu.edu.ph/' }
+    ] %}
+    {% set footerContactLinks = [
+        { label: 'Local Lines', href: 'https://norsu.edu.ph/contact-us/' },
+        { label: 'E-mail Addresses', href: 'https://norsu.edu.ph/contact-us/' }
+    ] %}
+
+    <div class="fes-footer-main">
+        <div class="container">
+            <div class="fes-footer-grid">
+                <div class="fes-footer-brand">
+                    <div class="fes-footer-brand-head">
+                        <img src="{{ asset('images/homeHeader/logonor.png') }}" alt="Negros Oriental State University seal" class="fes-footer-seal" loading="lazy" decoding="async">
+                        <div class="fes-footer-brand-copy">
+                            <h2 class="fes-footer-brand-title">NORSU</h2>
+                            <p class="fes-footer-brand-tagline">Our <strong>Pride</strong>. Our <strong>Hope</strong>. Our <strong>Future</strong>.</p>
+                        </div>
+                    </div>
+                    {% set footerBadges = [
+                        { src: asset('images/homeHeader/SEAL2.png'), alt: 'Philippine Transparency Seal' },
+                        { src: asset('images/homeHeader/FREEDOM2.png'), alt: 'Freedom of Information Philippines' },
+                        { src: asset('images/homeHeader/CGI2.png'), alt: 'GCL UKAS ISO Certification', class: 'is-iso' }
+                    ] %}
+                    <div class="fes-footer-badges">
+                        <div class="fes-footer-badge-row">
+                            {% for badge in footerBadges|slice(0, 2) %}
+                            <img src="{{ badge.src }}" alt="{{ badge.alt }}" class="fes-footer-badge" loading="lazy" decoding="async">
+                            {% endfor %}
+                        </div>
+                        <div class="fes-footer-badge-row is-iso-row">
+                            {% set isoBadge = footerBadges[2] %}
+                            <img src="{{ isoBadge.src }}" alt="{{ isoBadge.alt }}" class="fes-footer-badge is-iso" loading="lazy" decoding="async">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fes-footer-col">
+                    <h3 class="fes-footer-heading">Quick Links</h3>
+                    <ul class="fes-footer-links">
+                        {% for item in footerQuickLinks %}
+                        <li>
+                            <a href="{{ item.href }}" target="_blank" rel="noopener noreferrer">
+                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                <span>{{ item.label }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="fes-footer-col">
+                    <h3 class="fes-footer-heading">Useful Links</h3>
+                    <ul class="fes-footer-links">
+                        {% for item in footerUsefulLinks %}
+                        <li>
+                            <a href="{{ item.href }}" target="_blank" rel="noopener noreferrer">
+                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                <span>{{ item.label }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="fes-footer-col">
+                    <h3 class="fes-footer-heading">Contact Us</h3>
+                    <ul class="fes-footer-links">
+                        {% for item in footerContactLinks %}
+                        <li>
+                            <a href="{{ item.href }}" target="_blank" rel="noopener noreferrer">
+                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                <span>{{ item.label }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="fes-footer-col">
+                    <h3 class="fes-footer-heading">NORSU Channels</h3>
+                    <ul class="fes-footer-links fes-footer-channel-links">
+                        <li>
+                            <a href="https://www.facebook.com/norsupio" target="_blank" rel="noopener noreferrer" class="is-facebook">
+                                <i class="bi bi-facebook" aria-hidden="true"></i>
+                                <span>NORSU Public Information Office</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://www.youtube.com/results?search_query=NORSU+YouTube+Channel" target="_blank" rel="noopener noreferrer" class="is-youtube">
+                                <i class="bi bi-youtube" aria-hidden="true"></i>
+                                <span>NORSU YouTube Channel</span>
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="fes-footer-address">
+                        <h4>Address</h4>
+                        <p>
+                            Kagawasan Avenue, Capitol Area,<br>
+                            Dumaguete City, Negros Oriental,<br>
+                            Philippines 6200
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="fes-footer-bottom">
+        <div class="container">
+            <div class="fes-footer-bottom-wrap">
+                <p class="fes-footer-copyright">&copy; {{ 'now'|date('Y') }} <strong>Negros Oriental State University</strong></p>
+                <div class="fes-footer-legal">
+                    <a href="https://norsu.edu.ph/" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+                    <span aria-hidden="true">&bull;</span>
+                    <a href="https://norsu.edu.ph/" target="_blank" rel="noopener noreferrer">Data Privacy Notice</a>
+                </div>
+            </div>
+        </div>
     </div>
 </footer>

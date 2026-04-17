@@ -412,13 +412,6 @@ class HomeController extends AbstractController
             ];
         }
 
-        $completedEvals = array_values(array_filter($completedEvals, static function (array $row): bool {
-            $subject = mb_strtolower(trim((string) ($row['subject'] ?? '')));
-            $faculty = mb_strtolower(trim((string) ($row['faculty'] ?? '')));
-
-            return !($subject === 'capstone project 2' && $faculty === 'ryan escorial');
-        }));
-
         // ── Monthly Evaluation Trends (for chart) ──
         $currentYear = (int) date('Y');
         $monthlyTrends = ['SET' => array_fill(0, 12, 0), 'SEF' => array_fill(0, 12, 0)];
@@ -652,12 +645,6 @@ class HomeController extends AbstractController
                 'facultyId'     => $sub['facultyId'],
             ];
 
-            $subjectName = mb_strtolower(trim((string) ($entry['subject'] ?? '')));
-            $facultyName = mb_strtolower(trim((string) ($entry['faculty'] ?? '')));
-            if ($subjectName === 'capstone project 2' && $facultyName === 'ryan escorial') {
-                continue;
-            }
-
             // Keep only the latest submission per subject+faculty to avoid duplicate rows.
             $subjectKey = $sub['subjectId'] !== null
                 ? 's:' . (string) $sub['subjectId']
@@ -665,7 +652,10 @@ class HomeController extends AbstractController
             $facultyKey = $sub['facultyId'] !== null
                 ? 'f:' . (string) $sub['facultyId']
                 : 'fn:' . strtolower(trim((string) $entry['faculty']));
-            $dedupeKey = $subjectKey . '|' . $facultyKey;
+            $periodKey = $sub['epId'] !== null
+                ? 'ep:' . (string) $sub['epId']
+                : 'ep:0';
+            $dedupeKey = $periodKey . '|' . $subjectKey . '|' . $facultyKey;
 
             if (!isset($completedEvalMap[$dedupeKey])) {
                 $completedEvalMap[$dedupeKey] = $entry;
