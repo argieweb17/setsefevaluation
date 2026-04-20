@@ -5,8 +5,8 @@
 {% block stylesheets %}
 <style>
 /* ─── Toolbar ─── */
-.er-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:8px 12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
-.er-search-wrap{position:relative;flex:1;min-width:200px;max-width:400px;}
+.er-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:transparent;border:none;border-radius:0;padding:0;margin-bottom:16px;box-shadow:none;}
+.er-search-wrap{position:relative;flex:1;min-width:180px;max-width:280px;}
 .er-search-wrap>i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;pointer-events:none;}
 .er-search{width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px 7px 32px;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;background:#fafbfc;}
 .er-search:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
@@ -17,8 +17,8 @@
 .er-period-card{background:#fff;border:1px solid #e0e7ff;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 4px rgba(99,102,241,.06);}
 .er-period-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:14px 20px;background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-bottom:1px solid #e0e7ff;cursor:pointer;user-select:none;transition:background .15s;}
 .er-period-header:hover{background:linear-gradient(135deg,#e0e7ff,#c7d2fe);}
-.er-period-icon{width:36px;height:36px;border-radius:10px;background:#c7d2fe;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
-.er-period-badge{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;border-radius:6px;background:#4338ca;color:#fff;font-size:.72rem;font-weight:700;padding:0 8px;}
+.er-period-icon{width:auto;height:auto;border-radius:0;background:transparent;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.er-period-badge{display:inline-flex;align-items:center;justify-content:center;min-width:0;height:auto;border-radius:0;background:transparent;color:#4338ca;font-size:.72rem;font-weight:700;padding:0;}
 .er-period-chevron{font-size:.9rem;color:#64748b;transition:transform .25s ease;}
 .er-period-card.er-collapsed .er-period-chevron{transform:rotate(-90deg);}
 .er-period-card.er-collapsed .er-period-body{display:none;}
@@ -34,17 +34,16 @@
 .er-td-num{color:#94a3b8;font-size:.72rem;font-weight:600;text-align:center;}
 
 /* Code cell */
-.er-code-cell{display:flex;align-items:center;gap:10px;}
-.er-code-avatar{width:34px;height:34px;min-width:34px;border-radius:9px;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;letter-spacing:.5px;}
-.er-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e40af;background:#eff6ff;padding:2px 9px;border-radius:6px;letter-spacing:.3px;}
+.er-code-cell{display:flex;align-items:center;gap:0;}
+.er-code-text{font-family:'SF Mono','Cascadia Code','Consolas',monospace;font-size:.78rem;font-weight:700;color:#1e293b;background:transparent;padding:0;border-radius:0;letter-spacing:.3px;}
 
 /* Name */
 .er-subject-name{font-weight:600;color:#1e293b;font-size:.82rem;}
 
 /* Pills */
-.er-pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;}
-.er-pill-evaluator{background:#EFF6FF;color:#2563EB;}
-.er-pill-status{background:#ecfdf5;color:#059669;}
+.er-pill{display:inline-flex;align-items:center;padding:0;border-radius:0;font-size:.7rem;font-weight:600;white-space:nowrap;}
+.er-pill-evaluator{background:transparent;color:#1e293b;}
+.er-pill-status{background:transparent;color:#059669;}
 
 /* ─── Empty ─── */
 .er-table-wrap{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.03);}
@@ -57,7 +56,6 @@
     .er-table{font-size:.75rem;}
     .er-table thead th{padding:8px 10px;font-size:.62rem;}
     .er-table tbody td{padding:8px 10px;}
-    .er-code-avatar{width:28px;height:28px;min-width:28px;font-size:.55rem;border-radius:7px;}
     .er-period-header{padding:12px 14px;}
     .er-search-wrap{max-width:100%;}
 }
@@ -94,7 +92,7 @@
         <div class="d-flex align-items-center gap-2">
             <div class="er-period-icon"><i  class="bi bi-calendar3"></i></div>
             <div>
-                <h6 class="fw-bold mb-0" style="font-size:.92rem;color:#1e293b;">{{ period.evaluation.label }}</h6>
+                <h6 class="fw-bold mb-0" style="font-size:.92rem;color:#1e293b;">{{ period.evaluation.label|replace({' — ': ' ', ' – ': ' ', ' - ': ' '}) }}</h6>
                 <span style="font-size:.72rem;color:#64748b;">{{ period.subjects|length }} subject{{ period.subjects|length != 1 ? 's' : '' }} evaluated</span>
             </div>
         </div>
@@ -120,7 +118,6 @@
                     <td class="er-td-num">{{ loop.index }}</td>
                     <td>
                         <div class="er-code-cell">
-                            <div class="er-code-avatar">{{ subj.subjectCode|slice(0,2)|upper }}</div>
                             <span class="er-code-text">{{ subj.subjectCode }}</span>
                         </div>
                     </td>

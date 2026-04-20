@@ -5,6 +5,7 @@ namespace App\Security;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
 use App\Repository\FacultySubjectLoadRepository;
+use App\Repository\LoadslipVerificationRepository;
 use App\Repository\SubjectRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -17,6 +18,7 @@ class LoginListener
         private SubjectRepository $subjectRepo,
         private FacultySubjectLoadRepository $fslRepo,
         private AcademicYearRepository $ayRepo,
+        private LoadslipVerificationRepository $loadslipVerificationRepo,
         private EntityManagerInterface $em,
     ) {}
 
@@ -32,30 +34,44 @@ class LoginListener
         return (string) preg_replace('/[^0-9]/', '', $value);
     }
 
+    private function normalizeSemesterLabel(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(1ST|FIRST)\b/u', $normalized)) {
+            return 'FIRST';
+        }
+        if (preg_match('/\b(2ND|SECOND)\b/u', $normalized)) {
+            return 'SECOND';
+        }
+        if (preg_match('/\b(3RD|THIRD|SUMMER)\b/u', $normalized)) {
+            return 'SUMMER';
+        }
+
+        return '';
+    }
+
+    private function normalizeSchoolYearLabel(?string $value): string
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (preg_match('/\b(20\d{2})\s*[-\/]\s*(20\d{2})\b/u', $normalized, $m)) {
+            return (string) ($m[1] ?? '') . '-' . (string) ($m[2] ?? '');
+        }
+
+        return '';
+    }
+
     private function readLoadslipVerificationData(string $schoolId): ?array
     {
         $normalizedSchoolId = $this->normalizeStudentNumber($schoolId);
-        if ($normalizedSchoolId === '') {
-            return null;
-        }
-
-        $projectDir = dirname(__DIR__, 2);
-        $path = rtrim($projectDir, '\\/') . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'loadslip-verifications' . DIRECTORY_SEPARATOR . $normalizedSchoolId . '.json';
-        if (!is_file($path)) {
-            return null;
-        }
-
-        $raw = @file_get_contents($path);
-        if ($raw === false || trim($raw) === '') {
-            return null;
-        }
-
-        try {
-            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) {
-            return null;
-        }
-
+        $data = $this->loadslipVerificationRepo->findPayloadBySchoolId($normalizedSchoolId);
         if (!is_array($data)) {
             return null;
         }
@@ -76,11 +92,29 @@ class LoginListener
             return null;
         }
 
+        $currentAcademicYear = $this->ayRepo->findCurrent() ?? $this->ayRepo->findLatestBySequence();
+        $currentSchoolYear = $this->normalizeSchoolYearLabel((string) ($currentAcademicYear?->getYearLabel() ?? ''));
+        $currentSemester = $this->normalizeSemesterLabel((string) ($currentAcademicYear?->getSemester() ?? ''));
+        $storedSchoolYear = $this->normalizeSchoolYearLabel((string) ($data['schoolYear'] ?? ''));
+        $storedSemester = $this->normalizeSemesterLabel((string) ($data['semester'] ?? ''));
+
+        if (($currentSchoolYear !== '' || $currentSemester !== '') && (
+            $storedSchoolYear === ''
+            || $storedSemester === ''
+            || ($currentSchoolYear !== '' && $storedSchoolYear !== $currentSchoolYear)
+            || ($currentSemester !== '' && $storedSemester !== $currentSemester)
+        )) {
+            $this->loadslipVerificationRepo->deleteBySchoolId($normalizedSchoolId);
+            return null;
+        }
+
         return [
             'studentNumber' => $studentNumber,
             'codes' => $codes,
             'rows' => $rows,
             'previewPath' => trim((string) ($data['previewPath'] ?? '')),
+            'schoolYear' => $storedSchoolYear,
+            'semester' => $storedSemester,
             'verified' => (bool) ($data['verified'] ?? true),
         ];
     }

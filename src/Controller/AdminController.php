@@ -23,6 +23,7 @@ use App\Repository\EvaluationMessageRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\FacultySubjectLoadRepository;
+use App\Repository\LoadslipVerificationRepository;
 use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
@@ -45,7 +46,10 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 #[IsGranted('ROLE_ADMIN')]
 class AdminController extends AbstractController
 {
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(
+        private AuditLogger $audit,
+        private LoadslipVerificationRepository $loadslipVerificationRepo,
+    ) {}
 
     // ════════════════════════════════════════════════
     //  A. USER MANAGEMENT
@@ -1532,26 +1536,7 @@ class AdminController extends AbstractController
             return false;
         }
 
-        $path = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/')
-            . DIRECTORY_SEPARATOR . 'var'
-            . DIRECTORY_SEPARATOR . 'loadslip-verifications'
-            . DIRECTORY_SEPARATOR . $normalizedSchoolId . '.json';
-
-        if (!is_file($path)) {
-            return false;
-        }
-
-        $raw = @file_get_contents($path);
-        if ($raw === false || trim($raw) === '') {
-            return false;
-        }
-
-        try {
-            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) {
-            return false;
-        }
-
+        $data = $this->loadslipVerificationRepo->findPayloadBySchoolId($normalizedSchoolId);
         if (!is_array($data)) {
             return false;
         }

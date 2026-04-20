@@ -3,12 +3,88 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script>
+            (function () {
+                function setSidebarWidthVars(isCollapsed) {
+                    var width = isCollapsed ? '88px' : '260px';
+                    document.documentElement.style.setProperty('--sidebar-current-width', width);
+                    document.documentElement.style.setProperty('--sidebar-width', width);
+                }
+
+                try {
+                    var isCollapsed = window.localStorage.getItem('quamc.sidebarCollapsed') === '1';
+                    setSidebarWidthVars(isCollapsed);
+                    if (isCollapsed) {
+                        document.documentElement.classList.add('sidebar-collapsed');
+                    }
+                } catch (error) {
+                    // Ignore storage access issues and keep the default expanded layout.
+                }
+            })();
+        </script>
         <title>{% block title %}SET-SEF Evaluation System{% endblock %}</title>
         <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+        <style>
+            html.sidebar-collapsed .sidebar-brand {
+                justify-content: center !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            html.sidebar-collapsed .sidebar-brand-logo {
+                width: 40px !important;
+                height: 40px !important;
+            }
+
+            html.sidebar-collapsed .sidebar-brand-text,
+            html.sidebar-collapsed .sidebar-user-info,
+            html.sidebar-collapsed .sidebar .sidebar-header,
+            html.sidebar-collapsed .sidebar .nav-link .sidebar-count,
+            html.sidebar-collapsed .sidebar .nav-link .sidebar-badge,
+            html.sidebar-collapsed .sidebar-dropdown-arrow,
+            html.sidebar-collapsed .sidebar-dropdown-menu {
+                display: none !important;
+            }
+
+            html.sidebar-collapsed .sidebar .nav-link,
+            html.sidebar-collapsed .sidebar .sidebar-dropdown-toggle {
+                justify-content: center !important;
+                gap: 0 !important;
+                padding-left: 0.85rem !important;
+                padding-right: 0.85rem !important;
+                overflow: hidden !important;
+                white-space: nowrap !important;
+                font-size: 0 !important;
+                line-height: 1 !important;
+            }
+
+            html.sidebar-collapsed .sidebar .nav-link .sidebar-icon,
+            html.sidebar-collapsed .sidebar .sidebar-dropdown-toggle .sidebar-icon {
+                font-size: 1rem !important;
+            }
+
+            html.sidebar-collapsed .sidebar .nav-link.active::before {
+                left: 0 !important;
+                height: 70% !important;
+            }
+
+            html.sidebar-collapsed .sidebar-user-card {
+                justify-content: center !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+
+            @media (min-width: 992px) {
+                .topbar,
+                .main-content {
+                    transition: left 0.3s ease, margin-left 0.3s ease;
+                }
+            }
+        </style>
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
@@ -420,6 +496,9 @@
         {% if app.user %}
         <header class="topbar d-none d-lg-flex">
             <div class="topbar-left">
+                <button class="topbar-btn" id="sidebarCollapseToggle" type="button" title="Collapse sidebar" aria-label="Collapse sidebar" aria-controls="sidebar" aria-pressed="false">
+                    <i class="bi bi-chevron-bar-left" id="sidebarCollapseToggleIcon" aria-hidden="true"></i>
+                </button>
                 <div class="topbar-search-wrap" id="topbarSearchWrap">
                     <button class="topbar-btn topbar-search-trigger" id="topbarSearchBtn" type="button" title="Search">
                         <i class="bi bi-search"></i>
@@ -528,83 +607,171 @@
             </div>
         </header>
         <script>
-        document.addEventListener('DOMContentLoaded',function(){
-            // Remove animation stacking context so Bootstrap modals can layer correctly
-            var mc=document.querySelector('.main-content');
-            if(mc){mc.addEventListener('animationend',function(){mc.classList.add('animation-done');},{once:true});}
+        (function(){
+            var sidebarStorageKey = 'quamc.sidebarCollapsed';
 
-            // Fullscreen toggle
-            var btn=document.getElementById('topbarFullscreen');
-            if(btn){
-                btn.addEventListener('click',function(){
-                    if(!document.fullscreenElement){
-                        document.documentElement.requestFullscreen().catch(function(){});
-                    }else{
-                        document.exitFullscreen();
-                    }
+            function setSidebarWidthVars(isCollapsed){
+                var width = isCollapsed ? '88px' : '260px';
+                document.documentElement.style.setProperty('--sidebar-current-width', width);
+                document.documentElement.style.setProperty('--sidebar-width', width);
+            }
+
+            function readSidebarCollapseState(){
+                try {
+                    return window.localStorage.getItem(sidebarStorageKey) === '1';
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function writeSidebarCollapseState(isCollapsed){
+                try {
+                    window.localStorage.setItem(sidebarStorageKey, isCollapsed ? '1' : '0');
+                } catch (error) {
+                    // Ignore storage access failures and keep the current DOM state only.
+                }
+            }
+
+            function refreshSidebarCollapseUi(){
+                var isCollapsed = readSidebarCollapseState();
+                document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+                setSidebarWidthVars(isCollapsed);
+                syncSidebarCollapseToggle();
+            }
+
+            function syncSidebarCollapseToggle(){
+                var toggle=document.getElementById('sidebarCollapseToggle');
+                var icon=document.getElementById('sidebarCollapseToggleIcon');
+                var isCollapsed=document.documentElement.classList.contains('sidebar-collapsed');
+                if(!toggle) return;
+
+                var label=isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+                toggle.setAttribute('title', label);
+                toggle.setAttribute('aria-label', label);
+                toggle.setAttribute('aria-pressed', String(isCollapsed));
+
+                if(!icon) return;
+                icon.className = isCollapsed ? 'bi bi-chevron-bar-right' : 'bi bi-chevron-bar-left';
+            }
+
+            function applySidebarCollapse(isCollapsed){
+                document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+                setSidebarWidthVars(isCollapsed);
+                writeSidebarCollapseState(isCollapsed);
+                syncSidebarCollapseToggle();
+            }
+
+            function initSidebarCollapseToggle(){
+                var toggle=document.getElementById('sidebarCollapseToggle');
+                refreshSidebarCollapseUi();
+
+                if(!toggle || toggle.dataset.bound === '1') return;
+                toggle.dataset.bound = '1';
+                toggle.addEventListener('click', function(){
+                    var isCollapsed=document.documentElement.classList.contains('sidebar-collapsed');
+                    applySidebarCollapse(!isCollapsed);
                 });
-                document.addEventListener('fullscreenchange',function(){
-                    var icon=btn.querySelector('i');
-                    if(document.fullscreenElement){
-                        icon.className='bi bi-fullscreen-exit';
-                    }else{
-                        icon.className='bi bi-arrows-fullscreen';
+
+                document.querySelectorAll('.sidebar .nav-link, .sidebar .sidebar-sub-link').forEach(function(link){
+                    if(link.getAttribute('title')) return;
+                    var label=(link.textContent || '').replace(/\s+/g, ' ').trim();
+                    if(label){
+                        link.setAttribute('title', label);
                     }
                 });
             }
 
-            // Search expand/collapse
-            var wrap=document.getElementById('topbarSearchWrap');
-            var searchBtn=document.getElementById('topbarSearchBtn');
-            var searchInput=document.getElementById('topbarSearchInput');
-            var searchClose=document.getElementById('topbarSearchClose');
-            if(wrap&&searchBtn&&searchInput&&searchClose){
-                searchBtn.addEventListener('click',function(){
-                    wrap.classList.add('open');
-                    setTimeout(function(){ searchInput.focus(); },300);
-                });
-                searchClose.addEventListener('click',function(){
-                    wrap.classList.remove('open');
-                    searchInput.value='';
-                });
-                document.addEventListener('click',function(e){
-                    if(!wrap.contains(e.target)){
-                        wrap.classList.remove('open');
-                    }
-                });
-                searchInput.addEventListener('keydown',function(e){
-                    if(e.key==='Escape'){
+            function initMainContentAnimation(){
+                var mc=document.querySelector('.main-content');
+                if(!mc) return;
+                if(mc.dataset.topbarAnimationBound !== '1'){
+                    mc.dataset.topbarAnimationBound = '1';
+                }
+                mc.classList.remove('animation-done');
+                mc.addEventListener('animationend',function(){mc.classList.add('animation-done');},{once:true});
+            }
+
+            function initTopbarControls(){
+                var btn=document.getElementById('topbarFullscreen');
+                if(btn && btn.dataset.bound !== '1'){
+                    btn.dataset.bound = '1';
+                    btn.addEventListener('click',function(){
+                        if(!document.fullscreenElement){
+                            document.documentElement.requestFullscreen().catch(function(){});
+                        }else{
+                            document.exitFullscreen();
+                        }
+                    });
+                    document.addEventListener('fullscreenchange',function(){
+                        var icon=btn.querySelector('i');
+                        if(!icon) return;
+                        if(document.fullscreenElement){
+                            icon.className='bi bi-fullscreen-exit';
+                        }else{
+                            icon.className='bi bi-arrows-fullscreen';
+                        }
+
+                        window.requestAnimationFrame(function(){
+                            refreshSidebarCollapseUi();
+                            initSidebarCollapseToggle();
+                        });
+                    });
+
+                    window.addEventListener('resize', function(){
+                        window.requestAnimationFrame(function(){
+                            refreshSidebarCollapseUi();
+                            initSidebarCollapseToggle();
+                        });
+                    });
+                }
+
+                var wrap=document.getElementById('topbarSearchWrap');
+                var searchBtn=document.getElementById('topbarSearchBtn');
+                var searchInput=document.getElementById('topbarSearchInput');
+                var searchClose=document.getElementById('topbarSearchClose');
+                if(wrap&&searchBtn&&searchInput&&searchClose && wrap.dataset.bound !== '1'){
+                    wrap.dataset.bound = '1';
+                    searchBtn.addEventListener('click',function(){
+                        wrap.classList.add('open');
+                        setTimeout(function(){ searchInput.focus(); },300);
+                    });
+                    searchClose.addEventListener('click',function(){
                         wrap.classList.remove('open');
                         searchInput.value='';
-                    }
-                });
+                    });
+                    document.addEventListener('click',function(e){
+                        if(!wrap.contains(e.target)){
+                            wrap.classList.remove('open');
+                        }
+                    });
+                    searchInput.addEventListener('keydown',function(e){
+                        if(e.key==='Escape'){
+                            wrap.classList.remove('open');
+                            searchInput.value='';
+                        }
+                    });
+                }
             }
 
-            // Message notification bell toggle
-            var msgNotifBtn=document.getElementById('topbarMessageNotifBtn');
-            var msgNotifDrop=document.getElementById('topbarMessageNotifDropdown');
-            if(msgNotifBtn&&msgNotifDrop){
-                msgNotifBtn.addEventListener('click',function(e){
-                    e.stopPropagation();
-                    var isOpen=msgNotifDrop.style.display==='block';
-                    msgNotifDrop.style.display=isOpen?'none':'block';
-                });
-                document.addEventListener('click',function(e){
-                    if(msgNotifDrop&&!msgNotifDrop.contains(e.target)&&!msgNotifBtn.contains(e.target)){
-                        msgNotifDrop.style.display='none';
-                    }
-                });
+            function initMessageNotificationBell(){
+                var msgNotifBtn=document.getElementById('topbarMessageNotifBtn');
+                var msgNotifDrop=document.getElementById('topbarMessageNotifDropdown');
+                if(msgNotifBtn&&msgNotifDrop && msgNotifBtn.dataset.bound !== '1'){
+                    msgNotifBtn.dataset.bound = '1';
+                    msgNotifBtn.addEventListener('click',function(e){
+                        e.stopPropagation();
+                        var isOpen=msgNotifDrop.style.display==='block';
+                        msgNotifDrop.style.display=isOpen?'none':'block';
+                    });
+                    document.addEventListener('click',function(e){
+                        if(msgNotifDrop&&!msgNotifDrop.contains(e.target)&&!msgNotifBtn.contains(e.target)){
+                            msgNotifDrop.style.display='none';
+                        }
+                    });
+                }
             }
 
-            initSidebarDropdowns();
-        });
-        document.addEventListener('turbo:load', function(){
-            initSidebarDropdowns();
-            var mc=document.querySelector('.main-content');
-            if(mc){mc.classList.remove('animation-done');mc.addEventListener('animationend',function(){mc.classList.add('animation-done');},{once:true});}
-        });
-
-        function initSidebarDropdowns(){
+            function initSidebarDropdowns(){
             // Sidebar dropdown toggle with animation
             document.querySelectorAll('.sidebar-dropdown-toggle').forEach(function(toggle){
                 if(toggle._dropdownBound) return;
@@ -612,6 +779,11 @@
                 toggle.addEventListener('click',function(e){
                     var dd=this.closest('.sidebar-dropdown');
                     var menu=dd.querySelector('.sidebar-dropdown-menu');
+                    if(document.documentElement.classList.contains('sidebar-collapsed')){
+                        applySidebarCollapse(false);
+                        e.preventDefault();
+                        return;
+                    }
                     // Trigger arrow pulse
                     dd.classList.add('animating');
                     setTimeout(function(){ dd.classList.remove('animating'); },400);
@@ -642,7 +814,23 @@
                     link.style.transform='translateX(0)';
                 });
             });
-        }
+            }
+
+            function initBaseLayout(){
+                initSidebarCollapseToggle();
+                initMainContentAnimation();
+                initTopbarControls();
+                initMessageNotificationBell();
+                initSidebarDropdowns();
+            }
+
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', initBaseLayout, { once: true });
+            }else{
+                initBaseLayout();
+            }
+            document.addEventListener('turbo:load', initBaseLayout);
+        })();
         </script>
         {% endif %}
 
@@ -656,6 +844,7 @@
             {% set loadslipAlreadyVerifiedMessages = [] %}
             {% set studentIdNotFoundMessages = [] %}
             {% set loadslipStudentIdMissingMessages = [] %}
+            {% set selectImageMessages = [] %}
             {% set dataPrivacyDisclaimerMessages = [] %}
             {% for label, messages in nonSuccessFlashes %}
                 {% for message in messages %}
@@ -681,6 +870,8 @@
                         {% set loadslipNotVerifiedMessages = loadslipNotVerifiedMessages|merge([message]) %}
                     {% elseif label == 'warning' and message starts with 'Loadslip is already verified.' %}
                         {% set loadslipAlreadyVerifiedMessages = loadslipAlreadyVerifiedMessages|merge([message]) %}
+                    {% elseif label == 'danger' and message starts with 'Please select an image.' %}
+                        {% set selectImageMessages = selectImageMessages|merge([message]) %}
                     {% elseif label == 'danger' and message starts with 'Please select Agree or Disagree in the Data Privacy Disclaimer' %}
                         {% set dataPrivacyDisclaimerMessages = dataPrivacyDisclaimerMessages|merge([message]) %}
                     {% else %}
@@ -724,6 +915,40 @@
                     }
                     document.addEventListener('DOMContentLoaded', showStudentMismatchModal);
                     document.addEventListener('turbo:load', showStudentMismatchModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if selectImageMessages|length > 0 %}
+                <div class="modal fade" id="selectImageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 430px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #D97706;">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">No Image Selected</h5>
+                                {% for message in selectImageMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showSelectImageModal() {
+                        var modalEl = document.getElementById('selectImageModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        modalEl.dataset.shown = '1';
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showSelectImageModal);
+                    document.addEventListener('turbo:load', showSelectImageModal);
                 })();
                 </script>
             {% endif %}

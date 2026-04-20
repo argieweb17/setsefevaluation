@@ -97,7 +97,7 @@ class RegistrationController extends AbstractController
                 $schoolId = $this->resolveRoleIdentifier($request, $user, $role);
                 $hasCredentialError = false;
 
-                if (!$this->isNorsuEmail($email)) {
+                if ($this->requiresInstitutionalCredentials($role) && !$this->isNorsuEmail($email)) {
                     $form->get('email')->addError(new FormError('Email address must end with @norsu.edu.ph.'));
                     $securityError = 'Email address must end with @norsu.edu.ph.';
                     $hasCredentialError = true;

@@ -267,22 +267,24 @@
     flex-shrink: 0;
 }
 .fm-chat-delete-btn {
-    border: 1px solid #fecaca;
-    background: #fff;
+    border: none;
+    background: transparent;
     color: #dc2626;
-    border-radius: 999px;
-    padding: 8px 12px;
+    border-radius: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
     font-size: .78rem;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     line-height: 1;
     transition: all .15s ease;
 }
 .fm-chat-delete-btn:hover {
-    background: #fef2f2;
-    border-color: #fca5a5;
+    background: transparent;
+    border-color: transparent;
 }
 
 /* Chat Body */
@@ -505,43 +507,73 @@
 
 /* Compose Area - Simple */
 .fm-compose {
-    padding: 16px 24px;
+    padding: 8px 14px;
     background: #fff;
     border-top: 1px solid var(--chat-border);
 }
 .fm-compose-inner {
     display: flex;
     align-items: flex-end;
-    gap: 12px;
+    gap: 6px;
     background: var(--chat-bg);
-    border-radius: 24px;
-    padding: 8px 8px 8px 20px;
+    border-radius: 8px;
+    padding: 5px 6px 5px 10px;
+}
+.fm-compose-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 .fm-textarea {
-    flex: 1;
-    padding: 8px 0;
+    width: 100%;
+    padding: 2px 0;
     border: none;
-    font-size: .9rem;
+    font-size: .88rem;
     color: var(--chat-text-primary);
     background: transparent;
     outline: none;
     resize: none;
-    min-height: 24px;
-    max-height: 120px;
+    min-height: 18px;
+    max-height: 80px;
     font-family: inherit;
-    line-height: 1.5;
+    line-height: 1.4;
 }
 .fm-textarea::placeholder {
     color: var(--chat-text-muted);
 }
+.fm-compose-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.fm-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--chat-text-muted);
+    cursor: pointer;
+    transition: all .15s ease;
+    font-size: .9rem;
+}
+.fm-tool-btn:hover {
+    background: #fff;
+    color: var(--chat-blue);
+}
 .fm-send-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
     border: none;
     background: var(--chat-bubble-out);
     color: #fff;
-    font-size: 1.1rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: all .2s ease;
     display: flex;
@@ -552,6 +584,13 @@
 .fm-send-btn:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(30,64,175,.3);
+}
+.fm-file-name {
+    font-size: .72rem;
+    color: var(--chat-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Empty State */
@@ -867,7 +906,6 @@
             <div class="fm-chat-actions">
                 <button type="button" class="fm-chat-delete-btn" title="Delete chat" data-bs-toggle="modal" data-bs-target="#deleteChatModal">
                     <i  class="bi bi-trash"></i>
-                    <span class="d-none d-sm-inline">Delete chat</span>
                 </button>
             </div>
         </header>
@@ -947,11 +985,20 @@
 
         {% for msg in messages %}
         <div class="fm-compose" id="compose-{{ msg.id }}"{% if not loop.first %} style="display:none"{% endif %}>
-            <form method="post" action="{{ path('faculty_eval_request') }}">
+            <form method="post" action="{{ path('faculty_eval_request') }}" enctype="multipart/form-data">
                 <input type="hidden" name="_action" value="reply_message">
                 <input type="hidden" name="parent_message_id" value="{{ msg.id }}">
                 <div class="fm-compose-inner">
-                    <textarea name="msg_body" class="fm-textarea" placeholder="Type a message..." required></textarea>
+                    <div class="fm-compose-left">
+                        <textarea name="msg_body" class="fm-textarea" placeholder="Type a message..." required></textarea>
+                        <div class="fm-compose-tools">
+                            <label class="fm-tool-btn" title="Attach file">
+                                <i  class="bi bi-paperclip"></i>
+                                <input type="file" name="attachment" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png" class="d-none" onchange="updateFileName(this, {{ msg.id }})">
+                            </label>
+                            <span class="fm-file-name" id="fileName-{{ msg.id }}"></span>
+                        </div>
+                    </div>
                     <button type="submit" class="fm-send-btn">
                         <i  class="bi bi-send"></i>
                     </button>
@@ -1128,6 +1175,16 @@ function searchMessages() {
         const searchText = item.dataset.search || '';
         item.style.display = searchText.includes(query) ? '' : 'none';
     });
+}
+
+function updateFileName(input, msgId) {
+    const nameEl = document.getElementById('fileName-' + msgId);
+    if (!nameEl) return;
+    if (input.files[0]) {
+        nameEl.innerHTML = '<i  class="bi bi-paperclip"></i> ' + input.files[0].name;
+    } else {
+        nameEl.innerHTML = '';
+    }
 }
 
 function initFacultyEvalRequestPage() {

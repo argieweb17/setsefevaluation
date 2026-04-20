@@ -15,6 +15,7 @@ use App\Repository\CurriculumRepository;
 use App\Repository\FacultyNotificationReadRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\DepartmentRepository;
+use App\Repository\LoadslipVerificationRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\MessageNotificationRepository;
@@ -29,6 +30,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 class HomeController extends AbstractController
 {
@@ -264,6 +266,7 @@ class HomeController extends AbstractController
         SubjectRepository $subjectRepo,
         AcademicYearRepository $ayRepo,
         FacultySubjectLoadRepository $fslRepo,
+        LoadslipVerificationRepository $loadslipVerificationRepo,
         QuestionRepository $questionRepo,
         DepartmentRepository $deptRepo,
         AuditLogRepository $auditRepo,
@@ -294,7 +297,7 @@ class HomeController extends AbstractController
         }
 
         // Student (ROLE_USER)
-        return $this->studentDashboard($request, $user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo, $subjectRepo);
+        return $this->studentDashboard($request, $user, $curriculumRepo, $evalRepo, $responseRepo, $userRepo, $subjectRepo, $ayRepo, $loadslipVerificationRepo);
     }
 
     private function adminDashboard(
@@ -634,6 +637,7 @@ class HomeController extends AbstractController
 
             $entry = [
                 'subject'       => $subj ? $subj->getSubjectName() : ($ep ? ($ep->getSubject() ?? '—') : '—'),
+                'subjectId'     => $sub['subjectId'] !== null ? (int) $sub['subjectId'] : null,
                 'faculty'       => $fac ? $fac->getFullName() : ($ep ? ($ep->getFaculty() ?? '—') : '—'),
                 'time'          => $evaluationTime !== '' ? $evaluationTime : ($subjectSchedule !== '' ? $subjectSchedule : '—'),
                 'section'       => $evaluationSection !== '' ? $evaluationSection : ($responseSection !== '' ? $responseSection : ($subjectSection !== '' ? $subjectSection : '—')),
@@ -890,16 +894,19 @@ class HomeController extends AbstractController
         $facultyDept = $user->getDepartment();
         $allDepartments = $deptRepo->findAllOrdered();
         $departments = $this->getFacultyScopedDepartments($user, $allDepartments);
-        $semesterFilter = $request->query->get('semester');
         $currentAY = $ayRepo->findCurrent();
+        $activeSemester = $this->normalizeAcademicSemester($currentAY?->getSemester());
+        $semesterFilter = $request->query->get('semester');
 
-        // Default to the current academic year's semester if no filter selected
-        if ($semesterFilter === null && $currentAY && $currentAY->getSemester()) {
+        // Lock faculty subject loading to the active academic year semester when one exists.
+        if ($activeSemester !== null) {
+            $semesterFilter = $activeSemester;
+        } elseif ($semesterFilter === null && $currentAY && $currentAY->getSemester()) {
             $semesterFilter = $currentAY->getSemester();
         }
 
         $data = $this->buildAllDeptGroups($departments, $semesterFilter, $subjectRepo);
-        $allSemesters = $subjectRepo->findDistinctSemesters();
+        $allSemesters = $activeSemester !== null ? [$activeSemester] : $subjectRepo->findDistinctSemesters();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
         $allYearLevels = $subjectRepo->findDistinctYearLevels();
@@ -974,6 +981,7 @@ class HomeController extends AbstractController
             'loadedSubjectIds' => $loadedIds,
             'loadedSubjects' => $loadedSubjects,
             'currentAY' => $currentAY,
+            'lockedSemester' => $activeSemester,
             'departments' => $departments,
             'subjectFacultyMap' => $subjectFacultyMap,
             'fslDataMap' => $fslDataMap,
@@ -2253,6 +2261,7 @@ class HomeController extends AbstractController
         MessageNotificationRepository $notifRepo,
         UserRepository $userRepo,
         EntityManagerInterface $em,
+        SluggerInterface $slugger,
     ): Response {
         /** @var User $user */
         $user = $this->getUser();
@@ -2294,6 +2303,7 @@ class HomeController extends AbstractController
         if ($request->isMethod('POST') && $request->request->get('_action') === 'reply_message') {
             $parentId = $request->request->get('parent_message_id');
             $body = trim($request->request->get('msg_body', ''));
+            $status = (string) $request->request->get('status', EvaluationMessage::STATUS_PENDING);
 
             $parentMsg = $msgRepo->find($parentId);
             if ($parentMsg && $parentMsg->getSender() === $user && $body) {
@@ -2303,7 +2313,29 @@ class HomeController extends AbstractController
                 $reply->setMessage($body);
                 $reply->setSenderType('faculty');
                 $reply->setParentMessage($parentMsg);
+                $reply->setStatus($status);
                 $reply->setCreatedAt(new \DateTime());
+
+                $file = $request->files->get('attachment');
+                if ($file) {
+                    $originalName = $file->getClientOriginalName();
+                    $safeName = $slugger->slug(pathinfo($originalName, PATHINFO_FILENAME));
+                    $newFilename = $safeName . '-' . uniqid() . '.' . $file->guessExtension();
+                    $file->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads/attachments',
+                        $newFilename
+                    );
+                    $reply->setAttachment($newFilename);
+                    $reply->setAttachmentOriginalName($originalName);
+                }
+
+                if (in_array($status, [
+                    EvaluationMessage::STATUS_PENDING,
+                    EvaluationMessage::STATUS_REVIEWED,
+                    EvaluationMessage::STATUS_RESOLVED,
+                ], true)) {
+                    $parentMsg->setStatus($status);
+                }
 
                 $em->persist($reply);
                 $em->flush();
@@ -2454,12 +2486,6 @@ class HomeController extends AbstractController
                 continue;
             }
 
-            $subjectName = mb_strtolower(trim((string) ($row['subjectName'] ?? '')));
-            $isTargetFaculty = mb_strtolower(trim((string) $user->getFullName())) === 'ryan escorial';
-            if ($isTargetFaculty && $subjectName === 'capstone project 2') {
-                continue;
-            }
-
             if (!isset($periods[$epId])) {
                 $evaluation = $evalRepo->find($epId);
                 if (!$evaluation) {
@@ -2603,6 +2629,8 @@ class HomeController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        LoadslipVerificationRepository $loadslipVerificationRepo,
     ): Response {
         $openEvals = $evalRepo->findOpen();
 
@@ -2630,6 +2658,38 @@ class HomeController extends AbstractController
                 $raw
             );
             return (string) preg_replace('/[^0-9]/u', '', $raw);
+        };
+
+        $normalizeSemesterLabel = static function (?string $value): string {
+            $normalized = strtoupper(trim((string) $value));
+            if ($normalized === '') {
+                return '';
+            }
+
+            if (preg_match('/\b(1ST|FIRST)\b/u', $normalized)) {
+                return 'FIRST';
+            }
+            if (preg_match('/\b(2ND|SECOND)\b/u', $normalized)) {
+                return 'SECOND';
+            }
+            if (preg_match('/\b(3RD|THIRD|SUMMER)\b/u', $normalized)) {
+                return 'SUMMER';
+            }
+
+            return '';
+        };
+
+        $normalizeSchoolYearLabel = static function (?string $value): string {
+            $normalized = strtoupper(trim((string) $value));
+            if ($normalized === '') {
+                return '';
+            }
+
+            if (preg_match('/\b(20\d{2})\s*[-\/]\s*(20\d{2})\b/u', $normalized, $m)) {
+                return (string) ($m[1] ?? '') . '-' . (string) ($m[2] ?? '');
+            }
+
+            return '';
         };
 
         $extractNormalizedSubjectCode = static function (?string $label) use ($normalizeCode): string {
@@ -2664,30 +2724,18 @@ class HomeController extends AbstractController
             &$loadslipRows,
             &$sessionStudentNumber,
             &$isLoadslipVerified,
+            $loadslipVerificationRepo,
             $normalizeStudentNumber,
+            $normalizeSemesterLabel,
+            $normalizeSchoolYearLabel,
+            $ayRepo,
             $session
         ): void {
             if ($schoolId === '') {
                 return;
             }
 
-            $projectDir = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/');
-            $filePath = $projectDir . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'loadslip-verifications' . DIRECTORY_SEPARATOR . $schoolId . '.json';
-            if (!is_file($filePath)) {
-                return;
-            }
-
-            $json = @file_get_contents($filePath);
-            if (!is_string($json) || $json === '') {
-                return;
-            }
-
-            $data = json_decode($json, true);
-            if (!is_array($data)) {
-                $repaired = (string) preg_replace('/\[\s*,/u', '[', $json);
-                $repaired = (string) preg_replace('/,\s*\]/u', ']', $repaired);
-                $data = json_decode($repaired, true);
-            }
+            $data = $loadslipVerificationRepo->findPayloadBySchoolId($schoolId);
             if (!is_array($data)) {
                 return;
             }
@@ -2700,6 +2748,22 @@ class HomeController extends AbstractController
             $persistedCodes = is_array($data['codes'] ?? null) ? (array) $data['codes'] : [];
             $persistedRows = is_array($data['rows'] ?? null) ? (array) $data['rows'] : [];
             if (empty($persistedCodes) && empty($persistedRows)) {
+                return;
+            }
+
+            $currentAcademicYear = $ayRepo->findCurrent() ?? $ayRepo->findLatestBySequence();
+            $currentSchoolYear = $normalizeSchoolYearLabel((string) ($currentAcademicYear?->getYearLabel() ?? ''));
+            $currentSemester = $normalizeSemesterLabel((string) ($currentAcademicYear?->getSemester() ?? ''));
+            $storedSchoolYear = $normalizeSchoolYearLabel((string) ($data['schoolYear'] ?? ''));
+            $storedSemester = $normalizeSemesterLabel((string) ($data['semester'] ?? ''));
+
+            if (($currentSchoolYear !== '' || $currentSemester !== '') && (
+                $storedSchoolYear === ''
+                || $storedSemester === ''
+                || ($currentSchoolYear !== '' && $storedSchoolYear !== $currentSchoolYear)
+                || ($currentSemester !== '' && $storedSemester !== $currentSemester)
+            )) {
+                $loadslipVerificationRepo->deleteBySchoolId($schoolId);
                 return;
             }
 

@@ -28,9 +28,9 @@ class UserChecker implements UserCheckerInterface
             );
         }
 
-        if (!$this->hasAllowedEmailDomain($user)) {
+        if ($this->requiresInstitutionalEmailDomain($user) && !$this->hasAllowedEmailDomain($user)) {
             throw new CustomUserMessageAccountStatusException(
-                'Email address must end with @norsu.edu.ph.'
+                'Faculty, Staff, Superior, and Admin accounts must use an @norsu.edu.ph email address.'
             );
         }
 
@@ -51,6 +51,16 @@ class UserChecker implements UserCheckerInterface
         $roles = $user->getRoles();
 
         return in_array('ROLE_FACULTY', $roles, true)
+            || in_array('ROLE_STAFF', $roles, true)
+            || in_array('ROLE_SUPERIOR', $roles, true);
+    }
+
+    private function requiresInstitutionalEmailDomain(User $user): bool
+    {
+        $roles = $user->getRoles();
+
+        return in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_FACULTY', $roles, true)
             || in_array('ROLE_STAFF', $roles, true)
             || in_array('ROLE_SUPERIOR', $roles, true);
     }

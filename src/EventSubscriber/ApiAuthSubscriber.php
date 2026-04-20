@@ -43,6 +43,24 @@ class ApiAuthSubscriber implements EventSubscriberInterface
         'staff_api_faculty_subjects' => ['ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
         'superior_api_profile'     => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
         'superior_api_summary'     => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        // Evaluation API
+        'api_evaluation_periods'        => null, // any authenticated user
+        'api_evaluation_period_detail'  => null,
+        'api_evaluation_period_create'  => ['ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_period_update'  => ['ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_period_delete'  => ['ROLE_ADMIN'],
+        'api_evaluation_period_status'  => ['ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_period_lock_results' => ['ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_submit_set'     => ['ROLE_STUDENT', 'ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_draft_set'      => ['ROLE_STUDENT', 'ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_submit_superior' => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'api_evaluation_draft_superior' => ['ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'api_evaluation_period_results' => ['ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'api_evaluation_faculty_results' => ['ROLE_FACULTY', 'ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
+        'api_evaluation_superior_results' => ['ROLE_SUPERIOR', 'ROLE_STAFF', 'ROLE_ADMIN'],
+        'api_evaluation_history'        => null,
+        'api_evaluation_check_submission' => null,
+        'api_evaluation_participation'  => ['ROLE_STAFF', 'ROLE_SUPERIOR', 'ROLE_ADMIN'],
     ];
 
     public function __construct(

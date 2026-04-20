@@ -2532,6 +2532,9 @@ class ReportController extends AbstractController
     ): Response {
         $facultyId = (int) $request->query->get('faculty', 0);
         $selectedEvalId = (int) $request->query->get('evaluation', 0);
+        $selectedSubjectId = max(0, (int) $request->query->get('subject', 0));
+        $selectedSection = trim((string) $request->query->get('section', ''));
+        $hasSubjectFilter = $selectedSubjectId > 0 || $selectedSection !== '';
         $faculty = $userRepo->find($facultyId);
 
         if (!$faculty) {
@@ -2565,8 +2568,6 @@ class ReportController extends AbstractController
 
             $avg = round((float) $row['avgRating'], 2);
             $count = (int) $row['evaluatorCount'];
-            $totalEvaluators += $count;
-            $sumAvg += $avg;
 
             // Get subject+section details for this evaluation period
             $subjectDetails = [];
@@ -2599,6 +2600,40 @@ class ReportController extends AbstractController
                 }
             }
 
+            if ($hasSubjectFilter) {
+                $subjectDetails = array_values(array_filter(
+                    $subjectDetails,
+                    static function (array $subjectDetail) use ($selectedSubjectId, $selectedSection): bool {
+                        if ($selectedSubjectId > 0 && (int) ($subjectDetail['subjectId'] ?? 0) !== $selectedSubjectId) {
+                            return false;
+                        }
+
+                        if ($selectedSection !== '' && trim((string) ($subjectDetail['section'] ?? '')) !== $selectedSection) {
+                            return false;
+                        }
+
+                        return true;
+                    }
+                ));
+
+                if ($subjectDetails === []) {
+                    continue;
+                }
+
+                $weightedTotal = 0.0;
+                $count = 0;
+                foreach ($subjectDetails as $subjectDetail) {
+                    $subjectEvaluators = (int) ($subjectDetail['evaluators'] ?? 0);
+                    $count += $subjectEvaluators;
+                    $weightedTotal += ((float) ($subjectDetail['average'] ?? 0)) * $subjectEvaluators;
+                }
+
+                $avg = $count > 0 ? round($weightedTotal / $count, 2) : 0.0;
+            }
+
+            $totalEvaluators += $count;
+            $sumAvg += $avg;
+
             $results[] = [
                 'evaluation' => $eval,
                 'average' => $avg,
@@ -2615,6 +2650,8 @@ class ReportController extends AbstractController
             'evaluations' => $results,
             'totalEvaluators' => $totalEvaluators,
             'overallAvg' => $overallAvg,
+            'selectedSubjectId' => $selectedSubjectId > 0 ? $selectedSubjectId : null,
+            'selectedSection' => $selectedSection !== '' ? $selectedSection : null,
             'staffMode' => true,
         ]);
     }

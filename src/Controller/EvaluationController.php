@@ -4,12 +4,14 @@ namespace App\Controller;
 
 use App\Entity\AuditLog;
 use App\Entity\EvaluationResponse;
+use App\Entity\LoadslipVerification;
 use App\Repository\AcademicYearRepository;
 use App\Repository\CurriculumRepository;
 use App\Repository\DepartmentRepository;
 use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\FacultySubjectLoadRepository;
+use App\Repository\LoadslipVerificationRepository;
 use App\Repository\UserRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
@@ -35,6 +37,8 @@ class EvaluationController extends AbstractController
         private SubjectRepository $subjectRepo,
         private UserRepository $userRepo,
         private CurriculumRepository $curriculumRepo,
+        private AcademicYearRepository $academicYearRepo,
+        private LoadslipVerificationRepository $loadslipVerificationRepo,
     ) {}
 
     // ════════════════════════════════════════════════
@@ -476,17 +480,19 @@ class EvaluationController extends AbstractController
             return false;
         }
 
+        $persisted = $this->readLoadslipVerificationData($schoolId);
+        if ($persisted !== null && !$this->isStoredLoadslipAcademicTermCurrent($persisted)) {
+            $this->clearStudentLoadslipState($request, $schoolId, (string) ($persisted['previewPath'] ?? ''));
+            return false;
+        }
+
         $codes = (array) $session->get('student_loadslip_codes', []);
         $rows = (array) $session->get('student_loadslip_rows', []);
         $normalizedSessionStudentNumber = $this->normalizeStudentNumber((string) $session->get('student_loadslip_student_number', ''));
 
         // Stale session from a different student should not block current verification.
         if ($normalizedSessionStudentNumber !== '' && $normalizedSessionStudentNumber !== $normalizedSchoolId) {
-            $session->remove('student_loadslip_codes');
-            $session->remove('student_loadslip_rows');
-            $session->remove('student_loadslip_student_number');
-            $session->remove('student_loadslip_verified');
-            $session->remove('student_loadslip_preview_path');
+            $this->clearStudentLoadslipState($request);
             $codes = [];
             $rows = [];
             $normalizedSessionStudentNumber = '';
@@ -494,7 +500,6 @@ class EvaluationController extends AbstractController
 
         // Recover verification state for QR/public flows where session may not include imported data.
         if (empty($codes) && empty($rows)) {
-            $persisted = $this->readLoadslipVerificationData($schoolId);
             if ($persisted !== null) {
                 $codes = (array) ($persisted['codes'] ?? []);
                 $rows = (array) ($persisted['rows'] ?? []);
@@ -518,7 +523,6 @@ class EvaluationController extends AbstractController
 
         // If rows/codes exist but student number marker is missing, recover authoritative persisted data.
         if ($normalizedLoadslipStudentNumber === '') {
-            $persisted = $this->readLoadslipVerificationData($schoolId);
             if ($persisted !== null) {
                 $codes = (array) ($persisted['codes'] ?? []);
                 $rows = (array) ($persisted['rows'] ?? []);
@@ -544,7 +548,6 @@ class EvaluationController extends AbstractController
                 // If preview path is missing/invalid but verification data exists, restore it from persisted JSON.
                 $sessionPreviewPath = $this->normalizeLoadslipPreviewPath((string) $session->get('student_loadslip_preview_path', ''));
                 if ($sessionPreviewPath === '' || !$this->loadslipPreviewPathExists($sessionPreviewPath)) {
-                    $persisted = $this->readLoadslipVerificationData($schoolId);
                     if ($persisted !== null) {
                         $persistedPreviewPath = $this->normalizeLoadslipPreviewPath((string) ($persisted['previewPath'] ?? ''));
                         if ($persistedPreviewPath !== '' && $this->loadslipPreviewPathExists($persistedPreviewPath)) {
@@ -561,7 +564,6 @@ class EvaluationController extends AbstractController
         $verifiedFlag = (bool) $session->get('student_loadslip_verified', false);
 
         if ($verifiedFlag) {
-            $persisted = $this->readLoadslipVerificationData($schoolId);
             if ($persisted !== null) {
                 $session->set('student_loadslip_codes', (array) ($persisted['codes'] ?? []));
                 $session->set('student_loadslip_rows', (array) ($persisted['rows'] ?? []));
@@ -2545,6 +2547,12 @@ class EvaluationController extends AbstractController
     private function removeStoredLoadslipPreview(Request $request): void
     {
         $current = $this->normalizeLoadslipPreviewPath((string) $request->getSession()->get('student_loadslip_preview_path', ''));
+        $this->removeLoadslipPreviewPath($current);
+    }
+
+    private function removeLoadslipPreviewPath(?string $relativePath): void
+    {
+        $current = $this->normalizeLoadslipPreviewPath((string) $relativePath);
         if ($current === '') {
             return;
         }
@@ -2552,6 +2560,27 @@ class EvaluationController extends AbstractController
         $absolute = $this->getAbsolutePublicPath($current);
         if (is_file($absolute)) {
             @unlink($absolute);
+        }
+    }
+
+    private function clearStudentLoadslipState(Request $request, ?string $schoolId = null, ?string $previewPath = null): void
+    {
+        if ($previewPath !== null && trim($previewPath) !== '') {
+            $this->removeLoadslipPreviewPath($previewPath);
+        } else {
+            $this->removeStoredLoadslipPreview($request);
+        }
+
+        $session = $request->getSession();
+        $session->remove('student_loadslip_codes');
+        $session->remove('student_loadslip_rows');
+        $session->remove('student_loadslip_student_number');
+        $session->remove('student_loadslip_verified');
+        $session->remove('student_loadslip_preview_path');
+        $session->remove('student_loadslip_ocr_debug');
+
+        if ($schoolId !== null && trim($schoolId) !== '') {
+            $this->clearLoadslipVerificationData($schoolId);
         }
     }
 
@@ -2585,31 +2614,11 @@ class EvaluationController extends AbstractController
         return $this->normalizeLoadslipPreviewPath($relativeDir . '/' . $filename);
     }
     
-    private function getLoadslipVerificationFilePath(string $schoolId): ?string
+    private function persistLoadslipVerificationData(string $schoolId, array $codes, array $rows, string $studentNumber, ?string $previewPath = null, ?string $schoolYear = null, ?string $semester = null): void
     {
         $normalizedSchoolId = $this->normalizeStudentNumber($schoolId);
-        if ($normalizedSchoolId === '') {
-            return null;
-        }
-
-        $projectDir = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/');
-        $dir = $projectDir . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'loadslip-verifications';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
-        }
-
-        return $dir . DIRECTORY_SEPARATOR . $normalizedSchoolId . '.json';
-    }
-
-    private function persistLoadslipVerificationData(string $schoolId, array $codes, array $rows, string $studentNumber, ?string $previewPath = null): void
-    {
-        $filePath = $this->getLoadslipVerificationFilePath($schoolId);
-        if ($filePath === null) {
-            return;
-        }
-
         $normalizedStudentNumber = $this->normalizeStudentNumber($studentNumber);
-        if ($normalizedStudentNumber === '') {
+        if ($normalizedSchoolId === '' || $normalizedStudentNumber === '') {
             return;
         }
 
@@ -2636,37 +2645,47 @@ class EvaluationController extends AbstractController
             ];
         }
 
+        $normalizedSchoolYear = $this->normalizeSchoolYearLabel($schoolYear);
+        $normalizedSemester = $this->normalizeSemesterLabel($semester);
+        if ($normalizedSchoolYear === '' || $normalizedSemester === '') {
+            $existing = $this->readLoadslipVerificationData($schoolId);
+            if ($normalizedSchoolYear === '') {
+                $normalizedSchoolYear = $this->normalizeSchoolYearLabel((string) ($existing['schoolYear'] ?? ''));
+            }
+            if ($normalizedSemester === '') {
+                $normalizedSemester = $this->normalizeSemesterLabel((string) ($existing['semester'] ?? ''));
+            }
+        }
+
+        $verification = $this->loadslipVerificationRepo->findOneBySchoolId($normalizedSchoolId) ?? new LoadslipVerification();
         $payload = [
             'studentNumber' => $normalizedStudentNumber,
             'codes' => $sanitizedCodes,
             'rows' => $sanitizedRows,
             'previewPath' => $this->normalizeLoadslipPreviewPath($previewPath),
+            'schoolYear' => $normalizedSchoolYear,
+            'semester' => $normalizedSemester,
             'verified' => true,
             'updatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
         ];
 
-        @file_put_contents($filePath, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $verification
+            ->setSchoolId($normalizedSchoolId)
+            ->setStudentNumber($payload['studentNumber'])
+            ->setCodes($payload['codes'])
+            ->setRows($payload['rows'])
+            ->setPreviewPath($payload['previewPath'] !== '' ? $payload['previewPath'] : null)
+            ->setSchoolYear($payload['schoolYear'] !== '' ? $payload['schoolYear'] : null)
+            ->setSemester($payload['semester'] !== '' ? $payload['semester'] : null)
+            ->setVerified((bool) $payload['verified'])
+            ->setUpdatedAt(new \DateTimeImmutable($payload['updatedAt']));
+
+        $this->loadslipVerificationRepo->save($verification, true);
     }
 
     private function readLoadslipVerificationData(string $schoolId): ?array
     {
-        $filePath = $this->getLoadslipVerificationFilePath($schoolId);
-        if ($filePath === null || !is_file($filePath)) {
-            return null;
-        }
-
-        $json = @file_get_contents($filePath);
-        if (!is_string($json) || $json === '') {
-            return null;
-        }
-
-        $data = json_decode($json, true);
-        if (!is_array($data)) {
-            // Recover from common malformed payloads, e.g. [,"ITS 405", ...].
-            $repaired = (string) preg_replace('/\[\s*,/u', '[', $json);
-            $repaired = (string) preg_replace('/,\s*\]/u', ']', $repaired);
-            $data = json_decode($repaired, true);
-        }
+        $data = $this->loadslipVerificationRepo->findPayloadBySchoolId($schoolId);
         if (!is_array($data)) {
             return null;
         }
@@ -2694,16 +2713,15 @@ class EvaluationController extends AbstractController
             'codes' => $codes,
             'rows' => $rows,
             'previewPath' => $previewPath,
+            'schoolYear' => $this->normalizeSchoolYearLabel((string) ($data['schoolYear'] ?? '')),
+            'semester' => $this->normalizeSemesterLabel((string) ($data['semester'] ?? '')),
             'verified' => (bool) ($data['verified'] ?? true),
         ];
     }
 
     private function clearLoadslipVerificationData(string $schoolId): void
     {
-        $filePath = $this->getLoadslipVerificationFilePath($schoolId);
-        if ($filePath !== null && is_file($filePath)) {
-            @unlink($filePath);
-        }
+        $this->loadslipVerificationRepo->deleteBySchoolId($schoolId);
     }
 
     /**
@@ -3032,6 +3050,44 @@ class EvaluationController extends AbstractController
         }
 
         return '';
+    }
+
+    /**
+     * @return array{semester: string, schoolYear: string}
+     */
+    private function getCurrentLoadslipAcademicTerm(): array
+    {
+        $currentAcademicYear = $this->academicYearRepo->findCurrent() ?? $this->academicYearRepo->findLatestBySequence();
+
+        return [
+            'semester' => $this->normalizeSemesterLabel((string) ($currentAcademicYear?->getSemester() ?? '')),
+            'schoolYear' => $this->normalizeSchoolYearLabel((string) ($currentAcademicYear?->getYearLabel() ?? '')),
+        ];
+    }
+
+    private function isStoredLoadslipAcademicTermCurrent(array $data): bool
+    {
+        $currentTerm = $this->getCurrentLoadslipAcademicTerm();
+        if ($currentTerm['semester'] === '' && $currentTerm['schoolYear'] === '') {
+            return true;
+        }
+
+        $storedSemester = $this->normalizeSemesterLabel((string) ($data['semester'] ?? ''));
+        $storedSchoolYear = $this->normalizeSchoolYearLabel((string) ($data['schoolYear'] ?? ''));
+
+        if ($storedSemester === '' || $storedSchoolYear === '') {
+            return false;
+        }
+
+        if ($currentTerm['semester'] !== '' && $storedSemester !== $currentTerm['semester']) {
+            return false;
+        }
+
+        if ($currentTerm['schoolYear'] !== '' && $storedSchoolYear !== $currentTerm['schoolYear']) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -4658,7 +4714,7 @@ class EvaluationController extends AbstractController
         $request->getSession()->set('student_loadslip_rows', $parsedRows);
         $request->getSession()->set('student_loadslip_student_number', (string) $importedStudentNumber);
         $request->getSession()->set('student_loadslip_verified', true);
-        $this->persistLoadslipVerificationData((string) $student->getSchoolId(), $codes, $parsedRows, (string) $importedStudentNumber, $previewPath);
+        $this->persistLoadslipVerificationData((string) $student->getSchoolId(), $codes, $parsedRows, (string) $importedStudentNumber, $previewPath, $importedSchoolYear, $importedSemester);
         $this->addFlash('success', $reimporting
             ? 'Loadslip re-imported successfully. Verification data has been refreshed.'
             : 'Loadslip imported successfully.');

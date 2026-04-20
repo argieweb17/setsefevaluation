@@ -25,7 +25,11 @@
 .ev-td-subject{font-weight:600;color:#1e293b;}
 .ev-td-meta{color:#64748b;}
 .ev-td-response{text-align:center;}
-.ev-response-badge{display:inline-block;min-width:28px;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;background:#EFF6FF;color:#2563EB;text-align:center;}
+.ev-response-badge{display:inline-block;min-width:28px;padding:0;border-radius:0;font-size:.75rem;font-weight:600;background:transparent;color:#2563EB;text-align:center;}
+.ev-action-link{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:none !important;background:transparent !important;box-shadow:none !important;text-decoration:none;}
+.ev-action-link:hover,.ev-action-link:focus{background:transparent !important;box-shadow:none !important;transform:none;}
+.ev-action-link.ev-action-view{color:#2563EB;}
+.ev-action-link.ev-action-expand{color:#16A34A;}
 @media(max-width:768px){
     .ev-search-inner{width:100%;}
     .ev-search-bar{justify-content:stretch;}
@@ -163,8 +167,8 @@
                 <td class="ev-td-response"><span class="ev-response-badge">{{ row.responseCount }}</span></td>
                 <td class="text-center">
                     <div class="d-inline-flex gap-1">
-                        <a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-primary" title="View Results"><i class="bi bi-eye"></i></a>
-                        <a href="{{ path('staff_results_faculty_evaluations', {faculty: row.facultyId, evaluation: row.evalId}) }}" class="btn btn-sm btn-outline-success" title="View Faculty Subject Evaluations"><i class="bi bi-plus-lg"></i></a>
+                        <a href="{{ path('staff_results', {evaluation: row.evalId}) }}" class="ev-action-link ev-action-view" title="View Results"><i class="bi bi-eye"></i></a>
+                        <a href="{{ path('staff_results_faculty_evaluations', {faculty: row.facultyId, evaluation: row.evalId, subject: row.subjectId, section: row.section != '—' ? row.section : null}) }}" class="ev-action-link ev-action-expand" title="View Subject Evaluation"><i class="bi bi-plus-lg"></i></a>
                     </div>
                 </td>
             </tr>

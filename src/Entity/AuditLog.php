@@ -26,6 +26,8 @@ class AuditLog
 
     // Evaluation management
     public const ACTION_CREATE_EVALUATION = 'create_evaluation';
+    public const ACTION_EDIT_EVALUATION   = 'edit_evaluation';
+    public const ACTION_DELETE_EVALUATION = 'delete_evaluation';
     public const ACTION_OPEN_EVALUATION   = 'open_evaluation';
     public const ACTION_CLOSE_EVALUATION  = 'close_evaluation';
     public const ACTION_LOCK_RESULTS      = 'lock_results';
@@ -123,6 +125,8 @@ class AuditLog
             self::ACTION_RESET_PASSWORD    => 'Reset Password',
             self::ACTION_BULK_UPLOAD       => 'Bulk Upload Users',
             self::ACTION_CREATE_EVALUATION => 'Created Evaluation Period',
+            self::ACTION_EDIT_EVALUATION   => 'Edited Evaluation Period',
+            self::ACTION_DELETE_EVALUATION => 'Deleted Evaluation Period',
             self::ACTION_OPEN_EVALUATION   => 'Opened Evaluation',
             self::ACTION_CLOSE_EVALUATION  => 'Closed Evaluation',
             self::ACTION_LOCK_RESULTS      => 'Locked Results',

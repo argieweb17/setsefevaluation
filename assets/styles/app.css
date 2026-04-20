@@ -9,6 +9,12 @@
     --norsu-bg: #F0F4F8;
     --norsu-card-border: #D1D5DB;
     --sidebar-width: 260px;
+    --sidebar-collapsed-width: 88px;
+    --sidebar-current-width: var(--sidebar-width);
+}
+
+html.sidebar-collapsed {
+    --sidebar-current-width: var(--sidebar-collapsed-width);
 }
 
 /* ── Turbo progress bar ── */
@@ -185,7 +191,7 @@ body {
    SIDEBAR
    ═══════════════════════════════════════════════ */
 .sidebar {
-    width: var(--sidebar-width);
+    width: var(--sidebar-current-width);
     min-height: 100vh;
     height: 100vh;
     background: #fff;
@@ -195,7 +201,7 @@ body {
     left: 0;
     z-index: 1040;
     overflow-y: auto;
-    transition: transform 0.3s ease;
+    transition: width 0.3s ease, transform 0.3s ease;
     box-shadow: 2px 0 8px rgba(0,0,0,0.04);
     display: flex;
     flex-direction: column;
@@ -582,12 +588,13 @@ body {
 
 /* Main content area */
 .main-content {
-    margin-left: var(--sidebar-width);
+    margin-left: var(--sidebar-current-width);
     padding: 1.5rem;
     padding-top: calc(56px + 2rem);
     min-height: 100vh;
     position: relative;
     overflow-x: hidden;
+    transition: margin-left 0.3s ease;
 }
 
 /* No sidebar layout (login, register, public) */
@@ -1846,7 +1853,7 @@ a:hover {
 .topbar {
     position: fixed;
     top: 0;
-    left: var(--sidebar-width);
+    left: var(--sidebar-current-width);
     right: 0;
     height: 56px;
     background: #fff;
@@ -1858,6 +1865,7 @@ a:hover {
     z-index: 1035;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     overflow: visible;
+    transition: left 0.3s ease;
 }
 .topbar-left {
     display: flex;
@@ -1868,9 +1876,9 @@ a:hover {
 .topbar-btn {
     width: 38px;
     height: 38px;
-    border-radius: 0.5rem;
-    border: 1px solid #E5E7EB;
-    background: #F9FAFB;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     color: #6B7280;
     display: flex;
     align-items: center;
@@ -1881,8 +1889,7 @@ a:hover {
     flex-shrink: 0;
 }
 .topbar-btn:hover {
-    background: #EFF6FF;
-    border-color: #BFDBFE;
+    background: transparent;
     color: #2563EB;
 }
 
@@ -2182,6 +2189,83 @@ button.topbar-bell-btn {
 @media (max-width: 767.98px) {
     .topbar {
         display: none !important;
+    }
+}
+
+@media (min-width: 992px) {
+    html.sidebar-collapsed .sidebar {
+        box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    }
+
+    html.sidebar-collapsed .sidebar-brand {
+        justify-content: center;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    html.sidebar-collapsed .sidebar-brand-logo {
+        width: 40px;
+        height: 40px;
+    }
+
+    html.sidebar-collapsed .sidebar-brand-text,
+    html.sidebar-collapsed .sidebar-user-info,
+    html.sidebar-collapsed .sidebar .sidebar-header,
+    html.sidebar-collapsed .sidebar .nav-link .sidebar-count,
+    html.sidebar-collapsed .sidebar .nav-link .sidebar-badge,
+    html.sidebar-collapsed .sidebar-dropdown-arrow,
+    html.sidebar-collapsed .sidebar-dropdown-menu {
+        display: none !important;
+    }
+
+    html.sidebar-collapsed .sidebar .nav-link,
+    html.sidebar-collapsed .sidebar .sidebar-dropdown-toggle {
+        justify-content: center;
+        gap: 0;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem !important;
+        overflow: hidden;
+        white-space: nowrap;
+        font-size: 0;
+        line-height: 1;
+    }
+
+    html.sidebar-collapsed .sidebar .nav-link .sidebar-icon,
+    html.sidebar-collapsed .sidebar .sidebar-dropdown-toggle .sidebar-icon {
+        font-size: 1rem;
+    }
+
+    html.sidebar-collapsed .sidebar .nav-link:hover,
+    html.sidebar-collapsed .sidebar .sidebar-dropdown-toggle:hover {
+        transform: none;
+    }
+
+    html.sidebar-collapsed .sidebar .nav-link.active::before {
+        left: 0;
+        height: 70%;
+    }
+
+    html.sidebar-collapsed .sidebar-dropdown {
+        margin-left: 0.75rem;
+        margin-right: 0.75rem;
+    }
+
+    html.sidebar-collapsed .sidebar-dropdown.open {
+        margin-bottom: 0;
+    }
+
+    html.sidebar-collapsed .sidebar-user-card {
+        justify-content: center;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    html.sidebar-collapsed .sidebar .sidebar-bottom {
+        padding-bottom: 0.5rem;
+    }
+
+    html.sidebar-collapsed .sidebar .sidebar-header::after {
+        background: #E5E7EB;
     }
 }
 

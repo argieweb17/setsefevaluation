@@ -201,7 +201,9 @@
         <div class="sb-filter-group">
             <i class="bi bi-calendar-event sb-filter-icon"></i>
             <select class="sb-filter-select" id="semesterFilter" onchange="filterBySemester(this.value)" style="min-width:150px;">
+                {% if not lockedSemester %}
                 <option value="" {% if not selectedSemester %}selected{% endif %}>All Semesters</option>
+                {% endif %}
                 {% for sem in semesters|sort %}
                     <option value="{{ sem }}" {% if selectedSemester == sem %}selected{% endif %}>{{ sem }}</option>
                 {% endfor %}
@@ -1429,7 +1431,9 @@ setInterval(pollActiveEvaluations, 30000);  // Then every 30 seconds with deboun
                         <div class="col-md-4">
                             <label class="form-label fw-semibold" style="font-size:.75rem;">Semester</label>
                             <select name="semester" class="form-select form-select-sm" style="border-radius:8px;font-size:.82rem;">
+                                {% if not lockedSemester %}
                                 <option value="">— Select —</option>
+                                {% endif %}
                                 {% for sem in semesters %}
                                     <option value="{{ sem }}" {% if selectedSemester == sem %}selected{% endif %}>{{ sem }}</option>
                                 {% endfor %}

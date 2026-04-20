@@ -38,6 +38,33 @@ class StudentApiController extends AbstractController
                 'GET /api/questionnaire/evaluations/{id}',
                 'GET /api/questionnaire/type/{evaluationType}',
             ],
+            'evaluationApi' => [
+                'periods' => [
+                    'GET /api/evaluation/periods' => 'List periods (filters: type, status, schoolYear, semester)',
+                    'GET /api/evaluation/periods/{id}' => 'Period detail with questionnaire',
+                    'POST /api/evaluation/periods' => 'Create period (staff/admin)',
+                    'PUT /api/evaluation/periods/{id}' => 'Update period (staff/admin)',
+                    'DELETE /api/evaluation/periods/{id}' => 'Delete period (admin)',
+                    'PATCH /api/evaluation/periods/{id}/status' => 'Open/close period',
+                    'PATCH /api/evaluation/periods/{id}/lock-results' => 'Lock/unlock results',
+                ],
+                'submission' => [
+                    'POST /api/evaluation/periods/{id}/submit' => 'Submit SET evaluation (isDraft for drafts)',
+                    'GET /api/evaluation/periods/{id}/draft' => 'Load SET draft (facultyId, subjectId)',
+                    'POST /api/evaluation/periods/{id}/superior/{evaluateeId}/submit' => 'Submit SEF evaluation',
+                    'GET /api/evaluation/periods/{id}/superior/{evaluateeId}/draft' => 'Load SEF draft',
+                ],
+                'results' => [
+                    'GET /api/evaluation/periods/{id}/results' => 'Faculty rankings for a period',
+                    'GET /api/evaluation/periods/{id}/results/faculty/{facultyId}' => 'Detailed faculty results',
+                    'GET /api/evaluation/periods/{id}/results/superior/{evaluateeId}' => 'SEF evaluatee results',
+                ],
+                'other' => [
+                    'GET /api/evaluation/history' => 'Student evaluation history',
+                    'GET /api/evaluation/periods/{id}/check-submission' => 'Check if already submitted',
+                    'GET /api/evaluation/periods/{id}/participation' => 'Participation statistics',
+                ],
+            ],
             'auth' => 'Use Authorization: Bearer <token> for protected /api endpoints.',
         ]);
     }

@@ -89,9 +89,9 @@ class AuthApiController extends AbstractController
             return $this->json(['error' => 'Account is not active.'], 403);
         }
 
-        if (!$this->hasAllowedEmailDomain($user)) {
+        if ($this->requiresInstitutionalEmailDomainForUser($user) && !$this->hasAllowedEmailDomain($user)) {
             return $this->json([
-                'error' => 'Email address must end with @norsu.edu.ph.',
+                'error' => 'Faculty, Staff, Superior, and Admin accounts must use an @norsu.edu.ph email address.',
             ], 403);
         }
 
@@ -235,7 +235,7 @@ class AuthApiController extends AbstractController
             return $this->json(['error' => 'Invalid email format.'], 400);
         }
 
-        if ($email !== '' && !$this->isNorsuEmail($email)) {
+        if ($email !== '' && $requiresInstitutionalCredentials && !$this->isNorsuEmail($email)) {
             return $this->json(['error' => 'Email address must end with @norsu.edu.ph.'], 400);
         }
 
@@ -371,6 +371,16 @@ class AuthApiController extends AbstractController
         $roles = $user->getRoles();
 
         return in_array('ROLE_FACULTY', $roles, true)
+            || in_array('ROLE_STAFF', $roles, true)
+            || in_array('ROLE_SUPERIOR', $roles, true);
+    }
+
+    private function requiresInstitutionalEmailDomainForUser(User $user): bool
+    {
+        $roles = $user->getRoles();
+
+        return in_array('ROLE_ADMIN', $roles, true)
+            || in_array('ROLE_FACULTY', $roles, true)
             || in_array('ROLE_STAFF', $roles, true)
             || in_array('ROLE_SUPERIOR', $roles, true);
     }

@@ -5,6 +5,61 @@ import './stimulus_bootstrap.js';
  */
 import './styles/app.css';
 
+const SIDEBAR_COLLAPSE_STORAGE_KEY = 'quamc.sidebarCollapsed';
+
+function setSidebarWidthVars(isCollapsed) {
+    const width = isCollapsed ? '88px' : '260px';
+    document.documentElement.style.setProperty('--sidebar-current-width', width);
+    document.documentElement.style.setProperty('--sidebar-width', width);
+}
+
+function readStoredSidebarCollapse() {
+    try {
+        return window.localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY) === '1';
+    } catch (error) {
+        return false;
+    }
+}
+
+function writeStoredSidebarCollapse(isCollapsed) {
+    try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSE_STORAGE_KEY, isCollapsed ? '1' : '0');
+    } catch (error) {
+        // Ignore storage write failures and keep the in-memory state only.
+    }
+}
+
+function syncSidebarDesktopToggle() {
+    const toggle = document.getElementById('sidebarCollapseToggle');
+    const icon = document.getElementById('sidebarCollapseToggleIcon');
+    const isCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
+    if (!toggle) return;
+
+    const label = isCollapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('title', label);
+    toggle.setAttribute('aria-pressed', String(isCollapsed));
+
+    if (!icon) return;
+    icon.classList.toggle('bi-chevron-bar-left', !isCollapsed);
+    icon.classList.toggle('bi-chevron-bar-right', isCollapsed);
+}
+
+function applySidebarCollapse(isCollapsed) {
+    document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+    setSidebarWidthVars(isCollapsed);
+    writeStoredSidebarCollapse(isCollapsed);
+    closeSidebar();
+    syncSidebarDesktopToggle();
+}
+
+function initializeSidebarCollapse() {
+    const isCollapsed = readStoredSidebarCollapse();
+    document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+    setSidebarWidthVars(isCollapsed);
+    syncSidebarDesktopToggle();
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SIDEBAR HELPERS
    ═══════════════════════════════════════════════════════════════ */
@@ -154,6 +209,10 @@ document.addEventListener('click', (e) => {
         toggleSidebar();
         return;
     }
+    if (e.target.closest('#sidebarCollapseToggle')) {
+        applySidebarCollapse(!document.documentElement.classList.contains('sidebar-collapsed'));
+        return;
+    }
     /* Backdrop click → close */
     if (e.target.id === 'sidebarBackdrop') {
         closeSidebar();
@@ -234,6 +293,8 @@ document.addEventListener('turbo:before-visit', () => {
  * This is the single hook that guarantees fresh state.
  */
 document.addEventListener('turbo:load', () => {
+    initializeSidebarCollapse();
+
     /* 1. Update sidebar active highlighting */
     updateActiveLink();
 
@@ -271,6 +332,8 @@ document.addEventListener('turbo:load', () => {
     syncHomeHeroPanel();
 
 });
+
+initializeSidebarCollapse();
 
 /*
  * turbo:before-render — runs just before Turbo swaps in the new <body>.
