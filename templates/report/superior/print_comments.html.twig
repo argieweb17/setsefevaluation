@@ -2,16 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SEF Comments — {{ faculty.fullName }}</title>
+    <title>SEF Comments - {{ faculty.fullName }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
     <style>
-        /* ══════════════════════════════════════════════
-           PRINT LAYOUT — Superior Evaluation Comments
-           Matches Official NORSU QUAMC format.
-           ══════════════════════════════════════════════ */
-
         @page {
-            size: A4 portrait;
-            margin: 12mm 16mm 12mm 16mm;
+            size: 13in 8.5in;
+            margin: 8mm 10mm 8mm 10mm;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,148 +15,295 @@
         body {
             font-family: Geist, Arial, Helvetica, sans-serif;
             margin: 0;
-            padding: 20px 36px;
             color: #000;
-            font-size: 11px;
-            line-height: 1.35;
+            font-size: 9px;
+            line-height: 1.3;
+            padding: 12px 20px;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            background-image:
+                linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 24px 24px;
         }
 
-        /* ── Letterhead ── */
-        .letterhead {
+        .sheet {
+            width: 100%;
+            page-break-inside: avoid;
+            break-inside: avoid-page;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .header-left {
+            flex-shrink: 0;
+            margin-left: 0;
+        }
+        .header-left img {
+            max-height: 90px;
+            width: auto;
+        }
+        .header-right {
+            text-align: right;
+            padding-top: 4px;
+            margin-right: 10px;
+        }
+        .header-right .office-title {
+            font-size: 14px;
+            font-weight: 700;
+            font-style: italic;
+            margin-bottom: 4px;
+        }
+        .doc-info-table {
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-left: auto;
+        }
+        .doc-info-table td {
+            border: 1px solid #000;
+            padding: 1px 8px;
+        }
+        .doc-info-table .di-lbl {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .doc-info-table .di-val {
+            min-width: 60px;
+        }
+        .doc-info-table .di-page {
             text-align: center;
-            margin-bottom: 10px;
-        }
-        .letterhead img {
-            max-width: 100%;
-            height: auto;
+            font-weight: 400;
+            vertical-align: middle;
+            padding: 1px 12px;
+            letter-spacing: 2px;
+            font-size: 10px;
         }
 
-        /* ── Title Block ── */
         .title-block {
             text-align: center;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
         .title-block h2 {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
+            margin: 0;
+        }
+
+        .info-row {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+
+        .info-row td {
+            border: none;
+            padding: 4px 8px 2px;
+            font-size: 10px;
+        }
+
+        .info-row .lbl {
+            font-weight: 700;
+            text-align: center;
+            white-space: nowrap;
+            width: 11%;
+        }
+
+        .info-row .val {
+            border-bottom: 1px solid #000;
+            text-decoration: none;
+            width: 14%;
+        }
+
+        .main-row {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        .comments-wrap {
+            flex: 1 1 auto;
+            width: auto;
+        }
+
+        .comments-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 2px 6px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .items-table {
+            flex: 1 1 auto;
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .items-table th,
+        .items-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            font-size: 10px;
+        }
+
+        .items-table thead th {
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .items-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid-page;
+        }
+
+        .items-table .item {
+            text-align: left;
+        }
+
+        .items-table .num {
+            text-align: center;
+            width: 56px;
+            vertical-align: top;
+            font-weight: 700;
+        }
+
+        .comment-text {
+            line-height: 1.45;
+            vertical-align: top;
+        }
+
+        .comment-empty {
+            text-align: center;
+            font-style: italic;
+            color: #475569;
+            padding: 18px 12px;
+        }
+
+        .summary-box {
+            width: 220px;
+            flex-shrink: 0;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        .summary-box th,
+        .summary-box td {
+            border: 1px solid #000;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .summary-box th {
+            background: #cfe2f3;
+            font-size: 18px;
+        }
+
+        .summary-box .value {
+            font-size: 30px;
+            line-height: 1.1;
+        }
+
+        .summary-box .value-label {
+            font-size: 13px;
+            line-height: 1.35;
+            padding: 14px 10px;
+        }
+
+        .scale {
+            margin: 6px 0 8px;
+            text-align: center;
+            font-size: 9px;
+            font-style: italic;
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .purpose-row {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            background: transparent;
+        }
+
+        .purpose-row td {
+            border: none;
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        .purpose-row .lbl {
+            width: auto;
+            font-weight: 700;
+            text-align: left;
+            padding-left: 0;
+            padding-right: 8px;
+        }
+
+        .signature-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: 16px 20px 10px;
+            font-size: 10px;
+        }
+
+        .sig-block {
+            width: 38%;
+            text-align: center;
+        }
+
+        .sig-label {
+            text-align: left;
+            margin-bottom: 26px;
+            font-weight: 700;
+        }
+
+        .sig-name {
+            border-bottom: 1px solid #000;
+            font-weight: 700;
+            padding-bottom: 2px;
             margin-bottom: 3px;
         }
 
-        /* ── Faculty Info Table ── */
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 14px;
-            font-size: 11px;
-        }
-        .info-table td {
-            padding: 2px 4px;
-            border: none;
-            vertical-align: bottom;
-        }
-        .info-table .lbl {
-            font-weight: 400;
-            white-space: nowrap;
-        }
-        .info-table .val {
-            font-weight: 700;
-            border-bottom: 1px solid #000;
-            padding-left: 6px;
-        }
-        .info-table .val-right {
-            font-weight: 700;
-            border-bottom: 1px solid #000;
-            text-align: left;
-            padding-left: 6px;
+        .sig-image {
+            display: block;
+            max-width: 220px;
+            max-height: 52px;
+            width: auto;
+            height: auto;
+            margin: 0 auto 4px;
+            object-fit: contain;
         }
 
-        /* ── Comments Section ── */
-        .comments-section {
-            margin-bottom: 20px;
-        }
-        .comments-section h3 {
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .comments-section ol {
-            margin: 0;
-            padding-left: 22px;
-            font-size: 11px;
-        }
-        .comments-section ol li {
-            margin-bottom: 6px;
-            padding-left: 4px;
-        }
-        .no-comments {
-            font-style: italic;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        /* ── Signatures ── */
-        .signature-section {
-            margin-top: 60px;
-            font-size: 10px;
-            display: flex;
-            justify-content: flex-start;
-            gap: 100px;
-        }
-        .sig-block {
-            text-align: left;
-        }
-        .sig-label {
-            margin-bottom: 30px;
-        }
-        .sig-name {
-            font-weight: 700;
-            font-size: 10px;
-        }
         .sig-title {
             font-size: 9px;
         }
 
-        /* ── Disclaimer ── */
         .disclaimer {
-            margin-top: 30px;
-            padding: 12px 0;
-            font-size: 10px;
-            line-height: 1.20;
-        }
-        .disclaimer strong { font-style: normal; }
-
-        /* ── Footer Table ── */
-        .doc-footer-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 60px;
-            font-size: 9px;
-        }
-        .doc-footer-table td {
-            border: 1px solid #000;
-            padding: 3px 6px;
-            vertical-align: middle;
-        }
-        .doc-footer-table .ft-lbl {
-            font-weight: 700;
-            white-space: nowrap;
-            width: 22%;
-        }
-        .doc-footer-table .ft-val {
-            width: 20%;
-        }
-        .doc-footer-table .ft-page {
-            text-align: right;
-            border: 1px solid #000;
-            font-size: 10px;
-            padding: 3px 10px;
-            vertical-align: middle;
-            white-space: nowrap;
+            font-size: 8px;
+            font-style: italic;
+            border-top: none;
+            margin-top: 34px;
         }
 
-        /* ── Print-specific ── */
         @media print {
             body { padding: 0; }
             .no-print { display: none !important; }
@@ -168,123 +311,152 @@
     </style>
 </head>
 <body>
+{% set overallPercent = (overallAverage|default(0) / 5) * 100 %}
+{% set commentsPerPage = 10 %}
+{% set commentPages = comments|length > 0 ? comments|batch(commentsPerPage) : [[]] %}
+{% set totalPages = commentPages|length %}
 
-    {# ═══════════════════════════════════════════
-       LETTERHEAD
-       ═══════════════════════════════════════════ #}
-    <div class="letterhead">
-        <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+{% for pageComments in commentPages %}
+{% set pageNumber = loop.index %}
+<div class="sheet">
+    <div class="header-row">
+        <div class="header-left">
+            <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        </div>
+        <div class="header-right">
+            <div class="office-title">Office of the University Quality Assurance Management Center</div>
+            <table class="doc-info-table">
+                <tr>
+                    <td class="di-lbl">Document ID</td>
+                    <td class="di-val">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
+                    <td class="di-lbl">Issue Status</td>
+                    <td class="di-val"></td>
+                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>{{ pageNumber }}</strong>{% if totalPages > 1 %}/{{ totalPages }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Issue Date</td>
+                    <td class="di-val">{{ "now"|date("m-d-Y") }}</td>
+                    <td class="di-lbl">Approved by</td>
+                    <td class="di-val">ODQA</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Reviewed &amp; Authorized by</td>
+                    <td class="di-val">ODQA</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       TITLE BLOCK
-       ═══════════════════════════════════════════ #}
     <div class="title-block">
-        <h1>Office of the Director, Quality Assurance Management Center</h1>
-        <br>
-        <h2>SUPERIOR EVALUATION FOR FACULTY — COMMENTS</h2>
+        <h2>RESULT OF SUPERIOR EVALUATION FOR FACULTY - COMMENTS</h2>
     </div>
 
-    {# ═══════════════════════════════════════════
-       FACULTY INFO
-       ═══════════════════════════════════════════ #}
-    <table class="info-table">
+    <table class="info-row">
         <tr>
             <td class="lbl">Name of Faculty:</td>
-            <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
-            <td class="lbl">Position:</td>
-            <td class="val-right">{{ evaluation.position ?? 'N/A' }}</td>
-        </tr>
-        <tr>
-            <td class="lbl">College/Department:</td>
-            <td class="val">{{ evaluation.college ?? (faculty.department ? faculty.department.collegeName : 'N/A') }}</td>
-            <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
-        </tr>
-        <tr>
+            <td class="val">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
             <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">School Year:</td>
-            <td class="val-right">{{ evaluation.schoolYear ?? '' }}</td>
+            <td class="val">{{ faculty.campus ?? 'Main Campus I' }}</td>
+            <td class="lbl">College:</td>
+            <td class="val">{{ collegeLabel|default('N/A') }}</td>
+            <td class="lbl">Sem/SY:</td>
+            <td class="val">{{ semSyLabel|default('N/A') }}</td>
+            <td class="lbl">Employment Status:</td>
+            <td class="val">{{ employmentStatusLabel|default('Regular') }}</td>
         </tr>
     </table>
 
-    {# ═══════════════════════════════════════════
-       COMMENTS
-       ═══════════════════════════════════════════ #}
-    <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? 'SEF' }}{% if printSection %} ({{ printSection }}){% endif %}</h3>
-        <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
-            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
+    <div class="main-row">
+        <div class="comments-wrap">
+            <div class="comments-meta">
+                <span>Evaluator Comments</span>
+                <span>Evaluators: {{ evaluatorCount }} | Comments: {{ comments|length }}</span>
+            </div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width:56px;">No.</th>
+                        <th>Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in pageComments %}
+                        <tr>
+                            <td class="num">{{ ((pageNumber - 1) * commentsPerPage) + loop.index }}</td>
+                            <td class="item comment-text">{{ c }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="2" class="comment-empty">No comments were submitted for this evaluation.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        {% if comments|length > 0 %}
-        <ol>
-            {% for c in comments %}
-                <li>{{ c }}</li>
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="no-comments">No comments were submitted for this evaluation.</p>
-        {% endif %}
+
+        <table class="summary-box">
+            <tr>
+                <th>Overall Rating</th>
+            </tr>
+            <tr>
+                <td class="value">{{ overallPercent|round(0, 'common') }}</td>
+            </tr>
+            <tr>
+                <th>Verbal Rating</th>
+            </tr>
+            <tr>
+                <td class="value-label">{{ performanceLevel|default('N/A') }}</td>
+            </tr>
+        </table>
     </div>
 
-    {# ═══════════════════════════════════════════
-       SIGNATURE SECTION
-       ═══════════════════════════════════════════ #}
-    <div class="signature-section">
+    {% if loop.last %}
+    <div class="scale">
+        Comments are reproduced as submitted by evaluators for documentation and review purposes.
+    </div>
+
+    <table class="purpose-row">
+        <tr>
+            <td class="lbl">Purpose:</td>
+            <td>For IPCR Requirement only.</td>
+        </tr>
+    </table>
+
+    <div class="signature-wrap">
         <div class="sig-block">
             <div class="sig-label">Prepared by:</div>
-            <div class="sig-name">ARGIE PAIR PAGBUNOCAN</div>
-            <div class="sig-title">QUAMC Staff</div>
+            {% if preparedSignature is defined and preparedSignature is not empty %}
+                <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
+            <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
         </div>
         <div class="sig-block">
-            <div class="sig-label">Certified true and correct:</div>
-            <div class="sig-name">CESAR P. ESTROPE, Ed.D.</div>
-            <div class="sig-title">Director, Quality Assurance Management Center</div>
+            <div class="sig-label">Noted by:</div>
+            {% if certifiedSignature is defined and certifiedSignature is not empty %}
+                <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
+            <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
         </div>
     </div>
 
-    {# ═══════════════════════════════════════════
-       DISCLAIMER
-       ═══════════════════════════════════════════ #}
     <div class="disclaimer">
-        <strong><em>Disclaimer:</em></strong> <em>The information transmitted by this document is intended only for the person or entity to which it is
-        addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not
-        the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or
-        any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the
-        sender. Thank you</em>
+        Disclaimer: The information transmitted by this document is intended only for the person or entity to which it is addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the sender. Thank you.
     </div>
+    {% endif %}
+</div>
+{% if not loop.last %}
+<div class="page-break"></div>
+{% endif %}
+{% endfor %}
 
-    {# ═══════════════════════════════════════════
-       DOCUMENT FOOTER
-       ═══════════════════════════════════════════ #}
-    <table class="doc-footer-table">
-        <tr>
-            <td class="ft-lbl">Correspondence ID</td>
-            <td class="ft-val"></td>
-            <td class="ft-lbl"></td>
-            <td class="ft-val"></td>
-            <td rowspan="3" class="ft-page">Page <strong>1</strong> of <strong>1</strong></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Issue Date</td>
-            <td class="ft-val">{{ "now"|date("m-d-Y") }}</td>
-            <td class="ft-lbl">Issue Status</td>
-            <td class="ft-val"></td>
-        </tr>
-        <tr>
-            <td class="ft-lbl">Reviewed &amp; authorized by</td>
-            <td class="ft-val">ODQA</td>
-            <td class="ft-lbl">Approved by</td>
-            <td class="ft-val">ODQA</td>
-        </tr>
-    </table>
-
-    {# Auto-trigger print dialog #}
-    <script>
-        window.addEventListener('load', function() {
-            setTimeout(function() { window.print(); }, 400);
-        });
-    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () { window.print(); }, 350);
+    });
+</script>
 </body>
 </html>

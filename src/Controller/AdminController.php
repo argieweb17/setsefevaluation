@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\AcademicYear;
 use App\Entity\AuditLog;
 use App\Entity\Course;
+use App\Entity\CorrespondenceRecord;
 use App\Entity\Curriculum;
 use App\Entity\Department;
 use App\Entity\EvaluationMessage;
@@ -1895,6 +1896,7 @@ class AdminController extends AbstractController
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
         SubjectRepository $subjectRepo,
+        EntityManagerInterface $em,
     ): Response {
         $input = $request->isMethod('POST') ? $request->request : $request->query;
         $evalId = (int) $input->get('evaluation', 0);
@@ -2022,7 +2024,7 @@ class AdminController extends AbstractController
         $firstResult = $sectionResults[0] ?? null;
         $isSingleSection = count($sectionResults) === 1;
 
-        return $this->render('report/print_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'sectionResults' => $sectionResults,
@@ -2042,14 +2044,29 @@ class AdminController extends AbstractController
             'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
             'preparedSignature' => $preparedSignature,
             'certifiedSignature' => $certifiedSignature,
-        ]);
+        ];
+
+        $html = $this->renderView('report/print_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            (string) $evaluation->getEvaluationType(),
+            'set-print',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
+        );
+
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondenceHtml($html, $record);
+        }
+
+        return new Response($html);
     }
 
     // ════════════════════════════════════════════════
     //  E4. RESULTS — PRINT COMMENTS (Twig template)
     // ════════════════════════════════════════════════
 
-    #[Route('/results/print-comments', name: 'admin_results_print_comments', methods: ['GET'])]
+    #[Route('/results/print-comments', name: 'admin_results_print_comments', methods: ['GET', 'POST'])]
     public function resultsPrintComments(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
@@ -2057,11 +2074,21 @@ class AdminController extends AbstractController
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
         SubjectRepository $subjectRepo,
+        EntityManagerInterface $em,
     ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
-        $subjectId = $request->query->get('subject') ? (int) $request->query->get('subject') : null;
-        $section = $request->query->get('section');
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+        $subjectId = $input->get('subject') ? (int) $input->get('subject') : null;
+        $section = $input->get('section');
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2152,7 +2179,7 @@ class AdminController extends AbstractController
             }
         }
 
-        return $this->render('report/print_comments.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'comments' => $filteredComments,
@@ -2162,7 +2189,29 @@ class AdminController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'performanceLevel' => $this->getPerformanceLevel($overallAvg),
-        ]);
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ];
+
+        $html = $this->renderView('report/print_comments.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SET',
+            'set-print-comments',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
+        );
+
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondenceHtml($html, $record);
+        }
+
+        return new Response($html);
     }
 
     // ════════════════════════════════════════════════
@@ -2287,6 +2336,7 @@ class AdminController extends AbstractController
         EvaluationResponseRepository $responseRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
         $input = $request->isMethod('POST') ? $request->request : $request->query;
         $facultyId = (int) $input->get('faculty', 0);
@@ -2495,7 +2545,7 @@ class AdminController extends AbstractController
             $gradEvaluations[] = $emptySlot;
         }
 
-        return $this->render('report/print_all_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'allEvaluations' => $allEvaluations,
             'baccEvaluations' => $baccEvaluations,
@@ -2511,7 +2561,22 @@ class AdminController extends AbstractController
             'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
             'preparedSignature' => $preparedSignature,
             'certifiedSignature' => $certifiedSignature,
-        ]);
+        ];
+
+        $html = $this->renderView('report/print_all_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SET',
+            'set-print-all',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
+        );
+
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondenceHtml($html, $record);
+        }
+
+        return new Response($html);
     }
 
     // ════════════════════════════════════════════════
@@ -2598,6 +2663,12 @@ class AdminController extends AbstractController
             'preparedTitleDefault' => 'QUAMC Staff',
             'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
             'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+            'purposeOptions' => [
+                'For IPCR purpose only.',
+                'For Job Application purpose only.',
+                'For Personal file purpose only.',
+            ],
+            'purposeDefault' => 'For IPCR purpose only.',
         ]);
     }
 
@@ -2608,6 +2679,7 @@ class AdminController extends AbstractController
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
         $input = $request->isMethod('POST') ? $request->request : $request->query;
         $evalId = (int) $input->get('evaluation', 0);
@@ -2620,6 +2692,7 @@ class AdminController extends AbstractController
         $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
         $preparedSignature = (string) $input->get('preparedSignature', '');
         $certifiedSignature = (string) $input->get('certifiedSignature', '');
+        $purposeText = trim((string) $input->get('purposeText', 'For IPCR purpose only.'));
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2684,7 +2757,7 @@ class AdminController extends AbstractController
         $overallAvg = $superiorEvalRepo->getOverallAverage($facultyId, $evalId);
         $evaluatorCount = $superiorEvalRepo->countEvaluators($facultyId, $evalId);
 
-        return $this->render('report/superior/print_results.html.twig', [
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'questions' => $questionData,
@@ -2700,24 +2773,52 @@ class AdminController extends AbstractController
             'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
             'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
             'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'purposeText' => $purposeText !== '' ? $purposeText : 'For IPCR purpose only.',
             'preparedSignature' => $preparedSignature,
             'certifiedSignature' => $certifiedSignature,
-        ]);
+        ];
+
+        $html = $this->renderView('report/superior/print_results.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SEF',
+            'sef-print',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
+        );
+
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondenceHtml($html, $record);
+        }
+
+        return new Response($html);
     }
 
     // ════════════════════════════════════════════════
     //  E9. SEF RESULTS — PRINT COMMENTS
     // ════════════════════════════════════════════════
 
-    #[Route('/results/superior/print-comments', name: 'admin_results_superior_print_comments', methods: ['GET'])]
+    #[Route('/results/superior/print-comments', name: 'admin_results_superior_print_comments', methods: ['GET', 'POST'])]
     public function resultsSuperiorPrintComments(
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
         UserRepository $userRepo,
+        QuestionRepository $questionRepo,
+        EntityManagerInterface $em,
     ): Response {
-        $evalId = (int) $request->query->get('evaluation', 0);
-        $facultyId = (int) $request->query->get('faculty', 0);
+        $input = $request->isMethod('POST') ? $request->request : $request->query;
+        $evalId = (int) $input->get('evaluation', 0);
+        $facultyId = (int) $input->get('faculty', 0);
+
+        $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
+        $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
+        $preparedTitle = trim((string) $input->get('preparedTitle', 'QUAMC Staff'));
+        $certifiedBy = trim((string) $input->get('certifiedBy', 'CESAR P. ESTROPE, Ed.D'));
+        $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
+        $preparedSignature = (string) $input->get('preparedSignature', '');
+        $certifiedSignature = (string) $input->get('certifiedSignature', '');
+        $purposeText = trim((string) $input->get('purposeText', 'For IPCR purpose only.'));
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -2731,16 +2832,187 @@ class AdminController extends AbstractController
             array_map(fn($c) => $c['comment'], $comments),
             fn($c) => trim($c) !== ''
         ));
+
+        $questionAverages = $superiorEvalRepo->getAverageRatingsByEvaluatee($facultyId, $evalId);
+        $questions = $questionRepo->findByType('SEF');
+        $categoryAverages = [];
+        foreach ($questions as $q) {
+            $qId = $q->getId();
+            $avgData = $questionAverages[$qId] ?? null;
+            $qAvg = is_array($avgData) ? $avgData['average'] : null;
+            $cat = $q->getCategory();
+            if (!isset($categoryAverages[$cat])) {
+                $categoryAverages[$cat] = ['sum' => 0.0, 'n' => 0, 'questionCount' => 0];
+            }
+            $categoryAverages[$cat]['questionCount']++;
+            if ($qAvg !== null) {
+                $categoryAverages[$cat]['sum'] += $qAvg;
+                $categoryAverages[$cat]['n']++;
+            }
+        }
+
+        $catCount = count($categoryAverages);
+        $weightPct = $catCount > 0 ? round(100 / $catCount) : 0;
+        $weightFrac = $catCount > 0 ? 1.0 / $catCount : 0;
+        $categorySummary = [];
+        $compositeTotal = 0.0;
+        foreach ($categoryAverages as $cat => $data) {
+            $mean = $data['n'] > 0 ? $data['sum'] / $data['n'] : 0;
+            $weightedRating = $mean * $weightFrac;
+            $compositeTotal += $weightedRating;
+            $questionCount = (int) ($data['questionCount'] ?? 0);
+            $averageScore = $mean * $questionCount;
+            $maxScore = $questionCount * 5;
+            $ratingPct = $maxScore > 0 ? ($averageScore / $maxScore) * 100 : 0;
+            $categorySummary[] = [
+                'roman' => '',
+                'name' => $cat,
+                'mean' => round($mean, 2),
+                'weightPct' => $weightPct,
+                'weightedRating' => round($weightedRating, 2),
+                'questionCount' => $questionCount,
+                'averageScore' => round($averageScore, 2),
+                'maxScore' => $maxScore,
+                'ratingPct' => round($ratingPct, 2),
+            ];
+        }
+
+        $overallAvg = $superiorEvalRepo->getOverallAverage($facultyId, $evalId);
         $evaluatorCount = $superiorEvalRepo->countEvaluators($facultyId, $evalId);
 
-        return $this->render('report/superior/print_comments.html.twig', [
+        $collegeLabel = trim((string) (
+            $evaluation->getCollege()
+            ?: $faculty->getDepartment()?->getCollegeName()
+            ?: $faculty->getDepartment()?->getDepartmentName()
+            ?: ''
+        ));
+
+        $semesterLabel = trim((string) ($evaluation->getSemester() ?? ''));
+        $schoolYearLabel = trim((string) ($evaluation->getSchoolYear() ?? ''));
+        $semSyLabel = trim($semesterLabel . ($semesterLabel !== '' && $schoolYearLabel !== '' ? ' ' : '') . $schoolYearLabel);
+
+        $rawEmploymentStatus = trim((string) ($faculty->getEmploymentStatus() ?? ''));
+        $employmentStatusLabel = 'Regular';
+        $rawEmploymentStatusLower = mb_strtolower($rawEmploymentStatus);
+        if (
+            str_contains($rawEmploymentStatusLower, 'part-time')
+            || str_contains($rawEmploymentStatusLower, 'part time')
+            || str_contains($rawEmploymentStatusLower, 'parttime')
+        ) {
+            $employmentStatusLabel = 'Part-Time';
+        } elseif (
+            str_contains($rawEmploymentStatusLower, 'temporary')
+            || str_contains($rawEmploymentStatusLower, 'contractual')
+            || str_contains($rawEmploymentStatusLower, 'job order')
+            || str_contains($rawEmploymentStatusLower, 'casual')
+            || str_contains($rawEmploymentStatusLower, 'adjunct')
+        ) {
+            $employmentStatusLabel = 'Temporary';
+        }
+
+        $viewData = [
             'faculty' => $faculty,
             'evaluation' => $evaluation,
             'comments' => $filteredComments,
             'evaluatorCount' => $evaluatorCount,
-            'printSubjectCode' => null,
-            'printSection' => null,
-        ]);
+            'overallAverage' => $overallAvg,
+            'performanceLevel' => $this->getPerformanceLevel($overallAvg),
+            'collegeLabel' => $collegeLabel !== '' ? $collegeLabel : 'N/A',
+            'semSyLabel' => $semSyLabel !== '' ? $semSyLabel : 'N/A',
+            'employmentStatusLabel' => $employmentStatusLabel,
+            'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
+            'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
+            'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
+            'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
+            'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'purposeText' => $purposeText !== '' ? $purposeText : 'For IPCR purpose only.',
+            'preparedSignature' => $preparedSignature,
+            'certifiedSignature' => $certifiedSignature,
+        ];
+
+        $html = $this->renderView('report/superior/print_comments.html.twig', $viewData);
+        $record = $this->saveCorrespondenceRecord(
+            $em,
+            $correspondenceId,
+            'SEF',
+            'sef-print-comments',
+            method_exists($faculty, 'getFullName') ? (string) $faculty->getFullName() : null
+        );
+
+        if ($record instanceof CorrespondenceRecord) {
+            $this->saveCorrespondenceHtml($html, $record);
+        }
+
+        return new Response($html);
+    }
+
+    private function saveCorrespondenceRecord(
+        EntityManagerInterface $em,
+        ?string $correspondenceId,
+        string $evaluationType,
+        string $printScope,
+        ?string $facultyName = null,
+    ): ?CorrespondenceRecord {
+        $value = trim((string) $correspondenceId);
+        if ($value === '') {
+            return null;
+        }
+
+        $record = (new CorrespondenceRecord())
+            ->setCorrespondenceId($value)
+            ->setEvaluationType($evaluationType)
+            ->setPrintScope($printScope)
+            ->setFacultyName($facultyName !== null ? trim($facultyName) : null);
+
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User) {
+            $record->setCreatedBy($currentUser);
+        }
+
+        $em->persist($record);
+        $em->flush();
+
+        return $record;
+    }
+
+    private function getCorrespondenceStorageDir(): string
+    {
+        return rtrim((string) $this->getParameter('kernel.project_dir'), '/\\') . '/public/uploads/correspondence';
+    }
+
+    private function buildCorrespondenceArtifactBaseName(CorrespondenceRecord $record): string
+    {
+        $safeType = strtoupper((string) $record->getEvaluationType()) === 'SEF' ? 'sef' : 'set';
+        $safeId = (string) preg_replace('/[^A-Za-z0-9._-]+/', '_', (string) $record->getCorrespondenceId());
+        $safeId = trim($safeId) !== '' ? $safeId : 'record';
+        $createdAt = $record->getCreatedAt() ?? new \DateTimeImmutable();
+        $recordId = $record->getId() ?? 0;
+
+        return $safeType . '_' . $safeId . '_' . $createdAt->format('Ymd_His') . '_record_' . $recordId;
+    }
+
+    /**
+     * @return array{htmlAbs: string}
+     */
+    private function getCorrespondenceArtifactPaths(CorrespondenceRecord $record): array
+    {
+        $baseName = $this->buildCorrespondenceArtifactBaseName($record);
+        $dir = $this->getCorrespondenceStorageDir();
+
+        return [
+            'htmlAbs' => $dir . '/' . $baseName . '.html',
+        ];
+    }
+
+    private function saveCorrespondenceHtml(string $html, CorrespondenceRecord $record): bool
+    {
+        $paths = $this->getCorrespondenceArtifactPaths($record);
+        $baseDir = dirname($paths['htmlAbs']);
+        if (!is_dir($baseDir) && !@mkdir($baseDir, 0775, true) && !is_dir($baseDir)) {
+            return false;
+        }
+
+        return @file_put_contents($paths['htmlAbs'], $html, LOCK_EX) !== false;
     }
 
     // ════════════════════════════════════════════════
@@ -2783,11 +3055,16 @@ class AdminController extends AbstractController
                     continue;
                 }
 
+                $position = trim((string) ($evaluatee->getPosition() ?? ''));
+                if ($position === '') {
+                    $position = trim((string) ($evaluatee->getEmploymentStatus() ?? ''));
+                }
+
                 $evaluatedPersonnel[] = [
                     'id' => $evaluatee->getId(),
                     'evaluationId' => $eval->getId(),
                     'name' => $evaluatee->getFullName(),
-                    'department' => $evaluatee->getDepartment() ? $evaluatee->getDepartment()->getDepartmentName() : '—',
+                    'position' => $position !== '' ? $position : '—',
                     'average' => round((float) $evaluateeRow['avgRating'], 2),
                 ];
             }

@@ -2064,7 +2064,8 @@ class ReportController extends AbstractController
 
             $dompdf = new Dompdf($options);
             $dompdf->loadHtml($normalizedHtml, 'UTF-8');
-            $dompdf->setPaper([0, 0, 612, 936], 'portrait');
+            $paper = $this->resolveCorrespondencePaper($normalizedHtml);
+            $dompdf->setPaper($paper['size'], $paper['orientation']);
             $dompdf->render();
 
             $pdfOutput = $dompdf->output();
@@ -2094,6 +2095,18 @@ class ReportController extends AbstractController
         $normalized = preg_replace(
             '/@page\s*\{\s*size:\s*8\.5in\s+13in;\s*margin:\s*[^;]+;\s*\}/i',
             '@page { size: 8.5in 13in; margin: 12mm 16mm 12mm 16mm; }',
+            $normalized
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/@page\s*\{\s*size:\s*A4\s+landscape;\s*margin:\s*[^;]+;\s*\}/i',
+            '@page { size: 13in 8.5in; margin: 8mm 10mm 8mm 10mm; }',
+            $normalized
+        ) ?? $normalized;
+
+        $normalized = preg_replace(
+            '/(\.main-row\s*\{[^{}]*?width:\s*)64%(;)/i',
+            '$1100%$2',
             $normalized
         ) ?? $normalized;
 
@@ -2132,6 +2145,39 @@ class ReportController extends AbstractController
             1
         ) ?? $normalized;
 
+        // Repair legacy superior-result snapshots that still store /5 values in the
+        // rating column and summary box even though the report now renders percentages.
+        if (
+            str_contains($normalized, '<table class="summary-box">')
+            && str_contains($normalized, 'Rating Scale: 4.50 - 5.00 - Always Manifested')
+        ) {
+            $normalized = preg_replace_callback(
+                '/(<td class="num"[^>]*>\s*)(\d+(?:\.\d+)?)\s*\/\s*5(\s*<\/td>)/i',
+                static function (array $matches): string {
+                    $percent = round((((float) $matches[2]) / 5) * 100, 0);
+
+                    return $matches[1] . (string) $percent . $matches[3];
+                },
+                $normalized
+            ) ?? $normalized;
+
+            $normalized = preg_replace_callback(
+                '/<td class="value">\s*(\d+(?:\.\d+)?)\s*<div[^>]*>\s*\/\s*5\s*<\/div>\s*<\/td>/i',
+                static function (array $matches): string {
+                    $percent = number_format((((float) $matches[1]) / 5) * 100, 2, '.', '');
+
+                    return '<td class="value">' . $percent . '</td>';
+                },
+                $normalized
+            ) ?? $normalized;
+
+            $normalized = str_replace(
+                'Rating Scale: 4.50 - 5.00 - Always Manifested; 3.50 - 4.49 - Often Manifested; 2.50 - 3.49 - Sometimes Manifested; 1.50 - 2.49 - Seldom Manifested; 0.00 - 1.49 - Never/Rarely Manifested',
+                'Rating Scale: 91 - 100% - Always Manifested; 61 - 90% - Often Manifested; 31 - 60% - Sometimes Manifested; 11 - 30% - Seldom Manifested; 0 - 10% - Never/Rarely Manifested',
+                $normalized
+            );
+        }
+
         // Fix legacy saved templates that always rendered a second comments page,
         // even when no actual evaluator comments were present.
         $hasComments = preg_match('/<li\b/i', $normalized) === 1;
@@ -2152,7 +2198,6 @@ class ReportController extends AbstractController
 
         if (is_string($normalizedNoBlankPage) && $normalizedNoBlankPage !== '') {
             $normalizedNoBlankPage = str_replace(
-                'Page <strong>1</strong> of <strong>2</strong>',
                 'Page <strong>1</strong> of <strong>1</strong>',
                 $normalizedNoBlankPage
             );
@@ -2188,10 +2233,41 @@ class ReportController extends AbstractController
         ) ?? $html;
     }
 
+    /**
+     * @return array{size: array<int, int>|string, orientation: string}
+     */
+    private function resolveCorrespondencePaper(string $html): array
+    {
+        if (preg_match('/@page\s*\{[^}]*size\s*:\s*13in\s+8\.5in\b/i', $html)) {
+            return [
+                'size' => [0, 0, 612, 936],
+                'orientation' => 'landscape',
+            ];
+        }
+
+        if (preg_match('/@page\s*\{[^}]*size\s*:\s*A4\s+landscape\b/i', $html)) {
+            return [
+                'size' => 'A4',
+                'orientation' => 'landscape',
+            ];
+        }
+
+        if (preg_match('/@page\s*\{[^}]*size\s*:\s*A4\b/i', $html)) {
+            return [
+                'size' => 'A4',
+                'orientation' => 'portrait',
+            ];
+        }
+
+        return [
+            'size' => [0, 0, 612, 936],
+            'orientation' => 'portrait',
+        ];
+    }
+
     // ════════════════════════════════════════════════
     //  FACULTY MESSAGES (Staff)
     // ════════════════════════════════════════════════
-
     #[Route('/faculty-messages', name: 'staff_faculty_messages', methods: ['GET'])]
     public function facultyMessages(
         EvaluationMessageRepository $msgRepo,
@@ -2692,11 +2768,16 @@ class ReportController extends AbstractController
                     continue;
                 }
 
+                $position = trim((string) ($evaluatee->getPosition() ?? ''));
+                if ($position === '') {
+                    $position = trim((string) ($evaluatee->getEmploymentStatus() ?? ''));
+                }
+
                 $evaluatedPersonnel[] = [
                     'id' => $evaluatee->getId(),
                     'evaluationId' => $eval->getId(),
                     'name' => $evaluatee->getFullName(),
-                    'department' => $evaluatee->getDepartment() ? $evaluatee->getDepartment()->getDepartmentName() : '—',
+                    'position' => $position !== '' ? $position : '—',
                     'average' => round((float) $evaluateeRow['avgRating'], 2),
                 ];
             }
@@ -3401,6 +3482,7 @@ class ReportController extends AbstractController
             'printActionUrl' => $this->generateUrl('staff_results_superior_print'),
             'evaluation' => (int) $request->query->get('evaluation', 0),
             'faculty' => (int) $request->query->get('faculty', 0),
+            'evaluator' => (int) $request->query->get('evaluator', 0),
             'subject' => null,
             'section' => null,
             'correspondenceIdDefault' => trim((string) $request->query->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002')),
@@ -3408,6 +3490,12 @@ class ReportController extends AbstractController
             'preparedTitleDefault' => 'QUAMC Staff',
             'certifiedByDefault' => 'CESAR P. ESTROPE, Ed.D',
             'certifiedTitleDefault' => 'Director, Quality Assurance Management Center',
+            'purposeOptions' => [
+                'For IPCR purpose only.',
+                'For Job Application purpose only.',
+                'For Personal file purpose only.',
+            ],
+            'purposeDefault' => 'For IPCR purpose only.',
         ]);
     }
 
@@ -3416,6 +3504,8 @@ class ReportController extends AbstractController
         Request $request,
         EvaluationPeriodRepository $evalRepo,
         SuperiorEvaluationRepository $superiorEvalRepo,
+        AcademicYearRepository $ayRepo,
+        DepartmentRepository $deptRepo,
         UserRepository $userRepo,
         QuestionRepository $questionRepo,
         EntityManagerInterface $em,
@@ -3423,6 +3513,7 @@ class ReportController extends AbstractController
         $input = $request->isMethod('POST') ? $request->request : $request->query;
         $evalId = (int) $input->get('evaluation', 0);
         $facultyId = (int) $input->get('faculty', 0);
+        $evaluatorId = (int) $input->get('evaluator', 0);
 
         $correspondenceId = trim((string) $input->get('correspondenceId', 'DTAL-OTUP-ODQA-F1249-V002'));
         $preparedBy = trim((string) $input->get('preparedBy', 'Argie Pair Pagbunocan'));
@@ -3431,6 +3522,7 @@ class ReportController extends AbstractController
         $certifiedTitle = trim((string) $input->get('certifiedTitle', 'Director, Quality Assurance Management Center'));
         $preparedSignature = (string) $input->get('preparedSignature', '');
         $certifiedSignature = (string) $input->get('certifiedSignature', '');
+        $purposeText = trim((string) $input->get('purposeText', 'For IPCR purpose only.'));
 
         $evaluation = $evalRepo->find($evalId);
         $faculty = $userRepo->find($facultyId);
@@ -3439,7 +3531,46 @@ class ReportController extends AbstractController
             throw $this->createNotFoundException('Evaluation or faculty not found.');
         }
 
-        $questionAverages = $superiorEvalRepo->getAverageRatingsByEvaluatee($facultyId, $evalId);
+        $pairResponses = $evaluatorId > 0
+            ? $superiorEvalRepo->findSubmittedForEvaluatorAndPair($evaluatorId, $evalId, $facultyId)
+            : [];
+
+        $questionAverages = [];
+        $filteredComments = [];
+        $overallAvg = 0.0;
+        $evaluatorCount = 0;
+
+        if (!empty($pairResponses)) {
+            $ratingTotal = 0.0;
+            foreach ($pairResponses as $response) {
+                $questionId = $response->getQuestion()->getId();
+                $rating = (float) $response->getRating();
+                $questionAverages[$questionId] = [
+                    'average' => round($rating, 2),
+                    'count' => 1,
+                ];
+                $ratingTotal += $rating;
+
+                $comment = trim((string) $response->getComment());
+                if ($comment !== '') {
+                    $filteredComments[] = $comment;
+                }
+            }
+
+            $overallAvg = round($ratingTotal / count($pairResponses), 2);
+            $evaluatorCount = 1;
+            $filteredComments = array_values(array_unique($filteredComments));
+        } else {
+            $questionAverages = $superiorEvalRepo->getAverageRatingsByEvaluatee($facultyId, $evalId);
+            $comments = $superiorEvalRepo->getComments($facultyId, $evalId);
+            $filteredComments = array_values(array_filter(
+                array_map(fn($c) => $c['comment'], $comments),
+                fn($c) => trim($c) !== ''
+            ));
+            $overallAvg = $superiorEvalRepo->getOverallAverage($facultyId, $evalId);
+            $evaluatorCount = $superiorEvalRepo->countEvaluators($facultyId, $evalId);
+        }
+
         $questions = $questionRepo->findByType('SEF');
 
         $questionData = [];
@@ -3487,14 +3618,62 @@ class ReportController extends AbstractController
             $idx++;
         }
 
-        $comments = $superiorEvalRepo->getComments($facultyId, $evalId);
-        $filteredComments = array_values(array_filter(
-            array_map(fn($c) => $c['comment'], $comments),
-            fn($c) => trim($c) !== ''
+        $semesterLabel = trim((string) $evaluation->getSemester());
+        $schoolYearLabel = trim((string) $evaluation->getSchoolYear());
+
+        if ($schoolYearLabel !== '' && $semesterLabel === '') {
+            $matchingAcademicYear = $ayRepo->findOneBy([
+                'yearLabel' => $schoolYearLabel,
+                'isCurrent' => true,
+            ]);
+
+            if (!$matchingAcademicYear instanceof AcademicYear) {
+                $matchingAcademicYear = $ayRepo->findOneBy(
+                    ['yearLabel' => $schoolYearLabel],
+                    ['id' => 'DESC']
+                );
+            }
+
+            $semesterLabel = trim((string) ($matchingAcademicYear?->getSemester() ?? ''));
+        }
+
+        $semSyLabel = trim($semesterLabel . ($semesterLabel !== '' && $schoolYearLabel !== '' ? ' ' : '') . $schoolYearLabel);
+        $collegeLabel = trim((string) (
+            $faculty->getDepartment()?->getCollegeName()
+            ?? $evaluation->getCollege()
+            ?? $faculty->getDepartment()?->getDepartmentName()
+            ?? ''
         ));
 
-        $overallAvg = $superiorEvalRepo->getOverallAverage($facultyId, $evalId);
-        $evaluatorCount = $superiorEvalRepo->countEvaluators($facultyId, $evalId);
+        if ($collegeLabel === '') {
+            $collegeOptions = array_values(array_filter(array_unique(array_map(
+                static fn(Department $department): string => trim((string) $department->getCollegeName()),
+                $deptRepo->findAll()
+            ))));
+
+            if (count($collegeOptions) === 1) {
+                $collegeLabel = $collegeOptions[0];
+            }
+        }
+        $rawEmploymentStatus = trim((string) $faculty->getEmploymentStatus());
+        $employmentStatusLabel = 'Regular';
+        $rawEmploymentStatusLower = mb_strtolower($rawEmploymentStatus);
+
+        if (
+            str_contains($rawEmploymentStatusLower, 'part-time')
+            || str_contains($rawEmploymentStatusLower, 'part time')
+            || str_contains($rawEmploymentStatusLower, 'parttime')
+        ) {
+            $employmentStatusLabel = 'Part-Time';
+        } elseif (
+            str_contains($rawEmploymentStatusLower, 'temporary')
+            || str_contains($rawEmploymentStatusLower, 'contractual')
+            || str_contains($rawEmploymentStatusLower, 'job order')
+            || str_contains($rawEmploymentStatusLower, 'casual')
+            || str_contains($rawEmploymentStatusLower, 'adjunct')
+        ) {
+            $employmentStatusLabel = 'Temporary';
+        }
 
         $viewData = [
             'faculty' => $faculty,
@@ -3507,11 +3686,15 @@ class ReportController extends AbstractController
             'categorySummary' => $categorySummary,
             'compositeTotal' => round($compositeTotal, 2),
             'weightPct' => $weightPct,
+            'collegeLabel' => $collegeLabel !== '' ? $collegeLabel : 'N/A',
+            'semSyLabel' => $semSyLabel !== '' ? $semSyLabel : 'N/A',
+            'employmentStatusLabel' => $employmentStatusLabel,
             'correspondenceId' => $correspondenceId !== '' ? $correspondenceId : 'DTAL-OTUP-ODQA-F1249-V002',
             'preparedBy' => $preparedBy !== '' ? $preparedBy : 'Argie Pair Pagbunocan',
             'preparedTitle' => $preparedTitle !== '' ? $preparedTitle : 'QUAMC Staff',
             'certifiedBy' => $certifiedBy !== '' ? $certifiedBy : 'CESAR P. ESTROPE, Ed.D',
             'certifiedTitle' => $certifiedTitle !== '' ? $certifiedTitle : 'Director, Quality Assurance Management Center',
+            'purposeText' => $purposeText !== '' ? $purposeText : 'For IPCR purpose only.',
             'preparedSignature' => $preparedSignature,
             'certifiedSignature' => $certifiedSignature,
         ];
@@ -3889,7 +4072,8 @@ class ReportController extends AbstractController
 
             $dompdf = new Dompdf($options);
             $dompdf->loadHtml($normalizedHtml, 'UTF-8');
-            $dompdf->setPaper([0, 0, 612, 936], 'portrait');
+            $paper = $this->resolveCorrespondencePaper($normalizedHtml);
+            $dompdf->setPaper($paper['size'], $paper['orientation']);
             $dompdf->render();
 
             $response = new Response($dompdf->output());

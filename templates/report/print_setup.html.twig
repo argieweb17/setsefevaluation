@@ -58,13 +58,15 @@
         text-transform: uppercase;
     }
 
-    .ps-field input {
+    .ps-field input,
+    .ps-field select {
         width: 100%;
         border: 1px solid #cbd5e1;
         border-radius: 10px;
         padding: .62rem .75rem;
         font-size: .92rem;
         color: #0f172a;
+        background: #fff;
         outline: none;
         transition: border-color .2s ease, box-shadow .2s ease;
     }
@@ -74,7 +76,8 @@
         max-width: calc((100% - 1rem) / 2);
     }
 
-    .ps-field input:focus {
+    .ps-field input:focus,
+    .ps-field select:focus {
         border-color: #2563eb;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
@@ -233,6 +236,9 @@
         <form id="printSetupForm" class="ps-body" method="post" action="{{ printActionUrl }}" data-turbo="false">
             <input type="hidden" name="evaluation" value="{{ evaluation|default(0) }}">
             <input type="hidden" name="faculty" value="{{ faculty|default(0) }}">
+            {% if evaluator is defined and evaluator|default(0) > 0 %}
+                <input type="hidden" name="evaluator" value="{{ evaluator }}">
+            {% endif %}
             {% if selectedEvals is defined and selectedEvals|length > 0 %}
                 {% for evalId in selectedEvals %}
                     <input type="hidden" name="evals[]" value="{{ evalId }}">
@@ -246,10 +252,20 @@
             {% endif %}
 
             <div class="ps-grid">
-                <div class="ps-field ps-field-wide">
+                <div class="ps-field{% if not (purposeOptions is defined and purposeOptions|length > 0) %} ps-field-wide{% endif %}">
                     <label for="correspondenceId">Correspondence ID</label>
-                    <input id="correspondenceId" name="correspondenceId" type="text" maxlength="120" value="{{ correspondenceIdDefault|default('DTAL-OTUP-ODQA-F1249-V002') }}" required>
+                    <input id="correspondenceId" name="correspondenceId" type="text" maxlength="120" value="{{ correspondenceIdDefault|default('DTAL-OTUP-ODQA-F1249-V000') }}" required>
                 </div>
+                {% if purposeOptions is defined and purposeOptions|length > 0 %}
+                <div class="ps-field">
+                    <label for="purposeText">Purpose</label>
+                    <select id="purposeText" name="purposeText" required>
+                        {% for option in purposeOptions %}
+                            <option value="{{ option }}" {{ option == purposeDefault|default('') ? 'selected' : '' }}>{{ option }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 <div class="ps-field">
                     <label for="preparedBy">Prepared By</label>
                     <input id="preparedBy" name="preparedBy" type="text" maxlength="120" value="{{ preparedByDefault|default('Argie Pair Pagbunocan') }}" required>

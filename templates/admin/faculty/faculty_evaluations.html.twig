@@ -167,6 +167,7 @@
 
 /* ΓöÇΓöÇ Toolbar ΓöÇΓöÇ */
 .fe-toolbar{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:.75rem 1rem;margin-bottom:1rem;overflow-x:auto;}
+.fe-toolbar.search-only{background:transparent;border:none;border-radius:0;padding:0;box-shadow:none;overflow:visible;}
 .fe-toolbar-row{min-width:0;}
 .ev-filter-group{display:inline-flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:2px;}
 .ev-filter-btn{border:none;background:transparent;color:#64748b;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
@@ -174,7 +175,7 @@
 .ev-filter-btn.active{background:#1a56db;color:#fff;box-shadow:0 1px 3px rgba(26,86,219,.3);}
 .ev-filter-count{background:rgba(0,0,0,.08);padding:1px 6px;border-radius:10px;font-size:.7rem;margin-left:3px;}
 .ev-filter-btn.active .ev-filter-count{background:rgba(255,255,255,.25);color:#fff;}
-.ev-search-box{position:relative;width:280px;max-width:100%;flex:0 0 280px;margin-left:auto;}
+.ev-search-box{position:relative;width:220px;max-width:100%;flex:0 0 220px;margin-left:auto;}
 .ev-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.8rem;}
 .ev-search-input{width:100%;padding:6px 12px 6px 32px;border:1px solid #e2e8f0;border-radius:8px;font-size:.8rem;background:#f8fafc;transition:all .2s;}
 .ev-search-input:focus{outline:none;border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
@@ -543,7 +544,7 @@
 {% endif %}
 
 {# ΓöÇΓöÇ Filter Toolbar ΓöÇΓöÇ #}
-<div class="fe-toolbar">
+<div class="fe-toolbar{% if staffMode %} search-only{% endif %}">
     <div class="d-flex align-items-center flex-nowrap gap-2 w-100 fe-toolbar-row {% if staffMode %}justify-content-end{% endif %}">
         {% if not staffMode %}
         <div class="ev-filter-group" id="feTypeFilter">

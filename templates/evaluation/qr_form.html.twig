@@ -9,10 +9,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
 <style>
 .eval-form-paper{background:#fff;border:1px solid #e2e8f0;border-radius:0;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,.06);margin-bottom:16px;}
-.eval-info-bar{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:12px 20px;background:#f0f9ff;border-bottom:1px solid #e2e8f0;font-size:.82rem;}
-.eval-info-bar>div{display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+.eval-info-bar{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:4px 12px;padding:10px 14px;background:#f0f9ff;border-bottom:1px solid #e2e8f0;font-size:.76rem;}
+.eval-info-bar>div{display:flex;align-items:center;gap:3px;white-space:nowrap;}
+.eval-info-bar i{margin-right:0 !important;flex-shrink:0;}
 .eval-form-instructions{background:#fffbeb;border-bottom:1px solid #fde68a;padding:12px 24px;font-size:.82rem;color:#92400e;display:flex;flex-direction:column;gap:.35rem;line-height:1.6;}
-.eval-form-scale{display:flex;flex-direction:column;gap:.15rem;}
+.eval-form-scale{display:flex;flex-wrap:wrap;align-items:center;gap:.2rem 1rem;}
 .eval-form-section{border-bottom:1px solid #e2e8f0;}
 .eval-form-section:last-child{border-bottom:0;}
 .eval-form-category{background:#1e40af;padding:10px 24px;display:flex;align-items:center;gap:8px;}
@@ -74,8 +75,10 @@
 @media(max-width:576px){
     .container{padding-left:8px;padding-right:8px;}
     .eval-form-paper{border-radius:0;}
-    .eval-info-bar{gap:4px;padding:10px 14px;font-size:.75rem;}
+    .eval-info-bar{flex-direction:column;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:4px;padding:10px 14px;font-size:.75rem;}
+    .eval-info-bar>div{white-space:normal;flex-wrap:wrap;}
     .eval-form-instructions{padding:10px 14px;font-size:.75rem;}
+    .eval-form-scale{flex-direction:column;align-items:flex-start;gap:.15rem;}
     .eval-form-category{padding:8px 14px;}
     .eval-form-category-label{font-size:.78rem;}
     .eval-form-cat-desc{padding:8px 14px;font-size:.75rem;}

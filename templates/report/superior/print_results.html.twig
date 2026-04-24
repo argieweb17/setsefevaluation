@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>SEF Report - {{ faculty.fullName }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
     <style>
         @page {
-            size: A4 landscape;
+            size: 13in 8.5in;
             margin: 8mm 10mm 8mm 10mm;
         }
 
@@ -119,14 +120,15 @@
         .main-row {
             display: flex;
             align-items: stretch;
-            gap: 10px;
+            gap: 12px;
             margin-top: 4px;
             margin-bottom: 8px;
-            width: 64%;
+            width: 100%;
         }
 
         .items-table {
-            width: calc(100% - 210px);
+            flex: 1 1 auto;
+            width: auto;
             border-collapse: collapse;
             background: #fff;
         }
@@ -153,7 +155,7 @@
         }
 
         .summary-box {
-            width: 200px;
+            width: 220px;
             flex-shrink: 0;
             border-collapse: collapse;
             background: #fff;
@@ -176,6 +178,41 @@
         .summary-box .value {
             font-size: 30px;
             line-height: 1.1;
+        }
+
+        .comments-section {
+            margin-top: 8px;
+            background: #fff;
+            padding: 12px 14px;
+        }
+
+        .comments-section h3 {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .comments-meta {
+            font-size: 10px;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .comments-section ol {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 10px;
+        }
+
+        .comments-section ol li {
+            margin-bottom: 7px;
+            line-height: 1.45;
+        }
+
+        .no-comments {
+            font-size: 10px;
+            font-style: italic;
+            color: #475569;
         }
 
         .scale {
@@ -253,8 +290,12 @@
             font-size: 8px;
             font-style: italic;
             border-top: none;
-            padding-top: 5px;
             margin-top: 34px;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
         }
 
         @media print {
@@ -269,6 +310,8 @@
 {% set totalMax = 0 %}
 {% set overallValue = overallAverage|default(compositeTotal|default(0)) %}
 {% set overallPct = (overallValue / 5) * 100 %}
+{% set hasCommentsPage = comments|length > 0 %}
+{% set totalPages = hasCommentsPage ? 2 : 1 %}
 
 <div class="sheet">
     <div class="header-row">
@@ -283,7 +326,7 @@
                     <td class="di-val">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
                     <td class="di-lbl">Issue Status</td>
                     <td class="di-val"></td>
-                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong></td>
+                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>1</strong>{% if totalPages > 1 %}/{{ totalPages }}{% endif %}</td>
                 </tr>
                 <tr>
                     <td class="di-lbl">Issue Date</td>
@@ -311,12 +354,12 @@
             <td class="val">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
             <td class="lbl">Campus:</td>
             <td class="val">{{ faculty.campus ?? 'Main Campus' }}</td>
-            <td class="lbl">Course:</td>
-            <td class="val">{{ faculty.department ? faculty.department.departmentName : 'N/A' }}</td>
+            <td class="lbl">College:</td>
+            <td class="val">{{ collegeLabel|default('N/A') }}</td>
             <td class="lbl">Sem/SY:</td>
-            <td class="val">{{ evaluation.semester ?? '' }} {{ evaluation.schoolYear ?? '' }}</td>
+            <td class="val">{{ semSyLabel|default('N/A') }}</td>
             <td class="lbl">Employment Status:</td>
-            <td class="val">{{ faculty.employmentStatus ?? 'Regular Faculty' }}</td>
+            <td class="val">{{ employmentStatusLabel|default('Regular') }}</td>
         </tr>
     </table>
 
@@ -327,28 +370,29 @@
                     <th style="width:58%;">ITEMS</th>
                     <th class="num">Average<br>Score</th>
                     <th class="num">Max<br>Score</th>
-                    <th class="num">Rating<br>%</th>
+                    <th class="num">Rating</th>
                 </tr>
             </thead>
             <tbody>
                 {% for cat in categorySummary %}
                     {% set itemMax = cat.weightPct|default(0) %}
                     {% set itemAvg = (cat.mean|default(0) / 5) * itemMax %}
-                    {% set itemPct = (cat.mean|default(0) / 5) * 100 %}
+                    {% set itemRating = itemMax > 0 ? (itemAvg / itemMax) * 100 : 0 %}
                     {% set totalAvg = totalAvg + itemAvg %}
                     {% set totalMax = totalMax + itemMax %}
                     <tr>
                         <td class="item">{{ letters[loop.index0]|default(loop.index ~ '.') }} {{ cat.name }}</td>
                         <td class="num">{{ itemAvg|round(0, 'common') }}</td>
                         <td class="num">{{ itemMax|round(0, 'common') }}</td>
-                        <td class="num">{{ itemPct|round(0, 'common') }}</td>
+                        <td class="num">{{ itemRating|round(0, 'common') }}</td>
                     </tr>
                 {% endfor %}
+                {% set overallPercent = totalMax > 0 ? (totalAvg / totalMax) * 100 : 0 %}
                 <tr>
                     <td class="item" style="text-align:right;font-weight:700;">Total Score</td>
                     <td class="num" style="font-weight:700;">{{ totalAvg|round(0, 'common') }}</td>
                     <td class="num" style="font-weight:700;">{{ totalMax|round(0, 'common') }}</td>
-                    <td class="num" style="font-weight:700;">{{ overallPct|round(0, 'common') }}</td>
+                    <td class="num" style="font-weight:700;">{{ overallPercent|round(0, 'common') }}</td>
                 </tr>
             </tbody>
         </table>
@@ -358,7 +402,7 @@
                 <th>Overall Rating</th>
             </tr>
             <tr>
-                <td class="value">{{ overallPct|number_format(2) }}</td>
+                <td class="value">{{ overallPercent|round(0, 'common') }}</td>
             </tr>
             <tr>
                 <th>Verbal Rating</th>
@@ -376,7 +420,7 @@
     <table class="purpose-row">
         <tr>
             <td class="lbl">Purpose:</td>
-            <td>For IPCR Requirement only.</td>
+            <td>{{ purposeText|default('For IPCR purpose only.') }}</td>
         </tr>
     </table>
 
@@ -403,6 +447,100 @@
         Disclaimer: The information transmitted by this document is intended only for the person or entity to which it is addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the sender. Thank you.
     </div>
 </div>
+
+{% if hasCommentsPage %}
+<div class="page-break"></div>
+
+<div class="sheet">
+    <div class="header-row">
+        <div class="header-left">
+            <img src="{{ absolute_url(asset('images/header.jpg')) }}" alt="NORSU Letterhead">
+        </div>
+        <div class="header-right">
+            <div class="office-title">Office of the University Quality Assurance Management Center</div>
+            <table class="doc-info-table">
+                <tr>
+                    <td class="di-lbl">Document ID</td>
+                    <td class="di-val">{{ correspondenceId|default('DTAL-OTUP-ODQA-F1249-V002') }}</td>
+                    <td class="di-lbl">Issue Status</td>
+                    <td class="di-val"></td>
+                    <td rowspan="3" class="di-page">P a g e&nbsp;|<strong>2</strong>/{{ totalPages }}</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Issue Date</td>
+                    <td class="di-val">{{ "now"|date("m-d-Y") }}</td>
+                    <td class="di-lbl">Approved by</td>
+                    <td class="di-val">ODQA</td>
+                </tr>
+                <tr>
+                    <td class="di-lbl">Reviewed &amp; Authorized by</td>
+                    <td class="di-val">ODQA</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="title-block">
+        <h2>RESULT OF SUPERIOR EVALUATION FOR FACULTY - COMMENTS</h2>
+    </div>
+
+    <table class="info-row">
+        <tr>
+            <td class="lbl">Name of Faculty:</td>
+            <td class="val">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
+            <td class="lbl">Campus:</td>
+            <td class="val">{{ faculty.campus ?? 'Main Campus' }}</td>
+            <td class="lbl">College:</td>
+            <td class="val">{{ collegeLabel|default('N/A') }}</td>
+            <td class="lbl">Sem/SY:</td>
+            <td class="val">{{ semSyLabel|default('N/A') }}</td>
+            <td class="lbl">Employment Status:</td>
+            <td class="val">{{ employmentStatusLabel|default('Regular') }}</td>
+        </tr>
+    </table>
+
+    <div class="comments-section">
+        <h3>Evaluator Comments</h3>
+        <div class="comments-meta">
+            <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
+        </div>
+        {% if comments|length > 0 %}
+        <ol>
+            {% for c in comments %}
+                <li>{{ c }}</li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="no-comments">No comments were submitted for this evaluation.</p>
+        {% endif %}
+    </div>
+
+    <div class="signature-wrap">
+        <div class="sig-block">
+            <div class="sig-label">Prepared by:</div>
+            {% if preparedSignature is defined and preparedSignature is not empty %}
+                <img src="{{ preparedSignature }}" alt="Prepared signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ preparedBy|default('Argie Pair Pagbunocan') }}</div>
+            <div class="sig-title">{{ preparedTitle|default('QUAMC Staff') }}</div>
+        </div>
+        <div class="sig-block">
+            <div class="sig-label">Noted by:</div>
+            {% if certifiedSignature is defined and certifiedSignature is not empty %}
+                <img src="{{ certifiedSignature }}" alt="Certified signature" class="sig-image">
+            {% endif %}
+            <div class="sig-name">{{ certifiedBy|default('CESAR P. ESTROPE, Ed.D') }}</div>
+            <div class="sig-title">{{ certifiedTitle|default('Director, Quality Assurance Management Center') }}</div>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        Disclaimer: The information transmitted by this document is intended only for the person or entity to which it is addressed. This document may contain proprietary, business-confidential and/or privileged material. If you are not the intended recipient of this message, be aware that any use, review, retransmission, distribution, reproduction or any action taken in reliance upon this message is strictly prohibited. If you received this in error, please contact the sender. Thank you.
+    </div>
+</div>
+{% endif %}
 
 <script>
     window.addEventListener('load', function () {

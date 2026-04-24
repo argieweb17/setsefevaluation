@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Evaluation Report — {{ faculty.fullName }}</title>
+    <title>{{ documentTitle|default('Evaluation Report') }} — {{ faculty.fullName }}</title>
     <style>
         /* ══════════════════════════════════════════════
            PRINT LAYOUT — Edit this file to customise
@@ -265,6 +265,19 @@
     </style>
 </head>
 <body>
+    {% set defaultPrintTitle = 'RESULT OF ' ~ (evaluation.evaluationType == 'SET' ? 'STUDENT EVALUATION FOR TEACHER' : 'SUPERIOR EVALUATION FOR FACULTY') %}
+    {% set defaultCommentsTitle = (evaluation.evaluationType == 'SET' ? 'STUDENT EVALUATION FOR TEACHER' : 'SUPERIOR EVALUATION FOR FACULTY') ~ ' — COMMENTS' %}
+    {% set summaryHeading = summaryHeading|default(printSubjectCode|default(evaluation.subject|default(evaluation.evaluationType))) %}
+    {% set infoTopRightLabel = infoTopRightLabel|default('Subject') %}
+    {% set infoTopRightValue = infoTopRightValue|default(summaryHeading) %}
+    {% set infoMiddleLeftLabel = infoMiddleLeftLabel|default('College/Department') %}
+    {% set infoMiddleLeftValue = infoMiddleLeftValue|default(faculty.department ? faculty.department.collegeName : 'N/A') %}
+    {% set infoMiddleRightLabel = infoMiddleRightLabel|default('Semester') %}
+    {% set infoMiddleRightValue = infoMiddleRightValue|default(evaluation.semester ?? current_academic_year().semester ?? '') %}
+    {% set infoBottomLeftLabel = infoBottomLeftLabel|default('Campus') %}
+    {% set infoBottomLeftValue = infoBottomLeftValue|default(faculty.campus ?? 'N/A') %}
+    {% set infoBottomRightLabel = infoBottomRightLabel|default('Section') %}
+    {% set infoBottomRightValue = infoBottomRightValue|default(printSection|default('—')) %}
 
     <div class="page-sheet">
     <div class="page-main">
@@ -282,7 +295,7 @@
     <div class="title-block">
         <h1>Office of the University Quality Assurance Management Center</h1>
         <br>
-        <h2>RESULT OF {{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }}</h2>
+        <h2>{{ printResultTitle|default(defaultPrintTitle) }}</h2>
 
     </div>
 
@@ -293,20 +306,20 @@
         <tr>
             <td class="lbl">Name of Faculty:</td>
             <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
-            <td class="lbl">Subject:</td>
-            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
+            <td class="lbl">{{ infoTopRightLabel }}:</td>
+            <td class="val-right">{{ infoTopRightValue }}</td>
         </tr>
         <tr>
-            <td class="lbl">College/Department:</td>
-            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
-            <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+            <td class="lbl">{{ infoMiddleLeftLabel }}:</td>
+            <td class="val">{{ infoMiddleLeftValue }}</td>
+            <td class="lbl">{{ infoMiddleRightLabel }}:</td>
+            <td class="val-right">{{ infoMiddleRightValue }}</td>
         </tr>
         <tr>
-            <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">Section:</td>
-            <td class="val-right">{{ printSection ?? '—' }}</td>
+            <td class="lbl">{{ infoBottomLeftLabel }}:</td>
+            <td class="val">{{ infoBottomLeftValue }}</td>
+            <td class="lbl">{{ infoBottomRightLabel }}:</td>
+            <td class="val-right">{{ infoBottomRightValue }}</td>
         </tr>
     </table>
 
@@ -317,7 +330,7 @@
         <thead>
             <tr>
                 <th rowspan="3" style="width:30%">Areas of Instruction</th>
-                <th colspan="3">{{ evaluation.subject ?? evaluation.evaluationType }}</th>
+                <th colspan="3">{{ summaryHeading }}</th>
                 <th colspan="2">Composite Results</th>
             </tr>
             <tr>
@@ -372,7 +385,7 @@
                 <td colspan="2">{{ performanceLevel|upper }}</td>
             </tr>
             <tr class="subject-row">
-                <td class="area-cell">{{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</td>
+                <td class="area-cell">{{ summaryHeading }}</td>
                 <td>{{ evaluatorCount }}</td>
             
             </tr>
@@ -473,7 +486,7 @@
     <div class="title-block">
         <h1>Office of the University Quality Assurance Management Center</h1>
         <br>
-        <h2>{{ evaluation.evaluationType == 'SET' ? "STUDENT EVALUATION FOR TEACHER" : "SUPERIOR EVALUATION FOR FACULTY" }} — COMMENTS</h2>
+        <h2>{{ printCommentsTitle|default(defaultCommentsTitle) }}</h2>
     </div>
 
     {# ═══════════════════════════════════════════
@@ -483,20 +496,20 @@
         <tr>
             <td class="lbl">Name of Faculty:</td>
             <td class="val" style="width:38%">{{ faculty.lastName }}, {{ faculty.firstName }}</td>
-            <td class="lbl">Subject:</td>
-            <td class="val-right">{{ printSubjectCode ?? evaluation.subject ?? 'N/A' }}</td>
+            <td class="lbl">{{ infoTopRightLabel }}:</td>
+            <td class="val-right">{{ infoTopRightValue }}</td>
         </tr>
         <tr>
-            <td class="lbl">College/Department:</td>
-            <td class="val">{{ faculty.department ? faculty.department.collegeName : 'N/A' }}</td>
-            <td class="lbl">Semester:</td>
-            <td class="val-right">{{ evaluation.semester ?? current_academic_year().semester ?? '' }}</td>
+            <td class="lbl">{{ infoMiddleLeftLabel }}:</td>
+            <td class="val">{{ infoMiddleLeftValue }}</td>
+            <td class="lbl">{{ infoMiddleRightLabel }}:</td>
+            <td class="val-right">{{ infoMiddleRightValue }}</td>
         </tr>
         <tr>
-            <td class="lbl">Campus:</td>
-            <td class="val">{{ faculty.campus ?? 'N/A' }}</td>
-            <td class="lbl">Section:</td>
-            <td class="val-right">{{ printSection ?? '—' }}</td>
+            <td class="lbl">{{ infoBottomLeftLabel }}:</td>
+            <td class="val">{{ infoBottomLeftValue }}</td>
+            <td class="lbl">{{ infoBottomRightLabel }}:</td>
+            <td class="val-right">{{ infoBottomRightValue }}</td>
         </tr>
     </table>
 
@@ -504,7 +517,7 @@
        COMMENTS (PAGE 2)
        ═══════════════════════════════════════════ #}
     <div class="comments-section">
-        <h3>Evaluator Comments — {{ printSubjectCode ?? evaluation.subject ?? evaluation.evaluationType }}</h3>
+        <h3>Evaluator Comments — {{ summaryHeading }}</h3>
         <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
             <strong>Evaluators:</strong> {{ evaluatorCount }} &nbsp; | &nbsp; <strong>Comments:</strong> {{ comments|length }}
         </div>
