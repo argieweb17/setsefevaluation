@@ -152,6 +152,222 @@
     .sd-grid { grid-template-columns: 1fr; }
     .sd-section-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
 }
+
+/* ── Mobile table enhancements ── */
+@media (max-width: 768px) {
+    .ev-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 10px;
+    }
+    .sd-col-hide-md { display: none; }
+    .ev-table thead th,
+    .ev-table tbody td {
+        padding: 8px 10px;
+        font-size: 0.77rem;
+    }
+    .sd-faculty-avatar {
+        width: 24px;
+        height: 24px;
+        font-size: 0.5rem;
+    }
+    .sd-eval-btn {
+        padding: 0.28rem 0.6rem;
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+    .sd-status-badge {
+        padding: 0.18rem 0.5rem;
+        font-size: 0.68rem;
+    }
+}
+@media (max-width: 480px) {
+    .ev-table thead th,
+    .ev-table tbody td {
+        padding: 6px 8px;
+        font-size: 0.73rem;
+    }
+    .sd-code-badge {
+        display: none;
+    }
+    .analytics-stat-card {
+        padding: 0.85rem 1rem;
+    }
+}
+
+/* ── Progress Tracker ── */
+.sd-progress-section {
+    background: #fff;
+    border: 1px solid #e8ecf1;
+    border-radius: 12px;
+    padding: 1rem 1.35rem;
+}
+.sd-progress-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.7rem;
+}
+.sd-progress-label { font-size: 0.8rem; font-weight: 600; color: #475569; }
+.sd-progress-pct { font-size: 0.8rem; font-weight: 700; color: #7C3AED; }
+.sd-progress-track {
+    height: 10px;
+    background: #f1f5f9;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.sd-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7C3AED, #059669);
+    transition: width 0.6s ease;
+}
+.sd-progress-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.55rem;
+    flex-wrap: wrap;
+}
+.sd-progress-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.73rem;
+    color: #64748b;
+}
+.sd-progress-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Quick Actions ── */
+.sd-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+}
+.sd-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 1rem 0.75rem;
+    background: #fff;
+    border: 1.5px solid #e8ecf1;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #1e293b;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+.sd-action-card:hover {
+    border-color: #c7d2fe;
+    background: #f5f3ff;
+    color: #5b21b6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(91, 33, 182, 0.1);
+}
+.sd-action-icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+}
+.sd-action-label { font-size: 0.75rem; font-weight: 600; }
+.sd-action-desc { font-size: 0.68rem; color: #94a3b8; }
+
+/* ── Status Notice ── */
+.sd-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.9rem 1.15rem;
+    border-radius: 12px;
+}
+.sd-notice-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 0.05rem; }
+.sd-notice-body { flex: 1; }
+.sd-notice-title { font-size: 0.83rem; font-weight: 700; margin-bottom: 0.15rem; }
+.sd-notice-text { font-size: 0.78rem; line-height: 1.45; margin: 0; }
+.sd-notice-success { background: #F0FDF4; border: 1px solid #BBF7D0; color: #166534; }
+.sd-notice-warning { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; }
+.sd-notice-info    { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E40AF; }
+
+/* ── Schedule Cards ── */
+.sd-schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.75rem;
+}
+.sd-schedule-card {
+    background: #fff;
+    border: 1.5px solid #e8ecf1;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    transition: box-shadow 0.15s;
+}
+.sd-schedule-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+.sd-schedule-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.sd-schedule-code {
+    font-size: 0.68rem; font-weight: 700;
+    padding: 0.15rem 0.5rem; border-radius: 5px;
+    background: #EFF6FF; color: #1E40AF; letter-spacing: 0.3px;
+}
+.sd-schedule-name { font-size: 0.8rem; font-weight: 600; color: #1e293b; line-height: 1.35; }
+.sd-schedule-meta { display: flex; align-items: center; gap: 0.4rem; font-size: 0.73rem; color: #64748b; }
+.sd-schedule-faculty { display: flex; align-items: center; gap: 0.45rem; margin-top: 0.1rem; }
+.sd-schedule-faculty-av {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: linear-gradient(135deg, #1E3A8A, #059669);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 0.48rem; font-weight: 700; flex-shrink: 0;
+}
+.sd-schedule-faculty-name { font-size: 0.73rem; color: #64748b; }
+
+/* ── Recent Activity Feed ── */
+.sd-activity-feed {
+    background: #fff;
+    border: 1px solid #e8ecf1;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.sd-activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem 1.2rem;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.12s;
+}
+.sd-activity-item:last-child { border-bottom: none; }
+.sd-activity-item:hover { background: #fafbff; }
+.sd-activity-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; flex-shrink: 0; margin-top: 0.05rem;
+    background: #F0FDF4; color: #16A34A;
+    border: 2px solid #BBF7D0;
+}
+.sd-activity-body { flex: 1; min-width: 0; }
+.sd-activity-subject { font-size: 0.82rem; font-weight: 600; color: #1e293b; }
+.sd-activity-sub { font-size: 0.73rem; color: #64748b; margin-top: 0.1rem; }
+.sd-activity-badge { flex-shrink: 0; }
+
+/* ── Responsive extras ── */
+@media (max-width: 768px) {
+    .sd-quick-actions { grid-template-columns: repeat(2, 1fr); } /* 4 cards → 2×2 */
+    .sd-schedule-grid { grid-template-columns: 1fr; }
+    .sd-activity-item { flex-wrap: wrap; gap: 0.6rem; }
+    .sd-activity-badge { width: 100%; }
+}
+@media (max-width: 480px) {
+    .sd-progress-legend { flex-direction: column; gap: 0.4rem; }
+    .sd-action-card { padding: 0.75rem 0.5rem; }
+    .sd-action-desc { display: none; }
+}
 </style>
 {% endblock %}
 
@@ -229,6 +445,87 @@
 </div>
 {% endif %}
 
+{# ═══════ PROGRESS TRACKER ═══════ #}
+{% if totalEvals > 0 %}
+<div class="sd-progress-section mb-4">
+    <div class="sd-progress-header">
+        <span class="sd-progress-label"><i class="bi bi-bar-chart-steps me-1"></i>Evaluation Progress</span>
+        <span class="sd-progress-pct">{{ completed|length }} / {{ totalEvals }} completed</span>
+    </div>
+    <div class="sd-progress-track">
+        <div class="sd-progress-fill" style="width:{{ progress }}%"></div>
+    </div>
+    <div class="sd-progress-legend">
+        <span class="sd-progress-legend-item">
+            <span class="sd-progress-legend-dot" style="background:#16A34A"></span>
+            Completed ({{ completed|length }})
+        </span>
+        <span class="sd-progress-legend-item">
+            <span class="sd-progress-legend-dot" style="background:#D97706"></span>
+            Pending ({{ pending|length }})
+        </span>
+        {% if progress == 100 %}
+        <span class="sd-progress-legend-item" style="color:#16A34A;font-weight:600">
+            <i class="bi bi-trophy-fill me-1"></i>All evaluations done!
+        </span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# ═══════ STATUS NOTICE ═══════ #}
+{% if totalEvals > 0 %}
+    {% if progress == 100 %}
+    <div class="sd-notice sd-notice-success mb-4">
+        <i class="bi bi-trophy-fill sd-notice-icon"></i>
+        <div class="sd-notice-body">
+            <div class="sd-notice-title">All evaluations submitted!</div>
+            <p class="sd-notice-text">Great job! You have completed all required faculty evaluations for this period. Your responses have been recorded.</p>
+        </div>
+    </div>
+    {% elseif pending|length > 0 %}
+    <div class="sd-notice sd-notice-warning mb-4">
+        <i class="bi bi-exclamation-triangle-fill sd-notice-icon"></i>
+        <div class="sd-notice-body">
+            <div class="sd-notice-title">{{ pending|length }} evaluation{{ pending|length > 1 ? 's' : '' }} still pending</div>
+            <p class="sd-notice-text">Please complete your pending faculty evaluations before the deadline closes. Scroll down to see the list and click <strong>Evaluate</strong> to begin.</p>
+        </div>
+    </div>
+    {% endif %}
+{% else %}
+<div class="sd-notice sd-notice-info mb-4">
+    <i class="bi bi-stars sd-notice-icon"></i>
+    <div class="sd-notice-body">
+        <div class="sd-notice-title">Coming Soon</div>
+        <p class="sd-notice-text">This feature will be available soon. Stay tuned for updates!</p>
+    </div>
+</div>
+{% endif %}
+
+{# ═══════ QUICK ACTIONS ═══════ #}
+<div class="sd-quick-actions mb-4">
+    <a href="{{ path('evaluation_set_index') }}" class="sd-action-card">
+        <span class="sd-action-icon" style="color:#16A34A"><i class="bi bi-file-earmark-text-fill"></i></span>
+        <span class="sd-action-label">Loadslip</span>
+        <span class="sd-action-desc">View your loadslip</span>
+    </a>
+    <a href="{{ path('student_audit_log') }}" class="sd-action-card">
+        <span class="sd-action-icon" style="color:#D97706"><i class="bi bi-clock-history"></i></span>
+        <span class="sd-action-label">Activity Log</span>
+        <span class="sd-action-desc">Your history</span>
+    </a>
+    <a href="{{ path('app_profile') }}" class="sd-action-card">
+        <span class="sd-action-icon" style="color:#7C3AED"><i class="bi bi-person-fill"></i></span>
+        <span class="sd-action-label">My Profile</span>
+        <span class="sd-action-desc">Account settings</span>
+    </a>
+    <a href="{{ path('student_schedule') }}" class="sd-action-card">
+        <span class="sd-action-icon" style="color:#2563EB"><i class="bi bi-calendar3-week"></i></span>
+        <span class="sd-action-label">Schedule</span>
+        <span class="sd-action-desc">Class schedule</span>
+    </a>
+</div>
+
 {# ═══════ PENDING EVALUATIONS ═══════ #}
 {% if pending|length > 0 %}
 <div class="sd-section-header">
@@ -244,12 +541,12 @@
             <tr>
                 <th>Subject</th>
                 <th>Section</th>
-                <th>Description</th>
-                <th>Unit</th>
+                <th class="sd-col-hide-md">Description</th>
+                <th class="sd-col-hide-md">Unit</th>
                 <th>SET Subject</th>
                 <th>Faculty</th>
-                <th>Schedule</th>
-                <th>Eval Section</th>
+                <th class="sd-col-hide-md">Schedule</th>
+                <th class="sd-col-hide-md">Eval Section</th>
                 <th>Period</th>
                 <th>Status</th>
                 <th style="text-align:right">Action</th>
@@ -260,8 +557,8 @@
             <tr class="ev-row">
                 <td class="ev-td-meta">{{ item.loadslipRow.code|default('—') }}</td>
                 <td class="ev-td-meta">{{ item.loadslipRow.section ? item.loadslipRow.section|upper : '—' }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.description|default('—') }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.units|default('—') }}</td>
+                <td class="ev-td-meta sd-col-hide-md">{{ item.loadslipRow.description|default('—') }}</td>
+                <td class="ev-td-meta sd-col-hide-md">{{ item.loadslipRow.units|default('—') }}</td>
                 <td class="ev-td-subject">
                     <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
                     {{ item.subject.subjectName }}
@@ -272,8 +569,8 @@
                         <span>{{ item.faculty.fullName }}</span>
                     </div>
                 </td>
-                <td class="ev-td-meta">{{ item.evaluation.time ?? '—' }}</td>
-                <td class="ev-td-meta">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
+                <td class="ev-td-meta sd-col-hide-md">{{ item.evaluation.time ?? '—' }}</td>
+                <td class="ev-td-meta sd-col-hide-md">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
                 <td class="ev-td-meta">{{ item.evaluation.label }}</td>
                 <td><span class="sd-status-badge sd-status-pending"><i  class="bi bi-clock me-1"></i>Pending</span></td>
                 <td style="text-align:right">
@@ -289,56 +586,32 @@
 </div>
 {% endif %}
 
-{# ═══════ COMPLETED EVALUATIONS ═══════ #}
+{# ═══════ RECENT ACTIVITY ═══════ #}
 {% if completed|length > 0 %}
 <div class="sd-section-header">
     <div class="sd-section-title">
-        <span class="sd-section-icon" style="background:#F0FDF4;color:#16A34A"><i  class="bi bi-check-circle-fill"></i></span>
-        <h6 class="fw-bold mb-0">Completed Evaluations</h6>
+        <span class="sd-section-icon" style="background:#F0FDF4;color:#16A34A"><i class="bi bi-activity"></i></span>
+        <h6 class="fw-bold mb-0">Recent Activity</h6>
         <span class="sd-count-badge" style="background:#DCFCE7;color:#166534">{{ completed|length }}</span>
     </div>
 </div>
-<div class="ev-table-wrap mb-4">
-    <table class="ev-table" id="sdCompletedTable">
-        <thead>
-            <tr>
-                <th>Subject</th>
-                <th>Section</th>
-                <th>Description</th>
-                <th>Unit</th>
-                <th>SET Subject</th>
-                <th>Faculty</th>
-                <th>Schedule</th>
-                <th>Eval Section</th>
-                <th>Period</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in completed %}
-            <tr class="ev-row">
-                <td class="ev-td-meta">{{ item.loadslipRow.code|default('—') }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.section ? item.loadslipRow.section|upper : '—' }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.description|default('—') }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.units|default('—') }}</td>
-                <td class="ev-td-subject">
-                    <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
-                    {{ item.subject.subjectName }}
-                </td>
-                <td class="ev-td-meta">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="sd-faculty-avatar">{{ item.faculty.firstName|first }}{{ item.faculty.lastName|first }}</div>
-                        <span>{{ item.faculty.fullName }}</span>
-                    </div>
-                </td>
-                <td class="ev-td-meta">{{ item.evaluation.time ?? '—' }}</td>
-                <td class="ev-td-meta">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
-                <td class="ev-td-meta">{{ item.evaluation.label }}</td>
-                <td><span class="sd-status-badge sd-status-done"><i  class="bi bi-check-circle-fill me-1"></i>Submitted</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="sd-activity-feed mb-4">
+    {% for item in completed %}
+    <div class="sd-activity-item">
+        <div class="sd-activity-dot"><i class="bi bi-check2"></i></div>
+        <div class="sd-activity-body">
+            <div class="sd-activity-subject">
+                <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>{{ item.subject.subjectName }}
+            </div>
+            <div class="sd-activity-sub">
+                {{ item.evaluation.label }} &middot; Evaluated <strong>{{ item.faculty.fullName }}</strong>{% if item.loadslipRow.section is defined and item.loadslipRow.section %} &middot; Sec {{ item.loadslipRow.section|upper }}{% endif %}
+            </div>
+        </div>
+        <div class="sd-activity-badge">
+            <span class="sd-status-badge sd-status-done"><i class="bi bi-check-circle-fill me-1"></i>Submitted</span>
+        </div>
+    </div>
+    {% endfor %}
 </div>
 {% endif %}
 

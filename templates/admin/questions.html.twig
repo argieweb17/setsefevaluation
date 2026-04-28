@@ -21,7 +21,7 @@
 
 /* ─── Privacy Disclaimer ─── */
 .qq-disclaimer{background:#fff;border:1px solid #e8ecf1;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.03);margin-bottom:16px;}
-.qq-disclaimer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.2px;}
+.qq-disclaimer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:#1E3A8A;color:#fff;font-size:.8rem;font-weight:700;letter-spacing:.2px;}
 .qq-disclaimer-body{padding:12px 14px;font-size:.8rem;line-height:1.6;color:#475569;background:#f8fafc;}
 .qq-disclaimer-body p{margin:0 0 8px 0;}
 .qq-disclaimer-body p:last-child{margin-bottom:0;}
@@ -60,15 +60,20 @@
 .qq-type-badge{display:inline-flex;padding:5px 16px;border-radius:8px;font-size:.75rem;font-weight:700;letter-spacing:.5px;}
 .qq-type-set{background:#dbeafe;color:#1e40af;}
 .qq-type-sef{background:#dcfce7;color:#166534;}
-.qq-instructions{background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 24px;font-size:.82rem;color:#92400e;display:flex;align-items:flex-start;gap:10px;line-height:1.6;}
+.qq-instructions{background:#fffbeb;border-bottom:1px solid #fde68a;padding:10px 24px;font-size:.82rem;color:#92400e;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;column-gap:10px;line-height:1.6;}
+.qq-instructions>i{font-size:.92rem;color:#d97706;line-height:1.4;margin-top:.08rem;}
 .qq-instructions strong{color:#78350f;}
-.qq-instructions-content{display:flex;flex-direction:column;gap:.35rem;}
-.qq-scale{display:flex;flex-direction:column;gap:.15rem;}
+.qq-instructions-content{display:grid;gap:.35rem;min-width:0;}
+.qq-instructions-title{margin:0;}
+.qq-scale{display:grid;gap:.15rem;}
+.qq-scale-item{display:grid;grid-template-columns:1.2rem auto minmax(0,1fr);align-items:baseline;column-gap:.35rem;}
+.qq-scale-score{font-weight:700;color:#78350f;text-align:right;}
+.qq-scale-separator{font-weight:600;color:#b45309;}
 
 /* ─── Category ─── */
 .qq-section{border-bottom:1px solid #e5e7eb;}
 .qq-section:last-child{border-bottom:none;}
-.qq-category-bar{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#0f172a 0%,#1e40af 60%,#1a56db 100%);color:#fff;padding:10px 24px;}
+.qq-category-bar{display:flex;align-items:center;justify-content:space-between;background:#1E3A8A;color:#fff;padding:10px 24px;}
 .qq-category-comments{background:linear-gradient(135deg,#475569 0%,#64748b 100%);}
 .qq-category-num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
 .qq-category-label{font-weight:700;font-size:.85rem;letter-spacing:.3px;text-transform:uppercase;}
@@ -99,6 +104,8 @@
 .qq-td-question{padding-left:20px!important;}
 .qq-td-evidence{min-width:220px;}
 .qq-question-text{color:#1e293b;font-weight:500;line-height:1.5;}
+.qq-question-main{display:flex;align-items:flex-start;gap:.3rem;flex-wrap:wrap;}
+.qq-question-sub{margin-top:.55rem;color:#475569;font-style:italic;line-height:1.5;}
 .qq-question-meta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
 .qq-evidence-list{display:flex;flex-direction:column;gap:4px;}
 .qq-evidence-item{display:flex;align-items:flex-start;gap:7px;font-size:.72rem;color:#475569;line-height:1.35;}
@@ -298,13 +305,13 @@
     <div class="qq-instructions">
         <i  class="bi bi-info-circle"></i>
         <div class="qq-instructions-content">
-            <div><strong>Instructions:</strong> Rate each item using the scale:</div>
+            <div class="qq-instructions-title"><strong>Instructions:</strong> Rate each item using the scale:</div>
             <div class="qq-scale">
-                <div><strong>5</strong> – Always manifested</div>
-                <div><strong>4</strong> – Often manifested</div>
-                <div><strong>3</strong> – Sometimes manifested</div>
-                <div><strong>2</strong> – Seldom manifested</div>
-                <div><strong>1</strong> – Never/Rarely manifested</div>
+                <div class="qq-scale-item"><span class="qq-scale-score">5</span><span class="qq-scale-separator">–</span><span>Always manifested</span></div>
+                <div class="qq-scale-item"><span class="qq-scale-score">4</span><span class="qq-scale-separator">–</span><span>Often manifested</span></div>
+                <div class="qq-scale-item"><span class="qq-scale-score">3</span><span class="qq-scale-separator">–</span><span>Sometimes manifested</span></div>
+                <div class="qq-scale-item"><span class="qq-scale-score">2</span><span class="qq-scale-separator">–</span><span>Seldom manifested</span></div>
+                <div class="qq-scale-item"><span class="qq-scale-score">1</span><span class="qq-scale-separator">–</span><span>Never/Rarely manifested</span></div>
             </div>
         </div>
     </div>
@@ -360,9 +367,20 @@
                             <span class="qq-optional-tag">Optional</span>
                         {% endif %}
                         <div class="qq-question-text">
-                            {{ q.questionText }}
-                            {% if q.isRequired %}
-                                <span class="text-danger fw-bold" title="Required">*</span>
+                            {% set questionParts = q.questionText|split('(', 2) %}
+                            {% if questionParts|length > 1 %}
+                                <div class="qq-question-main">
+                                    <span>{{ questionParts[0]|trim }}</span>
+                                    {% if q.isRequired %}
+                                        <span class="text-danger fw-bold" title="Required">*</span>
+                                    {% endif %}
+                                </div>
+                                <div class="qq-question-sub">({{ questionParts[1]|trim }}</div>
+                            {% else %}
+                                {{ q.questionText }}
+                                {% if q.isRequired %}
+                                    <span class="text-danger fw-bold" title="Required">*</span>
+                                {% endif %}
                             {% endif %}
                         </div>
                         <div class="qq-question-meta">

@@ -86,6 +86,10 @@ body {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
 }
+.navbar-mobile-only.navbar-norsu {
+    background: #1E3A8A;
+    box-shadow: 0 3px 16px rgba(30, 58, 138, 0.3);
+}
 .navbar-norsu .navbar-brand {
     font-weight: 800;
     color: #fff !important;
@@ -4730,34 +4734,53 @@ html { scroll-behavior: smooth; }
         padding-bottom: 0.5rem;
     }
 
-    /* Welcome banner */
+    /* Welcome banner — mobile redesign */
     .welcome-banner {
-        border-radius: 0.75rem;
-        margin-bottom: 1rem;
+        border-radius: 0.65rem;
+        margin-bottom: 0.85rem;
     }
     .welcome-banner .banner-main {
-        padding: 1.5rem 1.15rem;
-        flex-direction: column;
-        text-align: center;
-        gap: 0.5rem;
+        padding: 1rem 1.1rem;
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 0.75rem;
     }
     .welcome-banner .user-avatar {
-        width: 40px;
-        height: 40px;
+        width: 46px;
+        height: 46px;
         font-size: 1rem;
+        flex-shrink: 0;
+        border: 2px solid rgba(255,255,255,0.55);
     }
     .welcome-banner h2 {
-        font-size: 1.15rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 0.1rem;
     }
     .welcome-banner p {
-        font-size: 0.78rem;
+        font-size: 0.7rem;
+        opacity: 0.8;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
     .welcome-banner .banner-bottom {
-        padding: 0.5rem 1rem;
-        gap: 0.75rem;
-        font-size: 0.7rem;
-        justify-content: center;
-        text-align: center;
+        padding: 0.45rem 1.1rem;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.3rem 0.5rem;
+        font-size: 0.68rem;
+        text-align: left;
+        justify-items: start;
+    }
+    .welcome-banner .banner-bottom span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
     }
     .welcome-banner::before,
     .welcome-banner::after {

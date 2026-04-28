@@ -116,8 +116,6 @@ $pdo->exec("DELETE FROM curriculum_subject WHERE curriculum_id = $CURRICULUM_ID"
 echo "  Cleared old curriculum_subject links.\n";
 
 // Delete old subjects that were test data (IDs 5-11)
-// First remove enrollments referencing them
-$pdo->exec("DELETE FROM enrollment WHERE subject_id IN (SELECT id FROM subject WHERE id BETWEEN 5 AND 11)");
 // Remove evaluation_response referencing them
 $pdo->exec("DELETE FROM evaluation_response WHERE subject_id IN (SELECT id FROM subject WHERE id BETWEEN 5 AND 11)");
 // Now delete the subjects

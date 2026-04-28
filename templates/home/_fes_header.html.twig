@@ -1,31 +1,5 @@
 {# Header partial for FES pages #}
 <header class="fes-header">
-    <a href="https://norsu.edu.ph" target="_blank" rel="noopener noreferrer" class="fes-topbar-link" aria-label="Visit official NORSU website">
-        <div class="fes-topbar">
-            <div class="fes-topbar-left">
-                <img src="{{ asset('images/homeHeader/logonor.png') }}" alt="Negros Oriental State University seal" class="fes-topbar-seal">
-                <h2 class="fes-topbar-title">
-                    <span class="fes-topbar-highlight">N</span>EGROS
-                    <span class="fes-topbar-highlight">OR</span>IENTAL
-                    <span class="fes-topbar-highlight">S</span>TATE
-                    <span class="fes-topbar-highlight">U</span>NIVERSITY
-                </h2>
-            </div>
-            {% set topbarLogos = [
-                { src: asset('images/homeHeader/SEAL2.png'), alt: 'Philippine Transparency Seal' },
-                { src: asset('images/homeHeader/FREEDOM2.png'), alt: 'Freedom of Information Philippines' },
-                { src: asset('images/homeHeader/CGI2.png'), alt: 'GCL UKAS ISO Certification', class: 'is-cgi2' },
-                { src: asset('images/homeHeader/Bagong_Pilipinas_logo2.png'), alt: 'Bagong Pilipinas' }
-            ] %}
-            <div class="fes-topbar-right">
-                {% for logo in topbarLogos %}
-                <span class="fes-topbar-logo-item{{ logo.class is defined ? ' ' ~ logo.class : '' }}">
-                    <img src="{{ logo.src }}" alt="{{ logo.alt }}" class="fes-topbar-logo{{ logo.class is defined ? ' ' ~ logo.class : '' }}" loading="eager" decoding="async">
-                </span>
-                {% endfor %}
-            </div>
-        </div>
-    </a>
     <div class="container">
         <a href="{{ path('app_home') }}" class="fes-logo">
             <img src="{{ asset('images/norsu1logo.png') }}" alt="NORSU Logo" class="fes-logo-img">
@@ -52,5 +26,51 @@
                 </div>
             </details>
         </nav>
+        <button type="button" class="fes-hamburger" id="fesHamburger" aria-label="Open navigation" aria-expanded="false">
+            <i class="bi bi-list" id="fesHamburgerIcon"></i>
+        </button>
     </div>
+    <nav class="fes-mobile-drawer" id="fesMobileDrawer" aria-label="Mobile navigation">
+        <div class="fes-mobile-drawer-inner">
+            <div class="fes-mobile-drawer-links">
+                <a href="{{ path('app_home') }}" class="fes-mobile-drawer-link{{ active|default('') == 'home' ? ' is-active' : '' }}">Home</a>
+                <a href="{{ path('app_home', {view: 'about'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'about' ? ' is-active' : '' }}">About</a>
+                <a href="{{ path('app_home', {view: 'faq'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'faq' ? ' is-active' : '' }}">FAQ</a>
+                <a href="{{ path('app_home', {view: 'contact'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'contact' ? ' is-active' : '' }}">Contact Us</a>
+            </div>
+            <div class="fes-mobile-drawer-divider"></div>
+            <div class="fes-mobile-drawer-cta">
+                <a href="{{ path('app_login') }}" class="fes-mobile-cta-btn is-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </a>
+                <a href="{{ path('app_register') }}" class="fes-mobile-cta-btn is-secondary">
+                    <i class="bi bi-person-fill"></i> Register
+                </a>
+            </div>
+        </div>
+    </nav>
+    <script>
+    (function() {
+        var btn = document.getElementById('fesHamburger');
+        var drawer = document.getElementById('fesMobileDrawer');
+        var icon = document.getElementById('fesHamburgerIcon');
+        if (!btn || !drawer) return;
+        function closeDrawer() {
+            drawer.classList.remove('is-open');
+            btn.setAttribute('aria-expanded', 'false');
+            if (icon) icon.className = 'bi bi-list';
+        }
+        btn.addEventListener('click', function() {
+            var isOpen = drawer.classList.toggle('is-open');
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            if (icon) icon.className = isOpen ? 'bi bi-x-lg' : 'bi bi-list';
+        });
+        document.addEventListener('click', function(e) {
+            if (!drawer.contains(e.target) && !btn.contains(e.target)) closeDrawer();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeDrawer();
+        });
+    })();
+    </script>
 </header>

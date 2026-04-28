@@ -183,6 +183,10 @@
                        href="{{ path('evaluation_set_index') }}">
                         <i class="sidebar-icon bi bi-journal-bookmark"></i> Loadslip
                     </a>
+                    <a class="nav-link {% if 'student_schedule' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
+                       href="{{ path('student_schedule') }}">
+                        <i class="sidebar-icon bi bi-calendar3-week"></i> Schedule
+                    </a>
                     <div class="sidebar-header">Evaluation</div>
                     <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
                        href="{{ path('evaluation_history') }}">

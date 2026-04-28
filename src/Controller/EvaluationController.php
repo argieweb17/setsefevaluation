@@ -675,8 +675,9 @@ class EvaluationController extends AbstractController
     {
         $dayToken = '(?:MON|TUE|WED|THU|FRI|SAT|SUN|M|T|W|TH|F|S|SU|MWF|TTH|THF)';
         $timeToken = '(?:\d{1,2}(?:(?::|\.)\d{2})?\s*(?:A\.?M\.?|P\.?M\.?|AM|PM)?)';
+        $placeholderToken = '(?:T\.?\s*B\.?\s*A\.?|T\.?\s*B\.?\s*D\.?|TO\s+BE\s+ANNOUNCED|TO\s+BE\s+DETERMINED)';
 
-        return '(?:(?:' . $dayToken . '(?:\s*-\s*' . $dayToken . '){0,2})\s+' . $timeToken . '\s*-\s*' . $timeToken . '|' . $timeToken . '\s*-\s*' . $timeToken . ')';
+        return '(?:' . $placeholderToken . '|(?:(?:' . $dayToken . '(?:\s*-\s*' . $dayToken . '){0,2})\s+' . $timeToken . '\s*-\s*' . $timeToken . '|' . $timeToken . '\s*-\s*' . $timeToken . '))';
     }
 
     private function getLoadslipSchedulePattern(): string
@@ -722,11 +723,31 @@ class EvaluationController extends AbstractController
         ];
     }
 
+    private function isUnknownScheduleMarker(?string $value): bool
+    {
+        $normalized = strtoupper(trim((string) $value));
+        if ($normalized === '') {
+            return false;
+        }
+
+        $compact = (string) preg_replace('/[^A-Z]/u', '', $normalized);
+
+        return in_array($compact, ['TBA', 'TBD', 'TOBEANNOUNCED', 'TOBEDETERMINED'], true);
+    }
+
     private function validateScheduleCandidate(string $candidate): ?array
     {
         $candidate = strtoupper(trim($candidate));
         if ($candidate === '') {
             return null;
+        }
+
+        if ($this->isUnknownScheduleMarker($candidate)) {
+            return [
+                'text' => 'TBA',
+                'hasDay' => false,
+                'hasMeridiem' => false,
+            ];
         }
 
         $candidate = str_replace(["\xE2\x80\x93", "\xE2\x80\x94"], '-', $candidate);
@@ -1256,6 +1277,10 @@ class EvaluationController extends AbstractController
     {
         $raw = strtoupper(trim((string) $value));
         if ($raw === '') {
+            return '';
+        }
+
+        if ($this->isUnknownScheduleMarker($raw)) {
             return '';
         }
 
@@ -3219,7 +3244,7 @@ class EvaluationController extends AbstractController
         $rowTrace = [];
         $rejectedTrace = [];
         $subjectCodeTrace = [];
-        $maxParsedRows = 10;
+        $maxParsedRows = 16;
         $passStats = [
             'line' => 0,
             'line_pair' => 0,
@@ -3618,8 +3643,8 @@ class EvaluationController extends AbstractController
             }
         }
 
-        // Secondary pass: match rows from flattened OCR text to recover missed middle lines.
-        $shouldRunRecoveryPasses = count($parsedRows) < 3;
+        // Secondary pass: keep recovery active while there is still room for more parsed rows.
+        $shouldRunRecoveryPasses = count($parsedRows) < $maxParsedRows;
 
         $flatSource = $text;
         if (is_array($tableWindow)) {
@@ -3636,7 +3661,8 @@ class EvaluationController extends AbstractController
 
         $flatText = (string) preg_replace('/\s+/u', ' ', $flatSource);
         if ($shouldRunRecoveryPasses && $flatText !== '') {
-            if (preg_match_all('/\b([A-Z0-9]{2,}\s*-?\s*[A-Z0-9]{1,6})(?:\s+([A-Z0-9]{1,4}))?\s+(.{1,120}?)\s+((?:[A-Z]{1,3}(?:\s*-\s*[A-Z]{1,3}){1,2}|MWF|TTH|THF)\s+\d{1,2}(?:(?::|\.)\d{2})?\s*-\s*\d{1,2}(?:(?::|\.)\d{2})?\s*(?:A\.?M\.?|P\.?M\.?|AM|PM)?|\d{1,2}(?:(?::|\.)\d{2})?\s*-\s*\d{1,2}(?:(?::|\.)\d{2})?\s*(?:A\.?M\.?|P\.?M\.?|AM|PM)?)\s+([A-Z0-9\s]{1,20})\s+(\d+(?:\.\d+)?)\b/u', $flatText, $rowMatches, PREG_SET_ORDER)) {
+            $flatRowPattern = '/\b([A-Z0-9]{2,}\s*-?\s*[A-Z0-9]{1,6})(?:\s+([A-Z0-9]{1,4}))?\s+(.{1,120}?)\s+(' . $this->getLoadslipScheduleSubpattern() . ')(?:\s+[A-Z0-9\s]{1,20})?\s+(\d+(?:\.\d+)?)\b/u';
+            if (preg_match_all($flatRowPattern, $flatText, $rowMatches, PREG_SET_ORDER)) {
                 foreach ($rowMatches as $matchIndex => $m) {
                     $matchText = (string) ($m[0] ?? '');
                     $flatOffset = strpos($flatText, $matchText);
@@ -3656,7 +3682,7 @@ class EvaluationController extends AbstractController
                     }
                     $description = trim((string) ($m[3] ?? ''));
                     $schedule = trim((string) ($m[4] ?? ''));
-                    $units = trim((string) ($m[6] ?? ''));
+                    $units = trim((string) ($m[5] ?? ''));
 
                     if ($normalized === '' || $schedule === '') {
                         $pushTrace($rejectedTrace, [

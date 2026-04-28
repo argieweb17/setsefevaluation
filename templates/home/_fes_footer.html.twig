@@ -1,22 +1,14 @@
 {# Footer partial for FES pages #}
 <footer class="fes-footer">
     {% set footerQuickLinks = [
-        { label: 'NORSU Logo', href: 'https://norsu.edu.ph/' },
-        { label: 'NORSU History', href: 'https://norsu.edu.ph/about-norsu/' },
-        { label: 'R.A. 9299 (NORSU CHARTER)', href: 'https://norsu.edu.ph/' },
-        { label: 'Annual Reports', href: 'https://norsu.edu.ph/' },
-        { label: 'PhilGEPS', href: 'https://notices.philgeps.gov.ph/' }
+        { label: 'NORSU Logo', href: 'https://' },
     ] %}
     {% set footerUsefulLinks = [
-        { label: 'Student Handbook', href: 'https://norsu.edu.ph/' },
-        { label: 'University Code', href: 'https://norsu.edu.ph/' },
-        { label: 'University Key Officials', href: 'https://norsu.edu.ph/' },
-        { label: 'University Calendar', href: 'https://norsu.edu.ph/' },
-        { label: 'Organizational Structure', href: 'https://norsu.edu.ph/' }
+        { label: 'Organizational Structure', href: 'https:///' }
     ] %}
     {% set footerContactLinks = [
-        { label: 'Local Lines', href: 'https://norsu.edu.ph/contact-us/' },
-        { label: 'E-mail Addresses', href: 'https://norsu.edu.ph/contact-us/' }
+        { label: 'Local Lines', href: 'https:///' },
+        { label: 'E-mail Addresses', href: 'https:///' }
     ] %}
 
     <div class="fes-footer-main">
@@ -28,22 +20,6 @@
                         <div class="fes-footer-brand-copy">
                             <h2 class="fes-footer-brand-title">NORSU</h2>
                             <p class="fes-footer-brand-tagline">Our <strong>Pride</strong>. Our <strong>Hope</strong>. Our <strong>Future</strong>.</p>
-                        </div>
-                    </div>
-                    {% set footerBadges = [
-                        { src: asset('images/homeHeader/SEAL2.png'), alt: 'Philippine Transparency Seal' },
-                        { src: asset('images/homeHeader/FREEDOM2.png'), alt: 'Freedom of Information Philippines' },
-                        { src: asset('images/homeHeader/CGI2.png'), alt: 'GCL UKAS ISO Certification', class: 'is-iso' }
-                    ] %}
-                    <div class="fes-footer-badges">
-                        <div class="fes-footer-badge-row">
-                            {% for badge in footerBadges|slice(0, 2) %}
-                            <img src="{{ badge.src }}" alt="{{ badge.alt }}" class="fes-footer-badge" loading="lazy" decoding="async">
-                            {% endfor %}
-                        </div>
-                        <div class="fes-footer-badge-row is-iso-row">
-                            {% set isoBadge = footerBadges[2] %}
-                            <img src="{{ isoBadge.src }}" alt="{{ isoBadge.alt }}" class="fes-footer-badge is-iso" loading="lazy" decoding="async">
                         </div>
                     </div>
                 </div>
@@ -125,9 +101,9 @@
             <div class="fes-footer-bottom-wrap">
                 <p class="fes-footer-copyright">&copy; {{ 'now'|date('Y') }} <strong>Negros Oriental State University</strong></p>
                 <div class="fes-footer-legal">
-                    <a href="https://norsu.edu.ph/" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+                    <a href="https:///" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
                     <span aria-hidden="true">&bull;</span>
-                    <a href="https://norsu.edu.ph/" target="_blank" rel="noopener noreferrer">Data Privacy Notice</a>
+                    <a href="https:///" target="_blank" rel="noopener noreferrer">Data Privacy Notice</a>
                 </div>
             </div>
         </div>

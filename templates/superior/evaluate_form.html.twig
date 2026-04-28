@@ -40,6 +40,49 @@
 .sup-privacy-head { background: linear-gradient(135deg,#1e3a8a,#2563eb); color: #fff; padding: 12px 16px; }
 .sup-privacy-body { background: #fff; color: #1f2937; padding: 16px; font-size: .9rem; line-height: 1.65; }
 .sup-privacy-choice { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.sup-instruction-bar {
+    background: #fffbeb;
+    border-bottom: 1px solid #fde68a;
+    padding: 14px 24px;
+}
+.sup-instruction-title {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #78350f;
+    margin-bottom: .55rem;
+}
+.sup-instruction-scale {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .45rem 1rem;
+}
+.sup-instruction-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: #92400e;
+}
+.sup-instruction-score {
+    min-width: 1rem;
+    font-weight: 700;
+    color: #b45309;
+}
+@media (max-width: 768px) {
+    .sup-instruction-bar {
+        padding: 12px 16px;
+    }
+
+    .sup-instruction-scale {
+        grid-template-columns: 1fr;
+        gap: .3rem;
+    }
+
+    .sup-instruction-item {
+        font-size: .76rem;
+    }
+}
 </style>
 {% endblock %}
 
@@ -48,6 +91,7 @@
 {% set backRouteParams = backRouteParams|default({}) %}
 {% set backLinkLabel = backLinkLabel|default('Back to Evaluations') %}
 {% set backButtonLabel = backButtonLabel|default('Back to Personnel List') %}
+{% set showPrivacyDisclaimerFirst = not (readOnly|default(false)) and not privacyConsentCaptured|default(false) %}
 <div class="mb-3">
     <a href="{{ path(backRouteName, backRouteParams) }}" class="text-decoration-none small">
         <i  class="bi bi-arrow-left me-1"></i>{{ backLinkLabel }}
@@ -55,6 +99,12 @@
 </div>
 
 {% set isReadOnly = readOnly|default(false) %}
+{% if error is defined and error %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
 {% if isReadOnly %}
 <div class="alert alert-success border-0 shadow-sm mb-3" style="background:#ecfdf3;color:#14532d;">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -68,19 +118,13 @@
 <form method="post" id="evalForm">
 {% endif %}
 <div class="eval-form-paper">
-    <div style="text-align:center;padding:16px 24px;border-bottom:3px solid #1e40af;background:#fff;">
-        <img src="{{ asset('images/header.jpg') }}" alt="NORSU Letterhead" style="max-width:100%;height:auto;">
-    </div>
-    <div style="text-align:center;padding:14px 24px 12px;border-bottom:2px solid #1e40af;background:#f8fafc;">
+    <div style="text-align:center;padding:14px 24px 12px;background:#f8fafc;">
         <span style="display:inline-block;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:0;padding:6px 20px;font-size:.85rem;font-weight:600;">
             Superior Evaluation of {{ evaluateeRoleLabel }}
         </span>
     </div>
-    <div style="text-align:center;padding:12px 32px 14px;background:#fff;border-bottom:1px solid #e2e8f0;">
-        <div style="font-size:.82rem;font-weight:600;color:#475569;margin-bottom:6px;">(Performance Evaluation Instrument for Administrative Leaders)</div>
-        <p style="font-size:.78rem;color:#64748b;line-height:1.6;margin:0;">Please evaluate the performance of the {{ evaluateeRoleLabel }} honestly based on your observations and interactions. All responses are confidential.</p>
-    </div>
 
+    {% if isReadOnly or showPrivacyDisclaimerFirst %}
     <div class="sup-privacy-card">
         <div class="sup-privacy-head">
             <div class="d-flex align-items-center gap-2">
@@ -93,23 +137,31 @@
         </div>
         <div class="sup-privacy-body">
             <div>{{ privacyDisclaimerHtml|default('')|raw }}</div>
-            {% if not isReadOnly %}
+            {% if showPrivacyDisclaimerFirst %}
             <hr class="my-3">
             <div class="mb-2 fw-semibold">Do you agree to the Data Privacy Disclaimer? <span class="text-danger">*</span></div>
             <div class="sup-privacy-choice">
                 <div class="form-check mb-0">
-                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyAgree" value="agree">
+                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyAgree" value="agree" {{ formValues.privacy_consent|default('') == 'agree' ? 'checked' : '' }}>
                     <label class="form-check-label" for="supPrivacyAgree">Agree</label>
                 </div>
                 <div class="form-check mb-0">
-                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyDisagree" value="disagree">
+                    <input class="form-check-input" type="radio" name="privacy_consent" id="supPrivacyDisagree" value="disagree" {{ formValues.privacy_consent|default('') == 'disagree' ? 'checked' : '' }}>
                     <label class="form-check-label" for="supPrivacyDisagree">Disagree</label>
                 </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-4">
+                <button type="submit" name="_action" value="privacy_gate" class="btn btn-norsu">
+                    <i class="bi bi-arrow-right-circle me-1"></i>Continue
+                </button>
+                <a href="{{ path('superior_evaluate_index') }}" class="btn btn-light">Cancel</a>
             </div>
             {% endif %}
         </div>
     </div>
+    {% endif %}
 
+    {% if not showPrivacyDisclaimerFirst %}
     {# Evaluatee Info #}
     <div style="padding:12px 24px;background:#fefce8;border-bottom:1px solid #e5e7eb;">
         <div class="row">
@@ -164,14 +216,14 @@
         {% endif %}
     </div>
 
-    <div class="eval-form-instructions">
-        <div><strong>Instructions:</strong> Rate each item using the scale:</div>
-        <div class="eval-form-scale">
-            <div><strong>5</strong> – Always manifested</div>
-            <div><strong>4</strong> – Often manifested</div>
-            <div><strong>3</strong> – Sometimes manifested</div>
-            <div><strong>2</strong> – Seldom manifested</div>
-            <div><strong>1</strong> – Never/Rarely manifested</div>
+    <div class="sup-instruction-bar">
+        <div class="sup-instruction-title">Instructions: Rate each item using the scale below.</div>
+        <div class="sup-instruction-scale">
+            <div class="sup-instruction-item"><span class="sup-instruction-score">5</span><span>Always manifested</span></div>
+            <div class="sup-instruction-item"><span class="sup-instruction-score">4</span><span>Often manifested</span></div>
+            <div class="sup-instruction-item"><span class="sup-instruction-score">3</span><span>Sometimes manifested</span></div>
+            <div class="sup-instruction-item"><span class="sup-instruction-score">2</span><span>Seldom manifested</span></div>
+            <div class="sup-instruction-item"><span class="sup-instruction-score">1</span><span>Never/Rarely manifested</span></div>
         </div>
     </div>
 
@@ -250,9 +302,11 @@
                       placeholder="Share any additional feedback for this {{ evaluateeRoleLabel }}...">{{ generalComment|default('') }}</textarea>
         </div>
     </div>
+    {% endif %}
 </div>
 
 {# Buttons outside paper #}
+{% if isReadOnly or not showPrivacyDisclaimerFirst %}
 <div class="eval-form-actions-bar">
     {% if isReadOnly %}
     <a href="{{ path(backRouteName, backRouteParams) }}" class="btn btn-norsu">
@@ -269,7 +323,71 @@
     <a href="{{ path('superior_evaluate_index') }}" class="btn btn-light">Cancel</a>
     {% endif %}
 </div>
+{% endif %}
 {% if not isReadOnly %}
 </form>
 {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+(function () {
+    function initSuperiorPrivacyGate() {
+        var form = document.getElementById('evalForm');
+        if (!form || form.dataset.superiorPrivacyGateBound === '1') {
+            return;
+        }
+
+        form.dataset.superiorPrivacyGateBound = '1';
+
+        var privacyAgree = document.getElementById('supPrivacyAgree');
+        var privacyDisagree = document.getElementById('supPrivacyDisagree');
+        var privacyGateButton = form.querySelector('button[name="_action"][value="privacy_gate"]');
+        if (!privacyGateButton) {
+            return;
+        }
+
+        var submitPrivacyGate = function () {
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit(privacyGateButton);
+                return;
+            }
+
+            privacyGateButton.click();
+        };
+
+        [privacyAgree, privacyDisagree].forEach(function (input) {
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener('change', function () {
+                if (input.checked) {
+                    submitPrivacyGate();
+                }
+            });
+        });
+
+        form.addEventListener('submit', function (event) {
+            var action = (event.submitter && event.submitter.value) ? event.submitter.value : '';
+            if (action !== 'privacy_gate') {
+                return;
+            }
+
+            var consentSelected = form.querySelector('input[name="privacy_consent"]:checked');
+            if (!consentSelected) {
+                event.preventDefault();
+                alert('Please select Agree or Disagree for the Data Privacy Disclaimer before continuing.');
+                if (privacyAgree) {
+                    privacyAgree.focus();
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initSuperiorPrivacyGate);
+    document.addEventListener('turbo:load', initSuperiorPrivacyGate);
+})();
+</script>
 {% endblock %}

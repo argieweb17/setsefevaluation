@@ -90,12 +90,6 @@ class AdminController extends AbstractController
             $this->audit->log(AuditLog::ACTION_DELETE_USER, 'User', $user->getId(),
                 'Rejected registration for ' . $user->getFullName());
 
-            // Remove dependent enrollments first to satisfy FK(student_id -> user.id).
-            $em->getConnection()->executeStatement(
-                'DELETE FROM enrollment WHERE student_id = :studentId',
-                ['studentId' => $user->getId()]
-            );
-
             $em->remove($user);
             $em->flush();
 
@@ -287,12 +281,6 @@ class AdminController extends AbstractController
             $em->createQuery('DELETE FROM App\\Entity\\EvaluationMessage m WHERE m.sender = :user')
                 ->setParameter('user', $user)
                 ->execute();
-
-            // Remove dependent enrollments first to satisfy FK(student_id -> user.id).
-            $em->getConnection()->executeStatement(
-                'DELETE FROM enrollment WHERE student_id = :studentId',
-                ['studentId' => $user->getId()]
-            );
 
             $em->remove($user);
             $em->flush();

@@ -1,0 +1,266 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Schedule | SET-SEF Evaluation{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── Page ── */
+.sch-page { max-width: 960px; margin: 0 auto; }
+
+/* ── Breadcrumb ── */
+.sch-breadcrumb {
+    display: flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: #94a3b8; margin-bottom: 1.25rem;
+}
+.sch-breadcrumb a { color: #64748b; text-decoration: none; }
+.sch-breadcrumb a:hover { color: #2563eb; }
+.sch-breadcrumb .sep { color: #cbd5e1; }
+.sch-breadcrumb .current { color: #1e293b; font-weight: 600; }
+
+/* ── Header ── */
+.sch-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;
+}
+.sch-header-left { display: flex; align-items: center; gap: 1rem; }
+.sch-header-icon {
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; color: #2563EB; flex-shrink: 0;
+}
+.sch-header-title { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0; }
+.sch-header-sub { font-size: 0.8rem; color: #64748b; margin-top: 0.15rem; }
+
+/* ── No-loadslip notice ── */
+.sch-notice {
+    display: flex; align-items: flex-start; gap: 0.9rem;
+    padding: 1rem 1.25rem; border-radius: 12px;
+    background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
+}
+.sch-notice i { font-size: 1.3rem; flex-shrink: 0; }
+.sch-notice-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.2rem; }
+.sch-notice-text { font-size: 0.78rem; line-height: 1.5; margin: 0; }
+
+/* ── Schedule grid ── */
+.sch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 2rem;
+}
+.sch-card {
+    background: #fff;
+    border: 1.5px solid #e8ecf1;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    display: flex; flex-direction: column; gap: 0.5rem;
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+.sch-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.08); border-color: #bfdbfe; }
+.sch-card-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.sch-code {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.3px;
+    color: #1E40AF;
+}
+.sch-units {
+    font-size: 0.72rem; font-weight: 600;
+    color: #166534;
+}
+.sch-name { font-size: 0.85rem; font-weight: 600; color: #1e293b; line-height: 1.35; }
+.sch-meta {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; color: #64748b;
+}
+.sch-meta i { font-size: 0.8rem; color: #94a3b8; flex-shrink: 0; }
+.sch-no-sched {
+    font-size: 0.72rem; color: #94a3b8; font-style: italic;
+}
+
+/* ── Responsive ── */
+@media (max-width: 576px) {
+    .sch-grid { grid-template-columns: 1fr; }
+    .sch-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Custom subject section ── */
+.sch-custom-section { margin-top: 2rem; }
+.sch-custom-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.85rem;
+}
+.sch-custom-title {
+    font-size: 0.9rem; font-weight: 700; color: #374151;
+    display: flex; align-items: center; gap: 0.5rem;
+}
+.sch-custom-badge {
+    font-size: 0.65rem; font-weight: 700; padding: 0.15rem 0.5rem;
+    border-radius: 20px; background: #EFF6FF; color: #1E40AF;
+}
+.sch-card-custom {
+    position: relative;
+}
+.sch-card-delete {
+    position: absolute; top: 0.6rem; right: 0.6rem;
+    background: none; border: none; padding: 0.2rem 0.35rem;
+    color: #cbd5e1; cursor: pointer; border-radius: 5px; line-height: 1;
+    transition: color 0.15s, background 0.15s;
+}
+.sch-card-delete:hover { color: #ef4444; background: #fef2f2; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="sch-page">
+
+    {# ── Header ── #}
+    <div class="sch-header">
+        <div class="sch-header-left">
+            <div class="sch-header-icon"><i class="bi bi-calendar3-week-fill"></i></div>
+            <div>
+                <h1 class="sch-header-title">My Class Schedule</h1>
+                <div class="sch-header-sub">Subjects from your verified loadslip</div>
+            </div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-sm" style="background:#1E3A8A;color:#fff;font-weight:600;border:none;" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <i class="bi bi-plus-lg me-1"></i>Add Subject
+            </button>
+            <a href="{{ path('evaluation_set_index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-file-earmark-text me-1"></i>View Loadslip
+            </a>
+        </div>
+    </div>
+
+    {% if not isVerified or rows|length == 0 %}
+    {# ── No loadslip uploaded yet ── #}
+    <div class="sch-notice">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            <div class="sch-notice-title">No loadslip found</div>
+            <p class="sch-notice-text">
+                Your schedule will appear here once you upload and verify your loadslip.
+                <a href="{{ path('evaluation_set_index') }}" class="fw-semibold text-warning-emphasis">Upload your loadslip →</a>
+            </p>
+        </div>
+    </div>
+
+    {% else %}
+    {# ── Schedule cards ── #}
+    <div class="sch-grid">
+        {% for row in rows %}
+        <div class="sch-card">
+            <div class="sch-card-top">
+                <span class="sch-code">{{ row.code|default('—') }}</span>
+                {% if row.units is defined and row.units %}
+                <span class="sch-units"><i class="bi bi-hash"></i> {{ row.units }} unit{{ row.units != '1' ? 's' : '' }}</span>
+                {% endif %}
+            </div>
+            <div class="sch-name">{{ row.description|default('Subject') }}</div>
+            {% if row.schedule is defined and row.schedule %}
+            <div class="sch-meta"><i class="bi bi-clock"></i> {{ row.schedule }}</div>
+            {% else %}
+            <div class="sch-no-sched">No schedule info</div>
+            {% endif %}
+            {% if row.section is defined and row.section %}
+            <div class="sch-meta"><i class="bi bi-people-fill"></i> Section {{ row.section|upper }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% endif %}
+
+    {# ── Custom (manually added) subjects ── #}
+    {% if customRows|length > 0 or true %}
+    <div class="sch-custom-section">
+        <div class="sch-custom-header">
+            <div class="sch-custom-title">
+                <i class="bi bi-pencil-square" style="color:#7C3AED"></i>
+                Manually Added Subjects
+                {% if customRows|length > 0 %}<span class="sch-custom-badge">{{ customRows|length }}</span>{% endif %}
+            </div>
+        </div>
+        {% if customRows|length == 0 %}
+        <div class="sch-notice" style="background:#F5F3FF;border-color:#DDD6FE;color:#5B21B6;">
+            <i class="bi bi-info-circle"></i>
+            <div>
+                <div class="sch-notice-title">No custom subjects yet</div>
+                <p class="sch-notice-text">Use the <strong>Add Subject</strong> button above to add subjects manually.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="sch-grid">
+            {% for item in customRows %}
+            <div class="sch-card sch-card-custom">
+                <form method="post" action="{{ path('student_schedule_delete', {id: item.id}) }}" onsubmit="return confirm('Remove this subject?')" style="display:inline">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_custom_subject_' ~ item.id) }}">
+                    <button type="submit" class="sch-card-delete" title="Remove"><i class="bi bi-x-lg"></i></button>
+                </form>
+                <div class="sch-card-top">
+                    <span class="sch-code" style="color:#7C3AED">{{ item.code }}</span>
+                    {% if item.units %}
+                    <span class="sch-units" style="color:#166534"><i class="bi bi-hash"></i> {{ item.units }} unit{{ item.units != '1' ? 's' : '' }}</span>
+                    {% endif %}
+                </div>
+                <div class="sch-name">{{ item.name }}</div>
+                {% if item.schedule %}
+                <div class="sch-meta"><i class="bi bi-clock"></i> {{ item.schedule }}</div>
+                {% else %}
+                <div class="sch-no-sched">No schedule info</div>
+                {% endif %}
+                {% if item.section %}
+                <div class="sch-meta"><i class="bi bi-people-fill"></i> Section {{ item.section|upper }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+{# ── Add Subject Modal ── #}
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:14px;border:none;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="border-bottom:1px solid #f1f5f9;padding:1.1rem 1.4rem;">
+                <h5 class="modal-title fw-bold" id="addSubjectModalLabel" style="font-size:1rem;">
+                    <i class="bi bi-plus-circle-fill me-2" style="color:#1E3A8A"></i>Add Subject
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ path('student_schedule_add') }}">
+                <div class="modal-body" style="padding:1.25rem 1.4rem;">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Subject Code <span class="text-danger">*</span></label>
+                            <input type="text" name="code" class="form-control form-control-sm" placeholder="e.g. ITS 401" required maxlength="50">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Units</label>
+                            <input type="text" name="units" class="form-control form-control-sm" placeholder="e.g. 3" maxlength="10">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Subject Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. Software Engineering" required maxlength="255">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Schedule</label>
+                            <input type="text" name="schedule" class="form-control form-control-sm" placeholder="e.g. MWF 9:00-10:00 AM" maxlength="100">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Section</label>
+                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. C" maxlength="50">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #f1f5f9;padding:0.9rem 1.4rem;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm" style="background:#1E3A8A;color:#fff;font-weight:600;border:none;">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

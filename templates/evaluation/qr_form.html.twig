@@ -16,7 +16,7 @@
 .eval-form-scale{display:flex;flex-wrap:wrap;align-items:center;gap:.2rem 1rem;}
 .eval-form-section{border-bottom:1px solid #e2e8f0;}
 .eval-form-section:last-child{border-bottom:0;}
-.eval-form-category{background:#1e40af;padding:10px 24px;display:flex;align-items:center;gap:8px;}
+.eval-form-category{background:#1E3A8A;padding:10px 24px;display:flex;align-items:center;gap:8px;}
 .eval-form-category-label{color:#fff;font-weight:700;font-size:.85rem;}
 .eval-form-cat-desc{background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:12px 24px;font-size:.82rem;color:#475569;line-height:1.6;font-style:italic;}
 .eval-form-table{width:100%;border-collapse:collapse;}
@@ -27,6 +27,8 @@
 .eval-form-table td{padding:10px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
 .eval-form-table td.eval-form-num{text-align:center;font-weight:600;color:#94a3b8;font-size:.82rem;}
 .eval-form-table td.eval-form-question{padding-left:16px;font-size:.85rem;color:#1e293b;line-height:1.5;}
+.eval-question-main{display:flex;align-items:flex-start;gap:.3rem;flex-wrap:wrap;}
+.eval-question-sub{margin-top:.55rem;color:#475569;font-style:italic;line-height:1.5;}
 .eval-form-table td.eval-form-rating{text-align:center;width:60px;}
 .eval-form-table tr:hover{background:#f8fafc;}
 .eval-radio-label{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;width:28px;height:28px;}
@@ -37,10 +39,15 @@
 .eval-form-textarea{border-radius:0;border-color:#e2e8f0;font-size:.85rem;resize:vertical;}
 .eval-form-textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1);}
 .eval-form-actions-bar{display:flex;gap:10px;padding:16px 0;justify-content:center;}
-.btn-norsu{background:linear-gradient(135deg,#1e40af,#3b82f6);color:#fff;border:0;border-radius:0;padding:10px 32px;font-weight:600;font-size:.9rem;transition:all .2s;}
-.btn-norsu:hover{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,64,175,.3);}
+.btn-norsu{background:#1E3A8A;color:#fff;border:0;border-radius:0;padding:10px 32px;font-weight:600;font-size:.9rem;transition:all .2s;}
+.btn-norsu:hover{background:#1E3A8A;color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(30,58,138,.3);}
 .student-gate-card{background:#fff;border:1px solid #dbe3f0;border-radius:0;overflow:hidden;box-shadow:0 12px 30px rgba(30,64,175,.08);margin-bottom:16px;}
-.student-gate-head{position:relative;padding:14px 18px;background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;}
+.qr-screen-center{min-height:calc(100vh - 3rem);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.qr-screen-center>.student-gate-card{width:100%;margin-bottom:0;}
+.qr-screen-center>.qr-privacy-card{width:100%;margin-bottom:0;}
+.qr-eval-pill-wrap{display:flex;justify-content:center;width:100%;margin-bottom:26px;}
+.qr-eval-pill{display:inline-block;background:linear-gradient(135deg,#dbeafe,#e0e7ff);color:#1e3a8a;border-radius:20px;padding:8px 24px;font-size:1rem;font-weight:700;}
+.student-gate-head{position:relative;padding:14px 18px;background:#1E3A8A;color:#fff;}
 .student-gate-head::after{display:none;}
 .student-gate-body{padding:16px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
 .student-gate-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr);gap:14px;align-items:start;}
@@ -49,16 +56,17 @@
 .student-verify-label{font-size:.82rem;font-weight:600;color:#334155;}
 .student-id-input{height:44px;border-radius:0;border-color:#cbd5e1;font-size:1rem;font-weight:600;letter-spacing:.02em;}
 .student-id-input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);}
-.student-verify-btn{height:44px;border-radius:0;}
+.student-verify-btn{height:44px;border-radius:0;background:#1E3A8A;border-color:#1E3A8A;}
+.student-verify-btn:hover,.student-verify-btn:focus,.student-verify-btn:active{background:#1E3A8A!important;border-color:#1E3A8A!important;box-shadow:0 0 0 3px rgba(30,58,138,.15);}
 .student-verified-chip{background:#ecfdf3;border:1px solid #86efac;border-radius:0;color:#166534;font-size:.84rem;font-weight:600;padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .student-verified-name{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .student-verified-icon{font-size:1rem;line-height:1;flex-shrink:0;}
 .student-guide-box{background:#f8fafc;border-color:#dbe3ef;}
-.student-guide-title{font-size:.96rem;font-weight:700;color:#1e40af;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.student-guide-title{font-size:.96rem;font-weight:700;color:#1E3A8A;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
 .student-guide-list{list-style:none;padding:0;margin:0;counter-reset:verifyStep;}
 .student-guide-list li{display:flex;gap:10px;align-items:flex-start;color:#475569;line-height:1.55;font-size:.9rem;}
 .student-guide-list li+li{margin-top:9px;}
-.student-guide-list li::before{counter-increment:verifyStep;content:counter(verifyStep) '.';min-width:auto;height:auto;border-radius:0;background:transparent;color:#1d4ed8;font-weight:700;font-size:.72rem;display:inline-flex;align-items:flex-start;justify-content:flex-start;margin-top:1px;flex-shrink:0;}
+.student-guide-list li::before{counter-increment:verifyStep;content:counter(verifyStep) '.';min-width:auto;height:auto;border-radius:0;background:transparent;color:#1E3A8A;font-weight:700;font-size:.72rem;display:inline-flex;align-items:flex-start;justify-content:flex-start;margin-top:1px;flex-shrink:0;}
 .student-state-card{margin-top:10px;padding:12px;border-radius:0;border:1px solid transparent;}
 .student-state-title{font-size:.83rem;font-weight:700;margin-bottom:4px;}
 .student-state-body{font-size:.82rem;line-height:1.52;}
@@ -67,10 +75,18 @@
 .student-state-card.danger{background:#fef2f2;border-color:#fecaca;color:#991b1b;}
 .student-loadslip-box{margin-top:10px;padding:12px;border-radius:0;background:#f8fafc;border:1px dashed #cbd5e1;}
 .student-quick-card{margin-top:10px;padding:12px;border-radius:0;background:#eef2ff;border:1px solid #c7d2fe;}
-.student-quick-title{font-size:.86rem;font-weight:700;color:#1e3a8a;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.student-quick-title{font-size:.86rem;font-weight:700;color:#1E3A8A;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
 .student-quick-note{font-size:.8rem;color:#475569;line-height:1.45;margin-bottom:10px;}
+.student-quick-card .btn-primary{background:#1E3A8A;border-color:#1E3A8A;}
+.student-quick-card .btn-primary:hover,.student-quick-card .btn-primary:focus,.student-quick-card .btn-primary:active{background:#1E3A8A!important;border-color:#1E3A8A!important;box-shadow:0 0 0 3px rgba(30,58,138,.15);}
+.student-quick-card .btn-outline-primary{color:#1E3A8A;border-color:#1E3A8A;}
+.student-quick-card .btn-outline-primary:hover,.student-quick-card .btn-outline-primary:focus,.student-quick-card .btn-outline-primary:active{background:#1E3A8A!important;border-color:#1E3A8A!important;color:#fff!important;box-shadow:0 0 0 3px rgba(30,58,138,.15);}
 @media(max-width:992px){
     .student-gate-grid{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+    .qr-screen-center{min-height:auto;}
+    .qr-eval-pill-wrap{margin-bottom:18px;}
 }
 @media(max-width:576px){
     .container{padding-left:8px;padding-right:8px;}
@@ -118,12 +134,12 @@
 {% if success %}
 {# ── Success Screen ── #}
 <div class="text-center py-5">
-    <div style="width:80px;height:80px;background:#dcfce7;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;">
-        <i class="bi bi-check-circle-fill" style="font-size:2.5rem;color:#16a34a;"></i>
+    <div style="width:80px;height:80px;background:#dbeafe;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;">
+        <i class="bi bi-check-circle-fill" style="font-size:2.5rem;color:#1e40af;"></i>
     </div>
-    <h4 class="fw-bold text-success mb-2">Evaluation Submitted!</h4>
+    <h4 class="fw-bold mb-2" style="color:#1e40af;">Evaluation Submitted!</h4>
     <p class="text-muted">Thank you for your feedback. Your evaluation has been recorded.</p>
-    <div class="mt-3 p-3 rounded-3 d-inline-block" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+    <div class="mt-3 p-3 rounded-3 d-inline-block" style="background:#eff6ff;border:1px solid #bfdbfe;">
         <small class="text-muted">Faculty: <strong>{{ faculty.fullName }}</strong></small><br>
         <small class="text-muted">Subject: <strong>{{ subject.subjectCode }}</strong></small>
         <br><small class="text-muted">Description: <strong>{{ subject.subjectName }}</strong></small>
@@ -142,6 +158,7 @@
 {% set showNoAccountModal = showNoAccountHelp %}
 {% set showUnverifiedHelp = error is defined and error and ('Loadslip is not verified' in error or 'Loadslip verification expired or missing' in error) %}
 {% set showUnverifiedModal = showUnverifiedHelp %}
+{% set showVerifyStudentModal = error is defined and error and 'Please verify your Student ID first.' in error %}
 {% set showPrivacyConsentModal = error is defined and error and ('You must agree to the Data Privacy Disclaimer to continue with the evaluation.' in error or 'You must agree to the Data Privacy Disclaimer before continuing.' in error or 'Please select Agree or Disagree for the Data Privacy Disclaimer.' in error) %}
 {% set showInactiveHelp = error is defined and error and 'inactive' in error %}
 {% set createAccountUrl = path('app_register', {'role': 'student'}) %}
@@ -149,7 +166,7 @@
 {% set importLoadslipUrl = path('evaluation_set_index') %}
 {% set showPrivacyDisclaimerFirst = qrVerified and not qrPrivacyConsentCaptured %}
 
-{% if error and not showMismatchModal and not showNoAccountModal and not showUnverifiedModal and not showPrivacyConsentModal %}
+{% if error and not showMismatchModal and not showNoAccountModal and not showUnverifiedModal and not showVerifyStudentModal and not showPrivacyConsentModal %}
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -160,6 +177,10 @@
 
 {# ── Student ID Gate ── #}
 {% if not showPrivacyDisclaimerFirst %}
+<div class="{{ not qrVerified ? 'qr-screen-center' : '' }}">
+<div class="qr-eval-pill-wrap">
+    <span class="qr-eval-pill">Student Evaluation for Teacher (SET)</span>
+</div>
 <div class="student-gate-card">
     <div class="student-gate-head">
         <div class="d-flex align-items-center gap-2 position-relative">
@@ -295,14 +316,16 @@
         </div>
     </div>
 </div>
+</div>
 {% endif %}
 
 {% if qrVerified %}
 
 {# ── Data Privacy Disclaimer ── #}
 {% if showPrivacyDisclaimerFirst %}
-<div class="card border-0 shadow-sm mb-3" style="border-radius:0;overflow:hidden;">
-    <div class="card-header py-3" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;">
+<div class="qr-screen-center">
+<div class="card border-0 shadow-sm mb-3 qr-privacy-card" style="border-radius:0;overflow:hidden;">
+    <div class="card-header py-3" style="background:#1E3A8A;color:#fff;">
         <div class="d-flex align-items-center gap-2">
             <i class="bi bi-shield-lock-fill" style="font-size:1.15rem;"></i>
             <div>
@@ -330,6 +353,7 @@
         </div>
         <button type="submit" name="_action" value="privacy_gate" class="d-none" tabindex="-1" aria-hidden="true"></button>
     </div>
+</div>
 </div>
 {% endif %}
 
@@ -394,8 +418,17 @@
         <tr>
             <td class="eval-form-num">{{ counter }}.</td>
             <td class="eval-form-question">
-                {{ q.questionText }}
-                {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+                {% set questionParts = q.questionText|split('(', 2) %}
+                {% if questionParts|length > 1 %}
+                    <div class="eval-question-main">
+                        <span>{{ questionParts[0]|trim }}</span>
+                        {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+                    </div>
+                    <div class="eval-question-sub">({{ questionParts[1]|trim }}</div>
+                {% else %}
+                    {{ q.questionText }}
+                    {% if q.isRequired %}<span class="text-danger">*</span>{% endif %}
+                {% endif %}
             </td>
             {% for r in 1..5 %}
             <td class="eval-form-rating">
@@ -515,6 +548,30 @@
 </div>
 {% endif %}
 
+{% if showVerifyStudentModal|default(false) %}
+<div class="modal fade" id="verifyStudentRequiredModal" tabindex="-1" aria-labelledby="verifyStudentRequiredModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:0;overflow:hidden;">
+            <div class="modal-header" style="background:#dbeafe;border-bottom:1px solid #bfdbfe;">
+                <h5 class="modal-title" id="verifyStudentRequiredModalLabel" style="color:#1e3a8a;">
+                    <i class="bi bi-person-vcard-fill me-2"></i>Student Verification Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:#334155;line-height:1.6;">
+                <p class="mb-2">{{ error }}</p>
+                <p class="mb-0" style="font-size:.9rem;color:#64748b;">
+                    Enter your Student ID in the verification box, then click Verify before continuing to the privacy disclaimer or questionnaire.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if showPrivacyConsentModal|default(false) %}
 <div class="modal fade" id="privacyConsentRequiredModal" tabindex="-1" aria-labelledby="privacyConsentRequiredModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -557,6 +614,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (loadslipUnverifiedModalEl && window.bootstrap && window.bootstrap.Modal) {
         var loadslipUnverifiedModal = new bootstrap.Modal(loadslipUnverifiedModalEl);
         loadslipUnverifiedModal.show();
+    }
+
+    var verifyStudentRequiredModalEl = document.getElementById('verifyStudentRequiredModal');
+    if (verifyStudentRequiredModalEl && window.bootstrap && window.bootstrap.Modal) {
+        var verifyStudentRequiredModal = new bootstrap.Modal(verifyStudentRequiredModalEl);
+        verifyStudentRequiredModal.show();
     }
 
     var privacyConsentRequiredModalEl = document.getElementById('privacyConsentRequiredModal');

@@ -2570,6 +2570,88 @@ class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/student/schedule', name: 'student_schedule')]
+    #[IsGranted('ROLE_USER')]
+    public function studentSchedule(
+        Request $request,
+        \App\Repository\StudentCustomSubjectRepository $customRepo,
+    ): Response {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if ($user->isFaculty() || $user->isStaff() || $user->isAdmin()) {
+            throw $this->createAccessDeniedException('Only students can access this page.');
+        }
+
+        $session = $request->getSession();
+        $rows = (array) $session->get('student_loadslip_rows', []);
+
+        return $this->render('home/student/schedule.html.twig', [
+            'rows'        => $rows,
+            'isVerified'  => (bool) $session->get('student_loadslip_verified', false),
+            'customRows'  => $customRepo->findByStudent($user),
+        ]);
+    }
+
+    #[Route('/student/schedule/add', name: 'student_schedule_add', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function studentScheduleAdd(
+        Request $request,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        if ($user->isFaculty() || $user->isStaff() || $user->isAdmin()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $code     = trim((string) $request->request->get('code', ''));
+        $name     = trim((string) $request->request->get('name', ''));
+        $schedule = trim((string) $request->request->get('schedule', '')) ?: null;
+        $section  = trim((string) $request->request->get('section', '')) ?: null;
+        $units    = trim((string) $request->request->get('units', '')) ?: null;
+
+        if ($code === '' || $name === '') {
+            $this->addFlash('error', 'Subject code and name are required.');
+            return $this->redirectToRoute('student_schedule');
+        }
+
+        $subject = (new \App\Entity\StudentCustomSubject())
+            ->setStudent($user)
+            ->setCode($code)
+            ->setName($name)
+            ->setSchedule($schedule)
+            ->setSection($section)
+            ->setUnits($units);
+
+        $em->persist($subject);
+        $em->flush();
+
+        $this->addFlash('success', 'Subject added successfully.');
+        return $this->redirectToRoute('student_schedule');
+    }
+
+    #[Route('/student/schedule/delete/{id}', name: 'student_schedule_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function studentScheduleDelete(
+        int $id,
+        \App\Repository\StudentCustomSubjectRepository $customRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var \App\Entity\User $user */
+        $user = $this->getUser();
+        $subject = $customRepo->find($id);
+
+        if (!$subject || $subject->getStudent() !== $user) {
+            throw $this->createNotFoundException();
+        }
+
+        $em->remove($subject);
+        $em->flush();
+
+        $this->addFlash('success', 'Subject removed.');
+        return $this->redirectToRoute('student_schedule');
+    }
+
     #[Route('/student/audit-log', name: 'student_audit_log')]
     #[IsGranted('ROLE_USER')]
     public function studentAuditLog(
@@ -2978,6 +3060,8 @@ class HomeController extends AbstractController
             'subjects' => $enrolledSubjects ?? [],
             'pending' => $pending,
             'completed' => $completed,
+            'loadslipRows' => $loadslipRows,
+            'loadslipVerified' => $isLoadslipVerified,
         ]);
     }
 

@@ -184,6 +184,19 @@ class SuperiorController extends AbstractController
         $evaluateeSubjects = $evaluateeMap[$evaluatee->getId()]['subjects'] ?? [];
 
         $evaluateeRole = (string) ($evaluateeMap[$evaluatee->getId()]['type'] ?? SuperiorEvaluation::TYPE_DEPARTMENT_HEAD);
+        $session = $request->getSession();
+        $privacySessionKey = sprintf(
+            'superior_privacy_consent_%d_%d_%d',
+            $user->getId(),
+            $evalId,
+            $evaluateeId
+        );
+        $privacyConsentChoice = trim((string) $session->get($privacySessionKey, ''));
+        if ($privacyConsentChoice !== 'agree') {
+            $session->remove($privacySessionKey);
+            $privacyConsentChoice = '';
+        }
+        $error = null;
 
         // Already submitted?
         if ($superiorEvalRepo->hasSubmitted($user->getId(), $evalId, $evaluateeId)) {
@@ -213,17 +226,19 @@ class SuperiorController extends AbstractController
 
         if ($request->isMethod('POST')) {
             $action = $request->request->get('_action', 'submit');
-            $ratings = $request->request->all('ratings');
-            $verifications = $request->request->all('verification');
-            $comments = $request->request->all('comments');
-            $generalComment = trim($comments[0] ?? '');
-            $commentSaved = false;
-            $isDraft = ($action === 'save_draft');
+            $privacyConsent = trim((string) $request->request->get('privacy_consent', ''));
 
-            if (!$isDraft) {
-                $privacyConsent = trim((string) $request->request->get('privacy_consent', ''));
-                if ($privacyConsent === '') {
-                    $this->addFlash('danger', 'Please select Agree or Disagree in the Data Privacy Disclaimer before submitting.');
+            if ($action === 'privacy_gate') {
+                if (!in_array($privacyConsent, ['agree', 'disagree'], true)) {
+                    $error = 'Please select Agree or Disagree for the Data Privacy Disclaimer.';
+                } elseif ($privacyConsent !== 'agree') {
+                    $session->remove($privacySessionKey);
+                    $privacyConsentChoice = '';
+                    $error = 'You must agree to the Data Privacy Disclaimer before continuing.';
+                } else {
+                    $privacyConsentChoice = $privacyConsent;
+                    $session->set($privacySessionKey, $privacyConsentChoice);
+
                     return $this->redirectToRoute('superior_evaluate_form', [
                         'evalId' => $evalId,
                         'evaluateeId' => $evaluateeId,
@@ -231,55 +246,69 @@ class SuperiorController extends AbstractController
                 }
             }
 
-            // Remove existing drafts
-            foreach ($drafts as $d) {
-                $em->remove($d);
-            }
-            $em->flush();
+            $ratings = $request->request->all('ratings');
+            $verifications = $request->request->all('verification');
+            $comments = $request->request->all('comments');
+            $generalComment = trim($comments[0] ?? '');
+            $commentSaved = false;
+            $isDraft = ($action === 'save_draft');
 
-            foreach ($questions as $q) {
-                $rating = (int) ($ratings[$q->getId()] ?? 0);
-                if ($rating < 1 || $rating > 5) {
-                    if (!$isDraft) continue;
-                    $rating = 0;
-                }
-
-                $response = new SuperiorEvaluation();
-                $response->setEvaluationPeriod($eval);
-                $response->setEvaluator($user);
-                $response->setEvaluatee($evaluatee);
-                $response->setEvaluateeRole($evaluateeRole);
-                $response->setQuestion($q);
-                $response->setRating($rating);
-                $response->setVerificationSelections(
-                    $this->sanitizeVerificationSelections($q, $verifications[$q->getId()] ?? [])
-                );
-                // Attach the general comment to the first response
-                if (!$commentSaved && $generalComment !== '') {
-                    $response->setComment($generalComment);
-                    $commentSaved = true;
-                }
-                $response->setIsDraft($isDraft);
-                $response->setSubmittedAt(new \DateTime());
-
-                $em->persist($response);
+            if ($action !== 'privacy_gate' && $privacyConsentChoice !== 'agree') {
+                $error = 'You must agree to the Data Privacy Disclaimer before continuing.';
             }
 
-            $em->flush();
+            if (!$error && $action !== 'privacy_gate') {
+                // Remove existing drafts
+                foreach ($drafts as $d) {
+                    $em->remove($d);
+                }
+                $em->flush();
 
-            if ($isDraft) {
-                $this->audit->log(AuditLog::ACTION_SAVE_DRAFT, 'SuperiorEvaluation', $evalId,
-                    'Draft saved for ' . $evaluatee->getFullName());
-                $this->addFlash('info', 'Draft saved successfully.');
-                return $this->redirectToRoute('superior_evaluate_index');
-            } else {
-                $this->audit->log(AuditLog::ACTION_SUBMIT_SET, 'SuperiorEvaluation', $evalId,
-                    'Superior evaluation submitted for ' . $evaluatee->getFullName());
-                $this->addFlash('success', 'Evaluation submitted successfully.');
-                return $this->redirectToRoute('superior_evaluate_view', [
-                    'evalId' => $evalId,
-                    'evaluateeId' => $evaluateeId,
-                ]);
+                foreach ($questions as $q) {
+                    $rating = (int) ($ratings[$q->getId()] ?? 0);
+                    if ($rating < 1 || $rating > 5) {
+                        if (!$isDraft) continue;
+                        $rating = 0;
+                    }
+
+                    $response = new SuperiorEvaluation();
+                    $response->setEvaluationPeriod($eval);
+                    $response->setEvaluator($user);
+                    $response->setEvaluatee($evaluatee);
+                    $response->setEvaluateeRole($evaluateeRole);
+                    $response->setQuestion($q);
+                    $response->setRating($rating);
+                    $response->setVerificationSelections(
+                        $this->sanitizeVerificationSelections($q, $verifications[$q->getId()] ?? [])
+                    );
+                    // Attach the general comment to the first response
+                    if (!$commentSaved && $generalComment !== '') {
+                        $response->setComment($generalComment);
+                        $commentSaved = true;
+                    }
+                    $response->setIsDraft($isDraft);
+                    $response->setSubmittedAt(new \DateTime());
+
+                    $em->persist($response);
+                }
+
+                $em->flush();
+
+                if ($isDraft) {
+                    $this->audit->log(AuditLog::ACTION_SAVE_DRAFT, 'SuperiorEvaluation', $evalId,
+                        'Draft saved for ' . $evaluatee->getFullName());
+                    $this->addFlash('info', 'Draft saved successfully.');
+                    return $this->redirectToRoute('superior_evaluate_index');
+                } else {
+                    $session->remove($privacySessionKey);
+                    $this->audit->log(AuditLog::ACTION_SUBMIT_SET, 'SuperiorEvaluation', $evalId,
+                        'Superior evaluation submitted for ' . $evaluatee->getFullName());
+                    $this->addFlash('success', 'Evaluation submitted successfully.');
+                    return $this->redirectToRoute('superior_evaluate_view', [
+                        'evalId' => $evalId,
+                        'evaluateeId' => $evaluateeId,
+                    ]);
+                }
             }
         }
 
@@ -297,8 +326,13 @@ class SuperiorController extends AbstractController
             'evaluateeRoleLabel' => $evaluateeRoleLabel,
             'evaluateeSubjects' => $evaluateeSubjects,
             'privacyDisclaimerHtml' => $descRepo->getDisclaimerHtml('SET'),
+            'privacyConsentCaptured' => $privacyConsentChoice === 'agree',
             'groupedQuestions' => $grouped,
             'draftMap' => $draftMap,
+            'error' => $error,
+            'formValues' => [
+                'privacy_consent' => $privacyConsentChoice !== '' ? $privacyConsentChoice : (string) $request->request->get('privacy_consent', ''),
+            ],
             'generalComment' => '',
             'readOnly' => false,
         ]);

@@ -20,10 +20,6 @@
 .ls-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:10px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
 .ls-filter-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .ls-filter-label{font-size:.78rem;font-weight:600;color:#6b7280;white-space:nowrap;display:flex;align-items:center;}
-.ls-sem-pills{display:flex;gap:6px;flex-wrap:wrap;}
-.ls-sem-pill{border:none;background:#f1f5f9;color:#64748b;padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .18s ease;white-space:nowrap;}
-.ls-sem-pill:hover{background:#e2e8f0;color:#334155;}
-.ls-sem-pill.active{background:var(--norsu-blue,#1a56db);color:#fff;box-shadow:0 2px 8px rgba(26,86,219,.25);}
 .ls-ay-select{min-width:220px;border:1px solid #dbe5f0;border-radius:10px;padding:6px 10px;font-size:.8rem;font-weight:600;background:#f8fafc;color:#334155;outline:none;transition:border-color .15s,box-shadow .15s;}
 .ls-ay-select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.08);background:#fff;}
 .ls-search-wrap{position:relative;min-width:200px;max-width:280px;}
@@ -395,13 +391,6 @@
                 <option value="{{ ay.id }}" {{ (selectedAyId|default(0)) == ay.id ? 'selected' : '' }}>{{ ayLabel }}</option>
             {% endfor %}
         </select>
-        <span class="ls-filter-label"><i class="me-1 bi bi-funnel"></i>Semester:</span>
-        <div class="ls-sem-pills">
-            <button type="button" class="ls-sem-pill active" data-sem="all" onclick="lsSemFilter(this)">All</button>
-            {% for sem in semSet %}
-                <button type="button" class="ls-sem-pill" data-sem="{{ sem|lower }}" onclick="lsSemFilter(this)">{{ sem }}</button>
-            {% endfor %}
-        </div>
     </div>
     <div class="ls-search-wrap">
         <i class="bi bi-search"></i>
@@ -717,8 +706,7 @@ function togglePrevLoad(id) {
     }
 }
 
-/* ── Client-side search + semester filter ── */
-var lsActiveSem = 'all';
+/* ── Client-side search ── */
 
 function lsApplyAyFilter(ayId) {
     var url = new URL(window.location.href);
@@ -730,21 +718,13 @@ function lsApplyAyFilter(ayId) {
     window.location.href = url.toString();
 }
 
-function lsSemFilter(btn) {
-    document.querySelectorAll('.ls-sem-pill').forEach(function(p) { p.classList.remove('active'); });
-    btn.classList.add('active');
-    lsActiveSem = btn.getAttribute('data-sem');
-    lsFilter();
-}
-
 function lsFilter() {
     var q = document.getElementById('lsSearchInput').value.toLowerCase();
     var rows = document.querySelectorAll('#lsTableBody .ls-row');
     var count = 0;
     rows.forEach(function(r) {
         var matchSearch = (r.getAttribute('data-search') || '').indexOf(q) !== -1;
-        var matchSem = lsActiveSem === 'all' || (r.getAttribute('data-semester') || '') === lsActiveSem;
-        var show = matchSearch && matchSem;
+        var show = matchSearch;
         r.style.display = show ? '' : 'none';
         if (show) count++;
     });
