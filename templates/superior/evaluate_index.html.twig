@@ -321,7 +321,7 @@
         <div class="sp-filter-group" id="spHistoryYearWrap"{% if defaultRecordType != 'previous' %} style="display:none"{% endif %}>
             <span class="sp-filter-label">Academic Year</span>
             <select id="spHistoryYear" class="sp-filter-control">
-                <option value="all">All years</option>
+                <option value="" {{ selectedHistoryYear == '' ? 'selected' : '' }}>Select academic year</option>
                 {% for sy in historyYears %}
                 <option value="{{ sy }}" {{ selectedHistoryYear == sy ? 'selected' : '' }}>{{ sy }}</option>
                 {% endfor %}
@@ -423,7 +423,8 @@
         </div>
 
         {% if historyItems|length > 0 %}
-        <div class="sp-table-wrap">
+        <div class="sp-empty" id="spHistorySelectHint"{% if selectedHistoryYear != '' %} style="display:none"{% endif %}>Select an academic year to view previous submissions.</div>
+        <div class="sp-table-wrap" id="spHistoryTableWrap"{% if selectedHistoryYear == '' %} style="display:none"{% endif %}>
             <table class="sp-table" id="spHistoryTable">
                 <thead>
                     <tr>
@@ -520,6 +521,8 @@
 
     const openNoResults = document.getElementById('spOpenNoResults');
     const historyNoResults = document.getElementById('spHistoryNoResults');
+    const historyTableWrap = document.getElementById('spHistoryTableWrap');
+    const historySelectHint = document.getElementById('spHistorySelectHint');
 
     if (!recordType && !searchInput) {
         return;
@@ -562,21 +565,41 @@
     const applyHistoryFilters = () => {
         let visibleCount = 0;
         const term = getSearchTerm();
-        const year = historyYear ? historyYear.value : 'all';
+        const year = historyYear ? historyYear.value : '';
+        const hasYearSelection = year !== '';
+
+        if (historyTableWrap) {
+            historyTableWrap.style.display = hasYearSelection ? '' : 'none';
+        }
+        if (historySelectHint) {
+            historySelectHint.style.display = hasYearSelection ? 'none' : '';
+        }
 
         historyRows.forEach((row) => {
             const rowSearch = (row.dataset.search || '').toLowerCase();
             const rowYear = row.dataset.year || '';
 
             const matchesSearch = !term || rowSearch.includes(term);
-            const matchesYear = year === 'all' || rowYear === year;
+            const matchesYear = hasYearSelection && rowYear === year;
 
-            const visible = matchesSearch && matchesYear;
+            const visible = hasYearSelection && matchesSearch && matchesYear;
             row.style.display = visible ? '' : 'none';
             if (visible) visibleCount++;
         });
 
         if (historyNoResults) {
+            const cell = historyNoResults.querySelector('td');
+            if (!hasYearSelection) {
+                if (cell) {
+                    cell.textContent = 'Select an academic year to view previous submissions.';
+                }
+                historyNoResults.style.display = '';
+                return;
+            }
+
+            if (cell) {
+                cell.textContent = 'No previous submissions match your filter selection.';
+            }
             historyNoResults.style.display = visibleCount === 0 ? '' : 'none';
         }
     };

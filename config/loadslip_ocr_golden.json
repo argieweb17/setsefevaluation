@@ -1,0 +1,33 @@
+{
+  "subjectAliases": {
+    "IS3": "ITS 403",
+    "ITS402": "ITS 403",
+    "ITS404": "ITS 404",
+    "ITS405": "ITS 405"
+  },
+  "descriptionRules": [
+    {
+      "code": "ITS 403",
+      "keywords": ["CAPSTONE", "PROJECT", "2"],
+      "minKeywords": 3,
+      "units": "3"
+    },
+    {
+      "code": "ITS 404",
+      "keywords": ["SOCIAL", "PROFESSIONAL", "ISSUES"],
+      "minKeywords": 3,
+      "units": "3"
+    },
+    {
+      "code": "ITS 405",
+      "keywords": ["MULTIMEDIA", "SYSTEMS"],
+      "minKeywords": 2,
+      "units": "3"
+    }
+  ],
+  "unitHints": {
+    "ITS 403": "3",
+    "ITS 404": "3",
+    "ITS 405": "3"
+  }
+}

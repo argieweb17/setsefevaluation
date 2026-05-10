@@ -125,9 +125,6 @@
             <button type="button" class="btn btn-sm" style="background:#1E3A8A;color:#fff;font-weight:600;border:none;" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
                 <i class="bi bi-plus-lg me-1"></i>Add Subject
             </button>
-            <a href="{{ path('evaluation_set_index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-file-earmark-text me-1"></i>View Loadslip
-            </a>
         </div>
     </div>
 
@@ -152,7 +149,7 @@
             <div class="sch-card-top">
                 <span class="sch-code">{{ row.code|default('—') }}</span>
                 {% if row.units is defined and row.units %}
-                <span class="sch-units"><i class="bi bi-hash"></i> {{ row.units }} unit{{ row.units != '1' ? 's' : '' }}</span>
+                <span class="sch-units">{{ row.units }} unit{{ row.units != '1' ? 's' : '' }}</span>
                 {% endif %}
             </div>
             <div class="sch-name">{{ row.description|default('Subject') }}</div>
@@ -199,7 +196,7 @@
                 <div class="sch-card-top">
                     <span class="sch-code" style="color:#7C3AED">{{ item.code }}</span>
                     {% if item.units %}
-                    <span class="sch-units" style="color:#166534"><i class="bi bi-hash"></i> {{ item.units }} unit{{ item.units != '1' ? 's' : '' }}</span>
+                    <span class="sch-units" style="color:#166534">{{ item.units }} unit{{ item.units != '1' ? 's' : '' }}</span>
                     {% endif %}
                 </div>
                 <div class="sch-name">{{ item.name }}</div>
@@ -220,6 +217,14 @@
 
 </div>
 
+{% set curriculumOptions = curriculumOptions|default({}) %}
+{% set curriculumCodeOptions = curriculumOptions.codes|default([]) %}
+{% set curriculumDescriptionOptions = curriculumOptions.descriptions|default([]) %}
+{% set curriculumUnitOptions = curriculumOptions.units|default([]) %}
+{% set curriculumScheduleOptions = curriculumOptions.schedules|default([]) %}
+{% set curriculumSectionOptions = curriculumOptions.sections|default([]) %}
+{% set curriculumAutofill = curriculumOptions.autofill|default({}) %}
+
 {# ── Add Subject Modal ── #}
 <div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -235,25 +240,50 @@
                     <div class="row g-3">
                         <div class="col-6">
                             <label class="form-label fw-semibold" style="font-size:0.8rem;">Subject Code <span class="text-danger">*</span></label>
-                            <input type="text" name="code" class="form-control form-control-sm" placeholder="e.g. ITS 401" required maxlength="50">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Units</label>
-                            <input type="text" name="units" class="form-control form-control-sm" placeholder="e.g. 3" maxlength="10">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Subject Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. Software Engineering" required maxlength="255">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Schedule</label>
-                            <input type="text" name="schedule" class="form-control form-control-sm" placeholder="e.g. MWF 9:00-10:00 AM" maxlength="100">
+                            <input type="text" id="subjectCodeInput" name="code" class="form-control form-control-sm" placeholder="e.g. ITS 401" required maxlength="50" list="subjectCodeOptions">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold" style="font-size:0.8rem;">Section</label>
-                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. C" maxlength="50">
+                            <input type="text" name="section" class="form-control form-control-sm" placeholder="e.g. C" maxlength="50" list="subjectSectionOptions">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Description <span class="text-danger">*</span></label>
+                            <input type="text" id="subjectDescriptionInput" name="name" class="form-control form-control-sm" placeholder="e.g. Software Engineering" required maxlength="255" list="subjectDescriptionOptions">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Schedule</label>
+                            <input type="text" name="schedule" class="form-control form-control-sm" placeholder="e.g. MWF 9:00-10:00 AM" maxlength="100" list="subjectScheduleOptions">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Units</label>
+                            <input type="text" id="subjectUnitsInput" name="units" class="form-control form-control-sm" placeholder="e.g. 3" maxlength="10" list="subjectUnitOptions">
                         </div>
                     </div>
+                    <datalist id="subjectCodeOptions">
+                        {% for option in curriculumCodeOptions %}
+                        <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <datalist id="subjectSectionOptions">
+                        {% for option in curriculumSectionOptions %}
+                        <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <datalist id="subjectDescriptionOptions">
+                        {% for option in curriculumDescriptionOptions %}
+                        <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <datalist id="subjectScheduleOptions">
+                        {% for option in curriculumScheduleOptions %}
+                        <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <datalist id="subjectUnitOptions">
+                        {% for option in curriculumUnitOptions %}
+                        <option value="{{ option }}"></option>
+                        {% endfor %}
+                    </datalist>
                 </div>
                 <div class="modal-footer" style="border-top:1px solid #f1f5f9;padding:0.9rem 1.4rem;">
                     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -263,4 +293,33 @@
         </div>
     </div>
 </div>
+{% if curriculumAutofill is not empty %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const codeInput = document.getElementById('subjectCodeInput');
+    const descriptionInput = document.getElementById('subjectDescriptionInput');
+    const unitsInput = document.getElementById('subjectUnitsInput');
+    if (!codeInput || !descriptionInput || !unitsInput) return;
+
+    const autofillMap = {{ curriculumAutofill|json_encode|raw }};
+    const normalize = (value) => String(value || '').trim().toUpperCase();
+
+    const applyAutofill = () => {
+        const key = normalize(codeInput.value);
+        if (!key || !autofillMap[key]) return;
+
+        const entry = autofillMap[key] || {};
+        if (entry.description) {
+            descriptionInput.value = entry.description;
+        }
+        if (entry.units) {
+            unitsInput.value = entry.units;
+        }
+    };
+
+    codeInput.addEventListener('input', applyAutofill);
+    codeInput.addEventListener('change', applyAutofill);
+});
+</script>
+{% endif %}
 {% endblock %}

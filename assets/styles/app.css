@@ -3469,9 +3469,21 @@ html { scroll-behavior: smooth; }
 }
 .eval-form-scale {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.2rem 1rem;
+    flex-direction: column;
+    gap: 0.12rem;
+}
+.eval-form-scale .efs-item {
+    display: grid;
+    grid-template-columns: 1.1rem 1.2rem minmax(0,1fr);
+    align-items: baseline;
+}
+.eval-form-scale .efs-num {
+    font-weight: 700;
+    color: #78350F;
+    text-align: right;
+}
+.eval-form-scale .efs-dash {
+    text-align: center;
 }
 
 /* Category sections inside paper */
@@ -5241,9 +5253,7 @@ html { scroll-behavior: smooth; }
         font-size: 0.72rem;
     }
     .eval-form-scale {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.15rem;
+        gap: 0.1rem;
     }
     .eval-form-category {
         padding: 0.45rem 0.7rem;

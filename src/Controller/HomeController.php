@@ -163,6 +163,253 @@ class HomeController extends AbstractController
         };
     }
 
+    private function normalizeYearLevelLabel(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return match (mb_strtolower(trim($value))) {
+            '1', '1st year', 'first year' => 'First Year',
+            '2', '2nd year', 'second year' => 'Second Year',
+            '3', '3rd year', 'third year' => 'Third Year',
+            '4', '4th year', 'fourth year' => 'Fourth Year',
+            '5', '5th year', 'fifth year' => 'Fifth Year',
+            default => null,
+        };
+    }
+
+    private function normalizeLoadslipRowCode(?string $value): string
+    {
+        $raw = mb_strtoupper(trim((string) $value));
+        $normalized = preg_replace('/[^A-Z0-9]/u', '', $raw);
+
+        return is_string($normalized) ? $normalized : '';
+    }
+
+    private function normalizeLoadslipRowText(?string $value): string
+    {
+        $raw = mb_strtoupper(trim((string) $value));
+        $normalized = preg_replace('/\s+/u', ' ', $raw);
+
+        return is_string($normalized) ? trim($normalized) : '';
+    }
+
+    private function extractLoadslipScheduleDurationMinutes(?string $value): ?int
+    {
+        $normalized = $this->normalizeLoadslipRowText($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (!preg_match('/\b(\d{1,2})(?:(?::|\.)\s*(\d{2}))?\s*(AM|PM)?\s*-\s*(\d{1,2})(?:(?::|\.)\s*(\d{2}))?\s*(AM|PM)?\b/u', $normalized, $matches)) {
+            return null;
+        }
+
+        $parseTime = static function (string $hourRaw, string $minuteRaw, string $meridiem): ?int {
+            $hour = (int) $hourRaw;
+            $minute = $minuteRaw !== '' ? (int) $minuteRaw : 0;
+            if ($minute < 0 || $minute > 59) {
+                return null;
+            }
+
+            $ampm = strtoupper(trim($meridiem));
+            if ($ampm === 'AM' || $ampm === 'PM') {
+                if ($hour < 1 || $hour > 12) {
+                    return null;
+                }
+
+                if ($ampm === 'PM' && $hour < 12) {
+                    $hour += 12;
+                } elseif ($ampm === 'AM' && $hour === 12) {
+                    $hour = 0;
+                }
+            } else {
+                if ($hour < 0 || $hour > 23) {
+                    return null;
+                }
+            }
+
+            return ($hour * 60) + $minute;
+        };
+
+        $endMeridiem = strtoupper(trim((string) ($matches[6] ?? '')));
+        $startMeridiem = strtoupper(trim((string) ($matches[3] ?? '')));
+        if ($startMeridiem === '') {
+            $startMeridiem = $endMeridiem;
+        }
+
+        $start = $parseTime((string) ($matches[1] ?? ''), (string) ($matches[2] ?? ''), $startMeridiem);
+        $end = $parseTime((string) ($matches[4] ?? ''), (string) ($matches[5] ?? ''), $endMeridiem);
+        if ($start === null || $end === null) {
+            return null;
+        }
+
+        if ($end <= $start) {
+            $end += 12 * 60;
+        }
+
+        $duration = $end - $start;
+        if ($duration <= 0 || $duration > (16 * 60)) {
+            return null;
+        }
+
+        return $duration;
+    }
+
+    private function isLikelyLoadslipNoteText(?string $value): bool
+    {
+        $normalized = $this->normalizeLoadslipRowText($value);
+        if ($normalized === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(?:NOTE|NO\s+REFUND|WITHDRAWAL|DROPPING\s+OF\s+(?:COURSES?|SUBJECTS?)|TOTAL\s+SUBJECTS?|TOTAL\s+UNITS?|DATE\s+ENROLLED|ENCODED\s+BY|PRINTED\s+BY)\b/u',
+            $normalized
+        );
+    }
+
+    private function scoreStudentScheduleRow(array $row): int
+    {
+        $description = trim((string) ($row['description'] ?? ''));
+        $schedule = trim((string) ($row['schedule'] ?? ''));
+        $section = trim((string) ($row['section'] ?? ''));
+        $units = trim((string) ($row['units'] ?? ''));
+
+        $score = 0;
+        if ($description !== '') {
+            $score += 8 + min(6, (int) floor(mb_strlen($description) / 8));
+        }
+        if ($schedule !== '') {
+            $score += 10;
+        }
+        if ($section !== '') {
+            $score += 4;
+        }
+        if ($units !== '') {
+            $score += 2;
+        }
+
+        if ($this->isLikelyLoadslipNoteText($description)) {
+            $score -= 20;
+        } elseif ($description !== '') {
+            $score += 6;
+        }
+
+        $duration = $this->extractLoadslipScheduleDurationMinutes($schedule);
+        if ($duration !== null) {
+            if ($duration >= 45 && $duration <= 240) {
+                $score += 12;
+            } elseif ($duration <= 360) {
+                $score += 4;
+            } else {
+                $score -= 12;
+            }
+        }
+
+        return $score;
+    }
+
+    private function collapseStudentScheduleRows(array $rows): array
+    {
+        $bestByCode = [];
+        $uncodedRows = [];
+
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $normalizedRow = [
+                'code' => trim((string) ($row['code'] ?? '')),
+                'section' => strtoupper(trim((string) ($row['section'] ?? ''))),
+                'description' => trim((string) ($row['description'] ?? '')),
+                'schedule' => trim((string) ($row['schedule'] ?? '')),
+                'units' => trim((string) ($row['units'] ?? '')),
+            ];
+
+            $codeKey = $this->normalizeLoadslipRowCode($normalizedRow['code']);
+            if ($codeKey === '') {
+                $uncodedRows[] = ['index' => (int) $index, 'row' => $normalizedRow];
+                continue;
+            }
+
+            $score = $this->scoreStudentScheduleRow($normalizedRow);
+            if (!isset($bestByCode[$codeKey])) {
+                $bestByCode[$codeKey] = [
+                    'index' => (int) $index,
+                    'score' => $score,
+                    'row' => $normalizedRow,
+                ];
+                continue;
+            }
+
+            $existing = $bestByCode[$codeKey];
+            $replace = $score > (int) ($existing['score'] ?? PHP_INT_MIN);
+
+            if (!$replace && $score === (int) ($existing['score'] ?? PHP_INT_MIN)) {
+                $existingDuration = $this->extractLoadslipScheduleDurationMinutes((string) (($existing['row']['schedule'] ?? '')));
+                $candidateDuration = $this->extractLoadslipScheduleDurationMinutes($normalizedRow['schedule']);
+                if ($candidateDuration !== null && $existingDuration === null) {
+                    $replace = true;
+                } elseif ($candidateDuration !== null && $existingDuration !== null && $candidateDuration < $existingDuration) {
+                    $replace = true;
+                }
+            }
+
+            if ($replace) {
+                $bestByCode[$codeKey] = [
+                    'index' => (int) ($existing['index'] ?? $index),
+                    'score' => $score,
+                    'row' => $normalizedRow,
+                ];
+            }
+        }
+
+        $collapsed = array_values($bestByCode);
+        usort($collapsed, static fn(array $a, array $b): int => ((int) ($a['index'] ?? 0)) <=> ((int) ($b['index'] ?? 0)));
+        usort($uncodedRows, static fn(array $a, array $b): int => ((int) ($a['index'] ?? 0)) <=> ((int) ($b['index'] ?? 0)));
+
+        $result = array_map(static fn(array $entry): array => (array) ($entry['row'] ?? []), $collapsed);
+        foreach ($uncodedRows as $entry) {
+            $result[] = (array) ($entry['row'] ?? []);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array<int, Subject>
+     */
+    private function getCurriculumSubjectsForStudent(User $user, CurriculumRepository $curriculumRepo): array
+    {
+        $courseId = $user->getCourse()?->getId();
+        $departmentId = $user->getDepartment()?->getId();
+        $subjectMap = [];
+
+        foreach ($curriculumRepo->findAll() as $curriculum) {
+            $curriculumCourse = $curriculum->getCourse();
+            if ($curriculumCourse !== null && ($courseId === null || $curriculumCourse->getId() !== $courseId)) {
+                continue;
+            }
+
+            $curriculumDepartment = $curriculum->getDepartment();
+            if ($curriculumDepartment !== null && ($departmentId === null || $curriculumDepartment->getId() !== $departmentId)) {
+                continue;
+            }
+
+            foreach ($curriculum->getSubjects() as $subject) {
+                $subjectId = $subject->getId();
+                if ($subjectId !== null) {
+                    $subjectMap[$subjectId] = $subject;
+                }
+            }
+        }
+
+        return array_values($subjectMap);
+    }
+
     private function subjectAllowedForActiveAcademicSemester(Subject $subject, ?string $activeSemester): bool
     {
         if ($activeSemester === null) {
@@ -2044,50 +2291,56 @@ class HomeController extends AbstractController
         $page = max(1, (int) $request->query->get('page', 1));
         $limit = 50;
 
-        $qb = $subjectRepo->createQueryBuilder('s')
-            ->leftJoin('s.department', 'd')
-            ->orderBy('s.subjectCode', 'ASC');
+        $hasDepartmentSelection = $filterDept !== null && $filterDept !== '';
+        $filterDeptId = $hasDepartmentSelection ? (int) $filterDept : null;
+        $selectedDeptId = ($filterDeptId !== null && in_array($filterDeptId, $allowedDeptIds, true)) ? $filterDeptId : null;
 
-        // Faculty can browse departments within the same college scope.
-        if (!empty($allowedDeptIds)) {
-            $qb->andWhere('d.id IN (:allowedDeptIds)')->setParameter('allowedDeptIds', $allowedDeptIds);
-        }
+        $subjects = [];
+        $totalFiltered = 0;
+        $totalPages = 1;
 
-        if ($filterCollege) {
-            $qb->andWhere('d.collegeName = :college')->setParameter('college', $filterCollege);
-        }
+        // Show department subjects only after the faculty chooses a department filter.
+        if ($selectedDeptId !== null) {
+            $qb = $subjectRepo->createQueryBuilder('s')
+                ->leftJoin('s.department', 'd')
+                ->orderBy('s.subjectCode', 'ASC');
 
-        if ($filterDept !== null && $filterDept !== '') {
-            $filterDeptId = (int) $filterDept;
-            if (in_array($filterDeptId, $allowedDeptIds, true)) {
-                $qb->andWhere('d.id = :deptId')->setParameter('deptId', $filterDeptId);
+            // Faculty can browse departments within the same college scope.
+            if (!empty($allowedDeptIds)) {
+                $qb->andWhere('d.id IN (:allowedDeptIds)')->setParameter('allowedDeptIds', $allowedDeptIds);
             }
-        }
 
-        if ($filterSemester) {
-            $qb->andWhere('s.semester = :sem')->setParameter('sem', $filterSemester);
-        }
-        if ($filterYearLevel) {
-            $yearLevelAliases = match ($filterYearLevel) {
-                '1' => ['1st Year', 'First Year'],
-                '2' => ['2nd Year', 'Second Year'],
-                '3' => ['3rd Year', 'Third Year'],
-                '4' => ['4th Year', 'Fourth Year'],
-                '5' => ['5th Year', 'Fifth Year'],
-                default => [],
-            };
-            if (!empty($yearLevelAliases)) {
-                $qb->andWhere('s.yearLevel IN (:yearLevels)')->setParameter('yearLevels', $yearLevelAliases);
+            if ($filterCollege) {
+                $qb->andWhere('d.collegeName = :college')->setParameter('college', $filterCollege);
             }
+
+            $qb->andWhere('d.id = :deptId')->setParameter('deptId', $selectedDeptId);
+
+            if ($filterSemester) {
+                $qb->andWhere('s.semester = :sem')->setParameter('sem', $filterSemester);
+            }
+            if ($filterYearLevel) {
+                $yearLevelAliases = match ($filterYearLevel) {
+                    '1' => ['1st Year', 'First Year'],
+                    '2' => ['2nd Year', 'Second Year'],
+                    '3' => ['3rd Year', 'Third Year'],
+                    '4' => ['4th Year', 'Fourth Year'],
+                    '5' => ['5th Year', 'Fifth Year'],
+                    default => [],
+                };
+                if (!empty($yearLevelAliases)) {
+                    $qb->andWhere('s.yearLevel IN (:yearLevels)')->setParameter('yearLevels', $yearLevelAliases);
+                }
+            }
+
+            $totalFiltered = (int) (clone $qb)->select('COUNT(s.id)')->getQuery()->getSingleScalarResult();
+            $totalPages = max(1, (int) ceil($totalFiltered / $limit));
+            if ($page > $totalPages) { $page = $totalPages; }
+
+            $subjects = $qb->setFirstResult(($page - 1) * $limit)
+                ->setMaxResults($limit)
+                ->getQuery()->getResult();
         }
-
-        $totalFiltered = (int) (clone $qb)->select('COUNT(s.id)')->getQuery()->getSingleScalarResult();
-        $totalPages = max(1, (int) ceil($totalFiltered / $limit));
-        if ($page > $totalPages) { $page = $totalPages; }
-
-        $subjects = $qb->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit)
-            ->getQuery()->getResult();
 
         $colleges = [];
         foreach ($departments as $d) {
@@ -2120,6 +2373,8 @@ class HomeController extends AbstractController
             'totalFiltered'   => $totalFiltered,
             'limit'           => $limit,
             'readOnly'        => true,
+            'requireDepartmentFilter' => true,
+            'departmentFilterApplied' => $selectedDeptId !== null,
         ]);
     }
 
@@ -2575,6 +2830,9 @@ class HomeController extends AbstractController
     public function studentSchedule(
         Request $request,
         \App\Repository\StudentCustomSubjectRepository $customRepo,
+        CurriculumRepository $curriculumRepo,
+        AcademicYearRepository $ayRepo,
+        LoadslipVerificationRepository $loadslipVerificationRepo,
     ): Response {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
@@ -2584,11 +2842,114 @@ class HomeController extends AbstractController
 
         $session = $request->getSession();
         $rows = (array) $session->get('student_loadslip_rows', []);
+        $collapsedRows = $this->collapseStudentScheduleRows($rows);
+        if ($collapsedRows !== $rows) {
+            $rows = $collapsedRows;
+            $session->set('student_loadslip_rows', $rows);
+
+            $schoolId = trim((string) ($user->getSchoolId() ?? ''));
+            if ($schoolId !== '') {
+                $verification = $loadslipVerificationRepo->findOneBySchoolId($schoolId);
+                if ($verification !== null) {
+                    $verification->setRows($rows);
+                    $verification->setUpdatedAt(new \DateTimeImmutable());
+                    $loadslipVerificationRepo->save($verification, true);
+                }
+            }
+        } else {
+            $rows = $collapsedRows;
+        }
+
+        $currentAcademicYear = $ayRepo->findCurrent() ?? $ayRepo->findLatestBySequence();
+        $activeSemester = $this->normalizeAcademicSemester($currentAcademicYear?->getSemester());
+        $studentYearLevel = $this->normalizeYearLevelLabel($user->getYearLevel());
+
+        $curriculumSubjects = $this->getCurriculumSubjectsForStudent($user, $curriculumRepo);
+        $codeOptions = [];
+        $descriptionOptions = [];
+        $unitOptions = [];
+        $scheduleOptions = [];
+        $sectionOptions = [];
+        $autofillMap = [];
+
+        foreach ($curriculumSubjects as $subject) {
+            if ($studentYearLevel !== null) {
+                $subjectYearLevel = $this->normalizeYearLevelLabel($subject->getYearLevel());
+                if ($subjectYearLevel === null || $subjectYearLevel !== $studentYearLevel) {
+                    continue;
+                }
+            }
+
+            if ($activeSemester !== null) {
+                $subjectSemester = $this->normalizeAcademicSemester($subject->getSemester());
+                if ($subjectSemester === null || $subjectSemester !== $activeSemester) {
+                    continue;
+                }
+            }
+
+            $code = trim((string) $subject->getSubjectCode());
+            if ($code !== '') {
+                $codeOptions[$code] = true;
+            }
+
+            $description = trim((string) $subject->getSubjectName());
+            if ($description !== '') {
+                $descriptionOptions[$description] = true;
+            }
+
+            $units = $subject->getUnits();
+            if ($units !== null) {
+                $unitOptions[(string) $units] = true;
+            }
+
+            $schedule = trim((string) ($subject->getSchedule() ?? ''));
+            if ($schedule !== '') {
+                $scheduleOptions[$schedule] = true;
+            }
+
+            $section = trim((string) ($subject->getSection() ?? ''));
+            if ($section !== '') {
+                $sectionOptions[strtoupper($section)] = true;
+            }
+
+            if ($code !== '') {
+                $codeKey = strtoupper($code);
+                $entry = $autofillMap[$codeKey] ?? ['description' => '', 'units' => ''];
+                if ($entry['description'] === '' && $description !== '') {
+                    $entry['description'] = $description;
+                }
+                if ($entry['units'] === '' && $units !== null) {
+                    $entry['units'] = (string) $units;
+                }
+                $autofillMap[$codeKey] = $entry;
+            }
+        }
+
+        $codeOptions = array_keys($codeOptions);
+        sort($codeOptions, SORT_NATURAL | SORT_FLAG_CASE);
+        $descriptionOptions = array_keys($descriptionOptions);
+        sort($descriptionOptions, SORT_NATURAL | SORT_FLAG_CASE);
+        $unitOptions = array_keys($unitOptions);
+        sort($unitOptions, SORT_NATURAL);
+        $scheduleOptions = array_keys($scheduleOptions);
+        sort($scheduleOptions, SORT_NATURAL | SORT_FLAG_CASE);
+        $sectionOptions = array_keys($sectionOptions);
+        sort($sectionOptions, SORT_NATURAL | SORT_FLAG_CASE);
 
         return $this->render('home/student/schedule.html.twig', [
             'rows'        => $rows,
             'isVerified'  => (bool) $session->get('student_loadslip_verified', false),
             'customRows'  => $customRepo->findByStudent($user),
+            'curriculumOptions' => [
+                'codes' => $codeOptions,
+                'descriptions' => $descriptionOptions,
+                'units' => $unitOptions,
+                'schedules' => $scheduleOptions,
+                'sections' => $sectionOptions,
+                'autofill' => $autofillMap,
+                'activeSemester' => $activeSemester,
+                'yearLevel' => $studentYearLevel,
+            ],
         ]);
     }
 

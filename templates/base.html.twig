@@ -24,9 +24,9 @@
         </script>
         <title>{% block title %}SET-SEF Evaluation System{% endblock %}</title>
         <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+        <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+        <link href="{{ asset('vendor/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet">
+        <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}" defer></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
         <style>
             html.sidebar-collapsed .sidebar-brand {
@@ -913,8 +913,9 @@
                     function showStudentMismatchModal() {
                         var modalEl = document.getElementById('studentIdMismatchModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showStudentMismatchModal);
@@ -947,8 +948,9 @@
                     function showSelectImageModal() {
                         var modalEl = document.getElementById('selectImageModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showSelectImageModal);
@@ -981,8 +983,9 @@
                     function showLoadslipClearedModal() {
                         var modalEl = document.getElementById('loadslipClearedModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showLoadslipClearedModal);
@@ -1015,8 +1018,9 @@
                     function showLoadslipNoCodesModal() {
                         var modalEl = document.getElementById('loadslipNoCodesModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showLoadslipNoCodesModal);
@@ -1049,8 +1053,9 @@
                     function showStudentIdNotFoundModal() {
                         var modalEl = document.getElementById('studentIdNotFoundModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showStudentIdNotFoundModal);
@@ -1083,8 +1088,9 @@
                     function showLoadslipStudentIdMissingModal() {
                         var modalEl = document.getElementById('loadslipStudentIdMissingModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         if (typeof window.playErrorModalSound === 'function') {
                             window.playErrorModalSound();
                         }
@@ -1120,8 +1126,9 @@
                     function showLoadslipNotVerifiedModal() {
                         var modalEl = document.getElementById('loadslipNotVerifiedModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showLoadslipNotVerifiedModal);
@@ -1154,8 +1161,9 @@
                     function showLoadslipAlreadyVerifiedModal() {
                         var modalEl = document.getElementById('loadslipAlreadyVerifiedModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showLoadslipAlreadyVerifiedModal);
@@ -1188,8 +1196,9 @@
                     function showDataPrivacyDisclaimerModal() {
                         var modalEl = document.getElementById('dataPrivacyDisclaimerModal');
                         if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
                         modalEl.dataset.shown = '1';
-                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
                     document.addEventListener('DOMContentLoaded', showDataPrivacyDisclaimerModal);
@@ -1330,11 +1339,12 @@
                 var m = document.getElementById('globalSuccessModal');
                 if (!m) return;
                 if (m.dataset.shown === '1') return;
+                if (!window.bootstrap || !window.bootstrap.Modal) return;
 
                 hasShownSuccessModal = true;
                 m.dataset.shown = '1';
 
-                var modal = bootstrap.Modal.getOrCreateInstance(m);
+                var modal = window.bootstrap.Modal.getOrCreateInstance(m);
                 if (typeof window.playSuccessModalSound === 'function') {
                     window.playSuccessModalSound();
                 }

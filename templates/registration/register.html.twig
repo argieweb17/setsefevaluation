@@ -473,6 +473,57 @@
     color: #991B1B;
     line-height: 1.4;
 }
+
+/* ── Google gate panel (faculty/staff/superior) ── */
+.rg-google-gate {
+    margin-top: 1rem;
+    border: 1px solid #DBEAFE;
+    border-radius: 0.875rem;
+    background: #F8FAFC;
+    padding: 1rem;
+}
+.rg-google-gate-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1E40AF;
+    margin-bottom: 0.4rem;
+}
+.rg-google-gate-desc {
+    margin: 0 0 0.85rem;
+    color: #475569;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+.rg-google-message {
+    margin-top: 0.75rem;
+    border-radius: 0.625rem;
+    border: 1px solid #BFDBFE;
+    background: #EFF6FF;
+    color: #1E3A8A;
+    font-size: 0.78rem;
+    padding: 0.55rem 0.7rem;
+}
+.rg-google-message.rg-google-error {
+    border-color: #FCA5A5;
+    background: #FEF2F2;
+    color: #991B1B;
+}
+.rg-google-code-box {
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px dashed #CBD5E1;
+}
+.rg-google-code-box .form-control {
+    border-radius: 0.625rem;
+}
+.rg-google-code-box .btn {
+    border-radius: 0.625rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
 @keyframes rgShakeIn {
     0% { transform: translateX(-8px); opacity: 0; }
     25% { transform: translateX(6px); }
@@ -1484,10 +1535,31 @@ a.rg-contact-item:hover {
                             </div>
                             <div class="rg-role-info">
                                 <h4>Superior</h4>
-                                <p>Evaluate Deans and Department Heads, review institutional performance</p>
+                                <p>Evaluate Superior Performane , review institutional performace</p>
                             </div>
                             <div class="rg-role-arrow"><i class="bi bi-arrow-right"></i></div>
                         </button>
+                    </div>
+
+                    <div id="googleGatePanel" class="rg-google-gate d-none">
+                        <div class="rg-google-gate-header">
+                            <i class="bi bi-google"></i>
+                            <span id="googleGateRoleLabel">Google Verification</span>
+                        </div>
+                        <p class="rg-google-gate-desc">
+                            Faculty, Staff, and Superior registration requires Google sign-in.
+                            After sign-in, an authentication code will be sent to your Gmail.
+                        </p>
+                        <div id="googleSignInContainer"></div>
+                        <div id="googleGateMessage" class="rg-google-message d-none"></div>
+                        <div id="googleCodeBox" class="rg-google-code-box d-none">
+                            <label class="rg-label" for="googleAuthCodeInput">Authentication Code</label>
+                            <div class="input-group">
+                                <input type="text" id="googleAuthCodeInput" class="form-control" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6-digit code">
+                                <button type="button" class="btn btn-primary" id="verifyGoogleCodeBtn">Verify Code</button>
+                            </div>
+                            <small class="text-muted d-block mt-2">Use the code sent to your Gmail inbox before continuing.</small>
+                        </div>
                     </div>
 
                     <div class="rg-login-link mt-4">
@@ -1561,10 +1633,10 @@ a.rg-contact-item:hover {
                                 <label class="rg-label">Email Address <span class="text-danger">*</span></label>
                                 <div class="rg-input-wrap">
                                     <i class="bi bi-envelope"></i>
-                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@norsu.edu.ph', 'id': 'regEmail', 'class': 'form-control rg-input', 'required': 'required'}}) }}
+                                    {{ form_widget(registrationForm.email, {'attr': {'placeholder': 'you@example.com', 'id': 'regEmail', 'class': 'form-control rg-input', 'required': 'required'}}) }}
                                 </div>
                                 {{ form_errors(registrationForm.email) }}
-                                <small class="text-muted mt-1 role-field" data-for="faculty staff superior" style="display:none">Email must end with @norsu.edu.ph.</small>
+                                <small class="text-muted mt-1 role-field" data-for="faculty staff superior" style="display:none">For Faculty, Staff, and Superior, this email is filled from your verified Google account.</small>
                             </div>
                         </div>
 
@@ -1881,7 +1953,7 @@ a.rg-contact-item:hover {
                             <i class="bi bi-info-circle-fill"></i>
                             <div>
                                 <strong>Admin Approval Required</strong>
-                                <p>Faculty, Staff, and Superior accounts require @norsu.edu.ph email, a registered ID, and administrator approval before access is granted.</p>
+                                <p>Faculty, Staff, and Superior accounts require Google verification, a registered ID, and administrator approval before access is granted.</p>
                             </div>
                         </div>
 
@@ -2079,9 +2151,30 @@ a.rg-contact-item:hover {
     var changeRoleBtn= document.getElementById('changeRoleBtn');
     var roleSelect   = document.getElementById('{{ registrationForm.role.vars.id }}');
     var regForm      = document.getElementById('regForm');
+    var firstNameInput = document.getElementById('{{ registrationForm.firstName.vars.id }}');
+    var lastNameInput  = document.getElementById('{{ registrationForm.lastName.vars.id }}');
     var emailInput   = document.getElementById('regEmail');
     var submitBtn    = document.getElementById('regSubmitBtn');
     var stepsEl      = document.getElementById('rgSteps');
+    var googleGatePanel = document.getElementById('googleGatePanel');
+    var googleGateRoleLabel = document.getElementById('googleGateRoleLabel');
+    var googleGateMessage = document.getElementById('googleGateMessage');
+    var googleSignInContainer = document.getElementById('googleSignInContainer');
+    var googleCodeBox = document.getElementById('googleCodeBox');
+    var googleAuthCodeInput = document.getElementById('googleAuthCodeInput');
+    var verifyGoogleCodeBtn = document.getElementById('verifyGoogleCodeBtn');
+
+    var googleAuthEnabled = {{ googleAuthEnabled|default(false) ? 'true' : 'false' }};
+    var googleAuthClientId = '{{ googleAuthClientId|default('')|e('js') }}';
+    var googleApiKey = '{{ googleApiKey|default('')|e('js') }}';
+    var googleAuthState = {{ googleAuthState|default({'verified': false})|json_encode|raw }};
+    var googleStartUrl = '{{ path('app_register_google_start') }}';
+    var googleVerifyUrl = '{{ path('app_register_google_verify_code') }}';
+    var pendingGoogleRole = '';
+
+    if (googleApiKey) {
+        window.GOOGLE_API_KEY = googleApiKey;
+    }
 
     var roleConfig = {
         student: { label: 'Student', icon: 'bi-mortarboard', color: '#1E40AF', bg: '#1E3A8A' },
@@ -2106,10 +2199,212 @@ a.rg-contact-item:hover {
         }
     }
 
-    /* ── Select role ── */
-    window.selectRole = function(role) {
-        var cfg = roleConfig[role];
+    function roleNeedsGoogle(role) {
+        return role === 'faculty' || role === 'staff' || role === 'superior';
+    }
+
+    function hasVerifiedGoogleForRole(role) {
+        return !!(googleAuthState
+            && googleAuthState.verified === true
+            && googleAuthState.role === role
+            && googleAuthState.email);
+    }
+
+    function maskEmailClient(email) {
+        if (!email || email.indexOf('@') === -1) return email || '';
+        var parts = email.split('@');
+        var local = parts[0] || '';
+        var domain = parts[1] || '';
+        if (local.length <= 2) {
+            return local.charAt(0) + '*@' + domain;
+        }
+        return local.substring(0, 2) + '*'.repeat(Math.max(1, local.length - 2)) + '@' + domain;
+    }
+
+    function setGoogleGateMessage(message, isError) {
+        if (!googleGateMessage) return;
+        googleGateMessage.textContent = message || '';
+        googleGateMessage.classList.remove('d-none', 'rg-google-error');
+        if (isError) {
+            googleGateMessage.classList.add('rg-google-error');
+        }
+    }
+
+    function renderGoogleButton() {
+        if (!googleAuthEnabled || !googleSignInContainer) return;
+        if (!window.google || !window.google.accounts || !window.google.accounts.id || !googleAuthClientId) {
+            setGoogleGateMessage('Google Sign-In is loading. Please wait a moment and try again.', true);
+            return;
+        }
+
+        googleSignInContainer.innerHTML = '';
+        window.google.accounts.id.initialize({
+            client_id: googleAuthClientId,
+            callback: handleGoogleCredential,
+            ux_mode: 'popup',
+            context: 'signup',
+            auto_select: false,
+            itp_support: true,
+        });
+
+        window.google.accounts.id.renderButton(googleSignInContainer, {
+            theme: 'outline',
+            size: 'large',
+            text: 'signup_with',
+            shape: 'rectangular',
+            width: 320,
+        });
+    }
+
+    function showGoogleGate(role, cfg) {
+        pendingGoogleRole = role;
+        if (roleSelect) roleSelect.value = role;
+        setStep(1);
+        formStep.classList.add('d-none');
+        roleStep.classList.remove('d-none');
+        if (googleGatePanel) googleGatePanel.classList.remove('d-none');
+
+        rgTitle.textContent = 'Verify with Google first';
+        rgSubtitle.textContent = 'Complete Google sign-in and Gmail code verification to register as ' + cfg.label + '.';
+
+        if (googleGateRoleLabel) {
+            googleGateRoleLabel.textContent = cfg.label + ' Google Verification';
+        }
+
+        if (!googleAuthEnabled) {
+            if (googleCodeBox) googleCodeBox.classList.add('d-none');
+            setGoogleGateMessage('Google Sign-In is not configured. Set GOOGLE_AUTH_CLIENT_ID in .env.local and restart the Symfony server.', true);
+            return;
+        }
+
+        if (hasVerifiedGoogleForRole(role)) {
+            setGoogleGateMessage('Google already verified for ' + maskEmailClient(googleAuthState.email) + '. You can continue.', false);
+            if (googleCodeBox) googleCodeBox.classList.add('d-none');
+            return;
+        }
+
+        if (googleAuthState && googleAuthState.role === role && googleAuthState.email) {
+            setGoogleGateMessage('Authentication code already sent to ' + maskEmailClient(googleAuthState.email) + '. Enter the code below.', false);
+            if (googleCodeBox) googleCodeBox.classList.remove('d-none');
+            if (googleAuthCodeInput) googleAuthCodeInput.focus();
+        } else {
+            if (googleCodeBox) googleCodeBox.classList.add('d-none');
+            setGoogleGateMessage('Sign in with Google to receive your authentication code.', false);
+        }
+
+        renderGoogleButton();
+    }
+
+    function handleGoogleCredential(response) {
+        if (!response || !response.credential || !pendingGoogleRole) {
+            setGoogleGateMessage('Google sign-in did not return a token. Please try again.', true);
+            return;
+        }
+
+        setGoogleGateMessage('Validating Google account and sending authentication code...', false);
+
+        fetch(googleStartUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                id_token: response.credential,
+                role: pendingGoogleRole,
+            }),
+        })
+            .then(function(res) {
+                return res.json()
+                    .catch(function() { return {}; })
+                    .then(function(data) {
+                        return { ok: res.ok, data: data };
+                    });
+            })
+            .then(function(result) {
+                if (!result.ok || !result.data || result.data.ok !== true) {
+                    throw new Error((result.data && result.data.message) ? result.data.message : 'Google sign-in failed.');
+                }
+
+                if (result.data.state) {
+                    googleAuthState = result.data.state;
+                }
+
+                var authMessage = result.data.message || 'Authentication code sent. Check your Gmail inbox.';
+                if (result.data.debugCode) {
+                    authMessage = authMessage + ' Code: ' + String(result.data.debugCode);
+                }
+
+                setGoogleGateMessage(authMessage, false);
+                if (googleCodeBox) googleCodeBox.classList.remove('d-none');
+                if (googleAuthCodeInput) {
+                    googleAuthCodeInput.value = result.data.debugCode ? String(result.data.debugCode) : '';
+                    googleAuthCodeInput.focus();
+                }
+            })
+            .catch(function(err) {
+                setGoogleGateMessage(err && err.message ? err.message : 'Unable to process Google sign-in.', true);
+            });
+    }
+
+    function verifyGoogleCode() {
+        if (!pendingGoogleRole) {
+            setGoogleGateMessage('Please select your role and sign in with Google first.', true);
+            return;
+        }
+
+        var code = googleAuthCodeInput ? googleAuthCodeInput.value.trim() : '';
+        if (!/^\d{6}$/.test(code)) {
+            setGoogleGateMessage('Enter the 6-digit authentication code from your Gmail.', true);
+            return;
+        }
+
+        setGoogleGateMessage('Verifying authentication code...', false);
+
+        fetch(googleVerifyUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                role: pendingGoogleRole,
+                code: code,
+            }),
+        })
+            .then(function(res) {
+                return res.json()
+                    .catch(function() { return {}; })
+                    .then(function(data) {
+                        return { ok: res.ok, data: data };
+                    });
+            })
+            .then(function(result) {
+                if (!result.ok || !result.data || result.data.ok !== true) {
+                    throw new Error((result.data && result.data.message) ? result.data.message : 'Invalid authentication code.');
+                }
+
+                if (result.data.state) {
+                    googleAuthState = result.data.state;
+                }
+
+                setGoogleGateMessage(result.data.message || 'Google verification complete.', false);
+
+                var cfg = roleConfig[pendingGoogleRole];
+                if (cfg) {
+                    openRoleForm(pendingGoogleRole, cfg);
+                }
+            })
+            .catch(function(err) {
+                setGoogleGateMessage(err && err.message ? err.message : 'Unable to verify authentication code.', true);
+            });
+    }
+
+    function openRoleForm(role, cfg) {
         if (!cfg) return;
+
         if (roleSelect) roleSelect.value = role;
 
         rolePill.innerHTML = '<i class="bi ' + cfg.icon + ' me-1"></i>' + cfg.label;
@@ -2141,8 +2436,25 @@ a.rg-contact-item:hover {
         });
 
         if (emailInput) {
-            emailInput.setAttribute('pattern', '^[^\\s@]+@norsu\\.edu\\.ph$');
-            emailInput.setAttribute('title', 'Use your @norsu.edu.ph email address.');
+            if (roleNeedsGoogle(role)) {
+                emailInput.removeAttribute('pattern');
+                emailInput.setAttribute('title', 'Email is synced from your Google sign-in.');
+                emailInput.readOnly = true;
+                if (googleAuthState && googleAuthState.email) {
+                    emailInput.value = googleAuthState.email;
+                }
+            } else {
+                emailInput.removeAttribute('pattern');
+                emailInput.setAttribute('title', 'Enter a valid email address.');
+                emailInput.readOnly = false;
+            }
+        }
+
+        if (roleNeedsGoogle(role) && firstNameInput && googleAuthState && googleAuthState.firstName && !firstNameInput.value) {
+            firstNameInput.value = googleAuthState.firstName;
+        }
+        if (roleNeedsGoogle(role) && lastNameInput && googleAuthState && googleAuthState.lastName && !lastNameInput.value) {
+            lastNameInput.value = googleAuthState.lastName;
         }
 
         /* Prevent duplicate department field submission */
@@ -2174,18 +2486,47 @@ a.rg-contact-item:hover {
 
         /* Transition steps */
         setStep(2);
+        if (googleGatePanel) googleGatePanel.classList.add('d-none');
         roleStep.classList.add('d-none');
         formStep.classList.remove('d-none');
         formStep.style.animation = 'none';
         void formStep.offsetHeight;
         formStep.style.animation = 'rgFadeIn 0.35s ease forwards';
+    }
+
+    /* ── Select role ── */
+    window.selectRole = function(role) {
+        var cfg = roleConfig[role];
+        if (!cfg) return;
+
+        if (roleNeedsGoogle(role)) {
+            if (!googleAuthEnabled || !hasVerifiedGoogleForRole(role)) {
+                showGoogleGate(role, cfg);
+                return;
+            }
+        }
+
+        openRoleForm(role, cfg);
     };
+
+    if (verifyGoogleCodeBtn) {
+        verifyGoogleCodeBtn.addEventListener('click', verifyGoogleCode);
+    }
+    if (googleAuthCodeInput) {
+        googleAuthCodeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                verifyGoogleCode();
+            }
+        });
+    }
 
     /* ── Change role ── */
     if (changeRoleBtn) {
         changeRoleBtn.addEventListener('click', function() {
             formStep.classList.add('d-none');
             roleStep.classList.remove('d-none');
+            if (googleGatePanel) googleGatePanel.classList.add('d-none');
             roleStep.style.animation = 'none';
             void roleStep.offsetHeight;
             roleStep.style.animation = 'rgFadeIn 0.35s ease forwards';
@@ -2208,6 +2549,20 @@ a.rg-contact-item:hover {
         regForm.addEventListener('submit', function(e) {
             var selectedRole = roleSelect ? roleSelect.value : '';
             var needsApproval = (selectedRole === 'faculty' || selectedRole === 'staff' || selectedRole === 'superior');
+
+            if (needsApproval) {
+                if (!googleAuthEnabled) {
+                    e.preventDefault();
+                    window.alert('Google Sign-In is not configured. Set GOOGLE_AUTH_CLIENT_ID in .env.local and restart the Symfony server.');
+                    return;
+                }
+
+                if (!hasVerifiedGoogleForRole(selectedRole)) {
+                    e.preventDefault();
+                    window.alert('Please complete Google sign-in and email authentication code verification first.');
+                    return;
+                }
+            }
 
             /* Disable validation on hidden role-specific fields so they don't block submission */
             regForm.querySelectorAll('.role-field').forEach(function(section) {
@@ -2486,4 +2841,7 @@ a.rg-contact-item:hover {
     }
 })();
 </script>
+{% if googleAuthEnabled|default(false) %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+{% endif %}
 {% endblock %}

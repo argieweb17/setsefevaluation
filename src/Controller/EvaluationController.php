@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use thiagoalessio\TesseractOCR\TesseractOCR;
@@ -227,9 +228,209 @@ class EvaluationController extends AbstractController
         return '';
     }
 
+    /**
+     * @return array{subjectAliases: array<string, string>, descriptionRules: array<int, array{code: string, keywords: array<int, string>, minKeywords: int, units: string}>, unitHints: array<string, string>}
+     */
+    private function getLoadslipGoldenMapping(): array
+    {
+        static $cache = null;
+        if (is_array($cache)) {
+            return $cache;
+        }
+
+        $cache = [
+            'subjectAliases' => [],
+            'descriptionRules' => [],
+            'unitHints' => [],
+        ];
+
+        $path = rtrim((string) $this->getParameter('kernel.project_dir'), '\\/')
+            . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'loadslip_ocr_golden.json';
+        if (!is_file($path) || !is_readable($path)) {
+            return $cache;
+        }
+
+        $decoded = json_decode((string) @file_get_contents($path), true);
+        if (!is_array($decoded)) {
+            return $cache;
+        }
+
+        foreach ((array) ($decoded['subjectAliases'] ?? []) as $alias => $canonical) {
+            $aliasKey = $this->compactSubjectCode((string) $alias);
+            $canonicalCode = $this->normalizeSubjectCode((string) $canonical);
+            if ($aliasKey === '' || $canonicalCode === '') {
+                continue;
+            }
+            $cache['subjectAliases'][$aliasKey] = $canonicalCode;
+        }
+
+        foreach ((array) ($decoded['descriptionRules'] ?? []) as $rule) {
+            if (!is_array($rule)) {
+                continue;
+            }
+
+            $code = $this->normalizeSubjectCode((string) ($rule['code'] ?? ''));
+            if ($code === '') {
+                continue;
+            }
+
+            $keywords = [];
+            foreach ((array) ($rule['keywords'] ?? []) as $keyword) {
+                $normalizedKeyword = strtoupper(trim((string) preg_replace('/[^A-Z0-9\s]/u', ' ', (string) $keyword)));
+                $normalizedKeyword = trim((string) preg_replace('/\s+/u', ' ', $normalizedKeyword));
+                if ($normalizedKeyword !== '') {
+                    $keywords[] = $normalizedKeyword;
+                }
+            }
+            $keywords = array_values(array_unique($keywords));
+            if (empty($keywords)) {
+                continue;
+            }
+
+            $units = trim((string) ($rule['units'] ?? ''));
+            if ($units !== '' && (!preg_match('/^\d+(?:\.\d+)?$/u', $units) || (float) $units > 10.0)) {
+                $units = '';
+            }
+
+            $minKeywords = (int) ($rule['minKeywords'] ?? count($keywords));
+            $minKeywords = max(1, min(count($keywords), $minKeywords));
+
+            $cache['descriptionRules'][] = [
+                'code' => $code,
+                'keywords' => $keywords,
+                'minKeywords' => $minKeywords,
+                'units' => $units,
+            ];
+        }
+
+        foreach ((array) ($decoded['unitHints'] ?? []) as $code => $units) {
+            $normalizedCode = $this->normalizeSubjectCode((string) $code);
+            $normalizedUnits = trim((string) $units);
+            if ($normalizedCode === '' || $normalizedUnits === '') {
+                continue;
+            }
+            if (!preg_match('/^\d+(?:\.\d+)?$/u', $normalizedUnits) || (float) $normalizedUnits > 10.0) {
+                continue;
+            }
+            $cache['unitHints'][$normalizedCode] = $normalizedUnits;
+        }
+
+        return $cache;
+    }
+
+    /**
+     * @param array{subjectAliases?: array<string, string>} $mapping
+     */
+    private function resolveLoadslipGoldenSubjectAlias(string $candidate, array $mapping): string
+    {
+        $compact = $this->compactSubjectCode($candidate);
+        if ($compact === '') {
+            return '';
+        }
+
+        return (string) (($mapping['subjectAliases'][$compact] ?? ''));
+    }
+
+    /**
+     * @param array{descriptionRules?: array<int, array{code: string, keywords: array<int, string>, minKeywords: int, units: string}>} $mapping
+     * @return array{code: string, keywords: array<int, string>, minKeywords: int, units: string}|null
+     */
+    private function matchLoadslipGoldenDescriptionRule(string $description, array $mapping): ?array
+    {
+        $normalized = strtoupper(trim((string) preg_replace('/[^A-Z0-9\s]/u', ' ', $description)));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+        if ($normalized === '') {
+            return null;
+        }
+
+        $bestRule = null;
+        $bestScore = -1;
+        foreach ((array) ($mapping['descriptionRules'] ?? []) as $rule) {
+            if (!is_array($rule)) {
+                continue;
+            }
+
+            $matchedKeywords = 0;
+            foreach ((array) ($rule['keywords'] ?? []) as $keyword) {
+                if ($keyword !== '' && str_contains($normalized, $keyword)) {
+                    $matchedKeywords++;
+                }
+            }
+
+            $required = (int) ($rule['minKeywords'] ?? count((array) ($rule['keywords'] ?? [])));
+            if ($matchedKeywords < max(1, $required)) {
+                continue;
+            }
+
+            if ($matchedKeywords > $bestScore) {
+                $bestScore = $matchedKeywords;
+                $bestRule = $rule;
+            }
+        }
+
+        return $bestRule;
+    }
+
+    private function applyLoadslipGoldenRowHints(array $row): array
+    {
+        $mapping = $this->getLoadslipGoldenMapping();
+        $code = $this->normalizeSubjectCode((string) ($row['code'] ?? ''));
+        $description = trim((string) ($row['description'] ?? ''));
+        $units = trim((string) ($row['units'] ?? ''));
+
+        $aliasCode = $this->resolveLoadslipGoldenSubjectAlias($code, $mapping);
+        if ($aliasCode !== '') {
+            $code = $aliasCode;
+        }
+
+        $code = $this->applyLoadslipSubjectCodeDescriptionHeuristic($code, $description);
+        $description = $this->normalizeLoadslipDescription($description, $code);
+
+        $rule = $this->matchLoadslipGoldenDescriptionRule($description, $mapping);
+        if (is_array($rule) && $units === '') {
+            $units = trim((string) ($rule['units'] ?? ''));
+        }
+
+        if ($units === '' && $code !== '' && isset($mapping['unitHints'][$code])) {
+            $units = trim((string) ($mapping['unitHints'][$code] ?? ''));
+        }
+
+        if ($units !== '' && (!preg_match('/^\d+(?:\.\d+)?$/u', $units) || (float) $units > 10.0)) {
+            $units = '';
+        }
+
+        $row['code'] = $code;
+        $row['description'] = $description;
+        $row['units'] = $units;
+
+        return $row;
+    }
+
+    private function isLikelyLoadslipNonSubjectText(string $value): bool
+    {
+        $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+        if ($normalized === '') {
+            return false;
+        }
+
+        return (bool) preg_match(
+            '/\b(?:NOTE|NO\s+REFUND|WITHDRAWAL|DROPPING\s+OF\s+(?:COURSES?|SUBJECTS?)|STUDENT,?\s*PARENT|ENCODED\s+BY|PRINTED\s+BY|DATE\s+ENROLLED|TOTAL\s+SUBJECTS?|TOTAL\s+UNITS?)\b/u',
+            $normalized
+        );
+    }
+
     private function resolveToKnownSubjectCode(string $candidate, array $knownCodeByCompact): string
     {
         $normalized = $this->normalizeSubjectCode($candidate);
+        $goldenMapping = $this->getLoadslipGoldenMapping();
+        $goldenAlias = $this->resolveLoadslipGoldenSubjectAlias($normalized, $goldenMapping);
+        if ($goldenAlias !== '') {
+            $goldenCompact = $this->compactSubjectCode($goldenAlias);
+            if ($goldenCompact !== '' && (empty($knownCodeByCompact) || isset($knownCodeByCompact[$goldenCompact]))) {
+                return $goldenAlias;
+            }
+        }
+
         $compact = $this->compactSubjectCode($normalized);
         if ($compact === '' || empty($knownCodeByCompact)) {
             return '';
@@ -287,15 +488,23 @@ class EvaluationController extends AbstractController
     private function applyLoadslipSubjectCodeDescriptionHeuristic(string $code, string $description): string
     {
         $normalizedCode = $this->normalizeSubjectCode($code);
-        if (!$this->isLikelySubjectCode($normalizedCode)) {
-            return $normalizedCode;
-        }
-
         $desc = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $description)));
         $desc = (string) preg_replace('/[^A-Z0-9\s]/u', ' ', $desc);
         $desc = trim((string) preg_replace('/\s+/u', ' ', $desc));
         if ($desc === '') {
             return $normalizedCode;
+        }
+
+        if ($this->isLikelyLoadslipNonSubjectText($desc)) {
+            return $normalizedCode;
+        }
+
+        $goldenRule = $this->matchLoadslipGoldenDescriptionRule($desc, $this->getLoadslipGoldenMapping());
+        if (is_array($goldenRule)) {
+            $goldenCode = $this->normalizeSubjectCode((string) ($goldenRule['code'] ?? ''));
+            if ($goldenCode !== '' && ($normalizedCode === '' || !$this->isLikelySubjectCode($normalizedCode))) {
+                return $goldenCode;
+            }
         }
 
         // Description-first recovery for rows where OCR misreads the code cell.
@@ -307,8 +516,16 @@ class EvaluationController extends AbstractController
             return 'ITS 404';
         }
 
+        if (preg_match('/\bPROFESSIONAL\b.*\bISSUES?\b/u', $desc) && preg_match('/\bIT\b/u', $desc)) {
+            return 'ITS 404';
+        }
+
         if (preg_match('/\bMULTIMEDIA\b/u', $desc) && preg_match('/\bSYSTEMS?\b/u', $desc)) {
             return 'ITS 405';
+        }
+
+        if (!$this->isLikelySubjectCode($normalizedCode)) {
+            return $normalizedCode;
         }
 
         // OCR can flip the last digit for BSIT capstone rows; description is a stronger signal.
@@ -421,9 +638,188 @@ class EvaluationController extends AbstractController
         return !in_array($prefix, $noisePrefixes, true);
     }
 
+    private function lineStartsWithLikelySubjectCode(string $value): bool
+    {
+        $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+        if ($normalized === '') {
+            return false;
+        }
+
+        if (!preg_match('/^\s*([A-Z0-9]{2,8}\s*-?\s*[A-Z0-9]{1,6}|[A-Z]{2,8}[0-9OQDILSZGB]{1,4}[A-Z]?)\b/u', $normalized, $m)) {
+            return false;
+        }
+
+        return $this->isLikelySubjectCode((string) ($m[1] ?? ''));
+    }
+
     private function normalizeHeaderName(string $value): string
     {
         return strtolower(trim(preg_replace('/\s+/', ' ', $value)));
+    }
+
+    private function normalizeLoadslipHeaderToken(string $value): string
+    {
+        $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+        if ($normalized === '') {
+            return '';
+        }
+
+        $normalized = strtr($normalized, [
+            '0' => 'O',
+            '1' => 'I',
+            '2' => 'Z',
+            '3' => 'E',
+            '4' => 'A',
+            '5' => 'S',
+            '6' => 'G',
+            '7' => 'T',
+            '8' => 'B',
+            '9' => 'G',
+            '|' => 'I',
+            '!' => 'I',
+        ]);
+
+        return (string) preg_replace('/[^A-Z]/u', '', $normalized);
+    }
+
+    private function classifyLoadslipHeaderToken(string $value): ?string
+    {
+        $normalized = $this->normalizeLoadslipHeaderToken($value);
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (str_starts_with($normalized, 'SUBJ') || $normalized === 'CODE') {
+            return 'code';
+        }
+
+        if ($normalized === 'SEC' || str_starts_with($normalized, 'SECT')) {
+            return 'section';
+        }
+
+        if (str_starts_with($normalized, 'DESC') || str_starts_with($normalized, 'DESCR')) {
+            return 'description';
+        }
+
+        if (str_starts_with($normalized, 'SCHE') || str_starts_with($normalized, 'SCHED')) {
+            return 'schedule';
+        }
+
+        if ($normalized === 'RM' || $normalized === 'ROOM') {
+            return 'room';
+        }
+
+        if (str_starts_with($normalized, 'UNIT')) {
+            return 'units';
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractLoadslipHeaderKindsFromText(string $value): array
+    {
+        $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+        if ($normalized === '') {
+            return [];
+        }
+
+        $tokens = array_values(array_filter(
+            preg_split('/[^A-Z0-9|!]+/u', $normalized) ?: [],
+            static fn(string $token): bool => $token !== ''
+        ));
+        if (empty($tokens)) {
+            return [];
+        }
+
+        $kinds = [];
+        $tokenCount = count($tokens);
+        for ($i = 0; $i < $tokenCount; $i++) {
+            $candidate = '';
+            for ($len = 1; $len <= 3 && ($i + $len) <= $tokenCount; $len++) {
+                $candidate .= (string) $tokens[$i + $len - 1];
+                $kind = $this->classifyLoadslipHeaderToken($candidate);
+                if ($kind !== null) {
+                    $kinds[$kind] = true;
+                }
+            }
+        }
+
+        return array_keys($kinds);
+    }
+
+    /**
+     * @param array<int, string> $lines
+     * @return array{start: int, end: int}|null
+     */
+    private function detectLoadslipHeaderSpan(array $lines): ?array
+    {
+        $requiredKinds = ['code', 'section', 'description', 'schedule', 'units'];
+        $lineCount = count($lines);
+
+        for ($idx = 0; $idx < $lineCount; $idx++) {
+            $current = trim((string) ($lines[$idx] ?? ''));
+            if ($current === '') {
+                continue;
+            }
+
+            $candidates = [
+                ['start' => $idx, 'end' => $idx, 'text' => $current],
+            ];
+
+            if (($idx + 1) < $lineCount) {
+                $next = trim((string) ($lines[$idx + 1] ?? ''));
+                if ($next !== '') {
+                    $candidates[] = [
+                        'start' => $idx,
+                        'end' => $idx + 1,
+                        'text' => $current . ' ' . $next,
+                    ];
+                }
+            }
+
+            foreach ($candidates as $candidate) {
+                $kinds = $this->extractLoadslipHeaderKindsFromText((string) ($candidate['text'] ?? ''));
+                if (count(array_intersect($requiredKinds, $kinds)) !== count($requiredKinds)) {
+                    continue;
+                }
+
+                return [
+                    'start' => (int) ($candidate['start'] ?? $idx),
+                    'end' => (int) ($candidate['end'] ?? $idx),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int, array{text?: string, left?: int}> $words
+     * @return array<string, int>
+     */
+    private function extractLoadslipHeaderAnchorsFromWords(array $words): array
+    {
+        $anchors = [];
+        $wordCount = count($words);
+
+        for ($idx = 0; $idx < $wordCount; $idx++) {
+            $candidate = '';
+            for ($len = 1; $len <= 3 && ($idx + $len) <= $wordCount; $len++) {
+                $candidate .= (string) (($words[$idx + $len - 1]['text'] ?? ''));
+                $kind = $this->classifyLoadslipHeaderToken($candidate);
+                if ($kind === null || isset($anchors[$kind])) {
+                    continue;
+                }
+
+                $anchors[$kind] = (int) ($words[$idx]['left'] ?? 0);
+                break;
+            }
+        }
+
+        return $anchors;
     }
 
     private function normalizeStudentNumber(string $value): string
@@ -831,31 +1227,19 @@ class EvaluationController extends AbstractController
             return null;
         }
 
-        $headerIndex = null;
-        foreach ($lines as $idx => $lineRaw) {
-            $line = strtoupper(trim((string) preg_replace('/\s+/u', ' ', (string) $lineRaw)));
-            if ($line === '') {
-                continue;
-            }
-
-            $hasHeaderTokens = preg_match('/\bSUBJ(?:ECT)?\b/u', $line)
-                && preg_match('/\bSECTION\b/u', $line)
-                && preg_match('/\bDESCRIPT(?:ION)?\b/u', $line)
-                && preg_match('/\bSCHEDULE\b/u', $line)
-                && preg_match('/\bUNITS?\b/u', $line);
-
-            if ($hasHeaderTokens) {
-                $headerIndex = (int) $idx;
-                break;
-            }
-        }
-
-        if ($headerIndex === null) {
+        $headerSpan = $this->detectLoadslipHeaderSpan(array_map(
+            static fn($line): string => (string) $line,
+            $lines
+        ));
+        if ($headerSpan === null) {
             return null;
         }
 
+        $headerIndex = (int) ($headerSpan['start'] ?? 0);
+        $headerEnd = max($headerIndex, (int) ($headerSpan['end'] ?? $headerIndex));
+
         $lineCount = count($lines);
-        $start = min($lineCount - 1, $headerIndex + 1);
+        $start = min($lineCount - 1, $headerEnd + 1);
         $maxLookahead = min($lineCount - 1, $start + 42);
 
         $seenRow = false;
@@ -903,6 +1287,7 @@ class EvaluationController extends AbstractController
         if (!$seenRow) {
             return [
                 'header' => $headerIndex,
+                'headerEnd' => $headerEnd,
                 'start' => $start,
                 'end' => min($lineCount - 1, $start + 18),
                 'hasRows' => false,
@@ -911,6 +1296,7 @@ class EvaluationController extends AbstractController
 
         return [
             'header' => $headerIndex,
+            'headerEnd' => $headerEnd,
             'start' => $start,
             'end' => max($start, $lastRowIndex),
             'hasRows' => true,
@@ -1238,6 +1624,690 @@ class EvaluationController extends AbstractController
                 'units' => $unitsColumn,
             ],
         ];
+    }
+
+    private function runLoadslipTsvOcr(string $path, int $psm, ?string $tesseractExecutable): ?string
+    {
+        $binary = $tesseractExecutable !== null && $tesseractExecutable !== '' ? $tesseractExecutable : 'tesseract';
+
+        try {
+            $process = new Process([$binary, $path, 'stdout', '-l', 'eng', '--psm', (string) $psm, 'tsv']);
+            $process->setTimeout(25);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                return null;
+            }
+
+            $output = trim((string) $process->getOutput());
+            if ($output === '' || !str_contains($output, "\t")) {
+                return null;
+            }
+
+            return $output;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>
+     */
+    private function parseLoadslipTsvWords(string $tsv): array
+    {
+        $lines = preg_split('/\R/u', trim($tsv)) ?: [];
+        if (count($lines) < 2) {
+            return [];
+        }
+
+        $headers = array_map('trim', explode("\t", (string) array_shift($lines)));
+        $headerIndex = [];
+        foreach ($headers as $idx => $header) {
+            $headerIndex[$header] = $idx;
+        }
+
+        $required = ['level', 'page_num', 'block_num', 'par_num', 'line_num', 'word_num', 'left', 'top', 'width', 'height', 'conf', 'text'];
+        foreach ($required as $key) {
+            if (!array_key_exists($key, $headerIndex)) {
+                return [];
+            }
+        }
+
+        $words = [];
+        foreach ($lines as $line) {
+            $cells = explode("\t", (string) $line, count($headers));
+            if (count($cells) < count($headers)) {
+                $cells = array_pad($cells, count($headers), '');
+            }
+
+            $level = (int) ($cells[$headerIndex['level']] ?? 0);
+            if ($level !== 5) {
+                continue;
+            }
+
+            $text = trim((string) ($cells[$headerIndex['text']] ?? ''));
+            if ($text === '') {
+                continue;
+            }
+
+            $left = (int) ($cells[$headerIndex['left']] ?? 0);
+            $top = (int) ($cells[$headerIndex['top']] ?? 0);
+            $width = (int) ($cells[$headerIndex['width']] ?? 0);
+            $height = (int) ($cells[$headerIndex['height']] ?? 0);
+            if ($width <= 0 || $height <= 0) {
+                continue;
+            }
+
+            $words[] = [
+                'text' => $text,
+                'left' => $left,
+                'top' => $top,
+                'width' => $width,
+                'height' => $height,
+                'right' => $left + $width,
+                'bottom' => $top + $height,
+                'conf' => (float) ($cells[$headerIndex['conf']] ?? 0),
+                'page_num' => (int) ($cells[$headerIndex['page_num']] ?? 0),
+                'block_num' => (int) ($cells[$headerIndex['block_num']] ?? 0),
+                'par_num' => (int) ($cells[$headerIndex['par_num']] ?? 0),
+                'line_num' => (int) ($cells[$headerIndex['line_num']] ?? 0),
+                'word_num' => (int) ($cells[$headerIndex['word_num']] ?? 0),
+            ];
+        }
+
+        return $words;
+    }
+
+    /**
+     * @param array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}> $words
+     * @return array<int, array{text: string, left: int, top: int, right: int, bottom: int, words: array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>}>
+     */
+    private function buildLoadslipTsvLines(array $words): array
+    {
+        if (empty($words)) {
+            return [];
+        }
+
+        $grouped = [];
+        foreach ($words as $word) {
+            $key = implode(':', [
+                (int) ($word['page_num'] ?? 0),
+                (int) ($word['block_num'] ?? 0),
+                (int) ($word['par_num'] ?? 0),
+                (int) ($word['line_num'] ?? 0),
+            ]);
+            $grouped[$key] ??= [];
+            $grouped[$key][] = $word;
+        }
+
+        $lines = [];
+        foreach ($grouped as $lineWords) {
+            usort($lineWords, static fn(array $a, array $b): int => (($a['left'] ?? 0) <=> ($b['left'] ?? 0)) ?: (($a['top'] ?? 0) <=> ($b['top'] ?? 0)));
+            $textParts = [];
+            $left = null;
+            $top = null;
+            $right = null;
+            $bottom = null;
+            foreach ($lineWords as $word) {
+                $textParts[] = trim((string) ($word['text'] ?? ''));
+                $left = $left === null ? (int) ($word['left'] ?? 0) : min($left, (int) ($word['left'] ?? 0));
+                $top = $top === null ? (int) ($word['top'] ?? 0) : min($top, (int) ($word['top'] ?? 0));
+                $right = $right === null ? (int) ($word['right'] ?? 0) : max($right, (int) ($word['right'] ?? 0));
+                $bottom = $bottom === null ? (int) ($word['bottom'] ?? 0) : max($bottom, (int) ($word['bottom'] ?? 0));
+            }
+
+            $text = trim(implode(' ', array_filter($textParts, static fn(string $v): bool => $v !== '')));
+            if ($text === '') {
+                continue;
+            }
+
+            $lines[] = [
+                'text' => $text,
+                'left' => $left ?? 0,
+                'top' => $top ?? 0,
+                'right' => $right ?? 0,
+                'bottom' => $bottom ?? 0,
+                'words' => $lineWords,
+            ];
+        }
+
+        usort($lines, static fn(array $a, array $b): int => (($a['top'] ?? 0) <=> ($b['top'] ?? 0)) ?: (($a['left'] ?? 0) <=> ($b['left'] ?? 0)));
+
+        return array_values($lines);
+    }
+
+    /**
+     * @param array<int, array{text: string, left: int, top: int, right: int, bottom: int, words: array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>, lineNumber?: int, lineNumberEnd?: int}> $lines
+     * @return array<int, array{text: string, left: int, top: int, right: int, bottom: int, words: array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>, lineNumber: int, lineNumberEnd: int}>
+     */
+    private function mergeLoadslipTsvLinesIntoVisualRows(array $lines): array
+    {
+        if (empty($lines)) {
+            return [];
+        }
+
+        $heights = [];
+        foreach ($lines as $line) {
+            $heights[] = max(1, ((int) ($line['bottom'] ?? 0) - (int) ($line['top'] ?? 0)) + 1);
+        }
+        sort($heights, SORT_NUMERIC);
+        $medianHeight = empty($heights) ? 16 : (int) ($heights[(int) floor(count($heights) / 2)] ?? 16);
+
+        usort($lines, static fn(array $a, array $b): int => (($a['top'] ?? 0) <=> ($b['top'] ?? 0)) ?: (($a['left'] ?? 0) <=> ($b['left'] ?? 0)));
+
+        $merged = [];
+        $current = null;
+        $flush = static function (?array &$row, array &$bucket): void {
+            if (!is_array($row)) {
+                return;
+            }
+
+            usort($row['words'], static fn(array $a, array $b): int => (($a['left'] ?? 0) <=> ($b['left'] ?? 0)) ?: (($a['top'] ?? 0) <=> ($b['top'] ?? 0)));
+            $textParts = [];
+            foreach ((array) ($row['words'] ?? []) as $word) {
+                $text = trim((string) ($word['text'] ?? ''));
+                if ($text !== '') {
+                    $textParts[] = $text;
+                }
+            }
+            $row['text'] = trim(implode(' ', $textParts));
+            unset($row['hasCode']);
+
+            if ($row['text'] !== '') {
+                $bucket[] = $row;
+            }
+            $row = null;
+        };
+
+        foreach ($lines as $line) {
+            $lineText = trim((string) ($line['text'] ?? ''));
+            if ($lineText === '') {
+                continue;
+            }
+
+            $lineHasCode = $this->lineStartsWithLikelySubjectCode($lineText);
+            $lineNumber = max(1, (int) ($line['lineNumber'] ?? 1));
+            $lineNumberEnd = max($lineNumber, (int) ($line['lineNumberEnd'] ?? $lineNumber));
+            $lineTop = (int) ($line['top'] ?? 0);
+            $lineBottom = (int) ($line['bottom'] ?? $lineTop);
+            $lineHeight = max(1, $lineBottom - $lineTop + 1);
+            $lineCenter = (int) round(($lineTop + $lineBottom) / 2);
+
+            if (!is_array($current)) {
+                $current = [
+                    'text' => $lineText,
+                    'left' => (int) ($line['left'] ?? 0),
+                    'top' => $lineTop,
+                    'right' => (int) ($line['right'] ?? 0),
+                    'bottom' => $lineBottom,
+                    'words' => array_values((array) ($line['words'] ?? [])),
+                    'lineNumber' => $lineNumber,
+                    'lineNumberEnd' => $lineNumberEnd,
+                    'hasCode' => $lineHasCode,
+                ];
+                continue;
+            }
+
+            $currentTop = (int) ($current['top'] ?? 0);
+            $currentBottom = (int) ($current['bottom'] ?? $currentTop);
+            $currentHeight = max(1, $currentBottom - $currentTop + 1);
+            $currentCenter = (int) round(($currentTop + $currentBottom) / 2);
+            $currentHasCode = (bool) ($current['hasCode'] ?? false);
+
+            $gapThreshold = max(8, (int) round(max($medianHeight, min($currentHeight, $lineHeight)) * 0.45));
+            $centerThreshold = max(10, (int) round(max($medianHeight, min($currentHeight, $lineHeight)) * 0.85));
+            $verticalGap = $lineTop - $currentBottom;
+            $sameBand = $verticalGap <= $gapThreshold || abs($lineCenter - $currentCenter) <= $centerThreshold;
+            $shouldMerge = $sameBand && !($lineHasCode && $currentHasCode);
+
+            if (!$shouldMerge) {
+                $flush($current, $merged);
+                $current = [
+                    'text' => $lineText,
+                    'left' => (int) ($line['left'] ?? 0),
+                    'top' => $lineTop,
+                    'right' => (int) ($line['right'] ?? 0),
+                    'bottom' => $lineBottom,
+                    'words' => array_values((array) ($line['words'] ?? [])),
+                    'lineNumber' => $lineNumber,
+                    'lineNumberEnd' => $lineNumberEnd,
+                    'hasCode' => $lineHasCode,
+                ];
+                continue;
+            }
+
+            $current['left'] = min((int) ($current['left'] ?? 0), (int) ($line['left'] ?? 0));
+            $current['top'] = min($currentTop, $lineTop);
+            $current['right'] = max((int) ($current['right'] ?? 0), (int) ($line['right'] ?? 0));
+            $current['bottom'] = max($currentBottom, $lineBottom);
+            $current['lineNumberEnd'] = max((int) ($current['lineNumberEnd'] ?? $lineNumberEnd), $lineNumberEnd);
+            $current['hasCode'] = $currentHasCode || $lineHasCode;
+            foreach ((array) ($line['words'] ?? []) as $word) {
+                $current['words'][] = $word;
+            }
+        }
+
+        $flush($current, $merged);
+
+        return array_values($merged);
+    }
+
+    /**
+     * @param array<int, array{text: string, left: int, top: int, right: int, bottom: int, words: array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>}> $lines
+     * @return array{lineIndex: int, lineIndexEnd: int, lineNumber: int, lineNumberEnd: int, anchors: array<string, int>}|null
+     */
+    private function detectLoadslipTsvHeader(array $lines): ?array
+    {
+        foreach ($lines as $idx => $line) {
+            $candidates = [
+                [
+                    'lineIndex' => $idx,
+                    'lineIndexEnd' => $idx,
+                    'lineNumber' => (int) ($line['lineNumber'] ?? ($idx + 1)),
+                    'lineNumberEnd' => (int) ($line['lineNumberEnd'] ?? ($line['lineNumber'] ?? ($idx + 1))),
+                    'text' => (string) ($line['text'] ?? ''),
+                    'words' => (array) ($line['words'] ?? []),
+                ],
+            ];
+
+            if (($idx + 1) < count($lines)) {
+                $nextLine = (array) ($lines[$idx + 1] ?? []);
+                $combinedText = trim((string) ($line['text'] ?? '') . ' ' . (string) ($nextLine['text'] ?? ''));
+                if ($combinedText !== '') {
+                    $candidates[] = [
+                        'lineIndex' => $idx,
+                        'lineIndexEnd' => $idx + 1,
+                        'lineNumber' => (int) ($line['lineNumber'] ?? ($idx + 1)),
+                        'lineNumberEnd' => (int) ($nextLine['lineNumberEnd'] ?? ($nextLine['lineNumber'] ?? ($idx + 2))),
+                        'text' => $combinedText,
+                        'words' => array_merge((array) ($line['words'] ?? []), (array) ($nextLine['words'] ?? [])),
+                    ];
+                }
+            }
+
+            foreach ($candidates as $candidate) {
+                $kinds = $this->extractLoadslipHeaderKindsFromText((string) ($candidate['text'] ?? ''));
+                if (count(array_intersect(['code', 'section', 'description', 'schedule', 'units'], $kinds)) !== 5) {
+                    continue;
+                }
+
+                $anchors = $this->extractLoadslipHeaderAnchorsFromWords((array) ($candidate['words'] ?? []));
+                if (isset($anchors['code'], $anchors['section'], $anchors['description'], $anchors['schedule'], $anchors['units'])) {
+                    return [
+                        'lineIndex' => (int) ($candidate['lineIndex'] ?? $idx),
+                        'lineIndexEnd' => (int) ($candidate['lineIndexEnd'] ?? $idx),
+                        'lineNumber' => (int) ($candidate['lineNumber'] ?? ($idx + 1)),
+                        'lineNumberEnd' => (int) ($candidate['lineNumberEnd'] ?? ($idx + 1)),
+                        'anchors' => $anchors,
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, int> $anchors
+     * @return array<string, array{start: int, end: int}>
+     */
+    private function buildLoadslipTsvColumnBounds(array $anchors, int $imageWidth): array
+    {
+        $ordered = [];
+        foreach (['code', 'section', 'description', 'schedule', 'room', 'units'] as $name) {
+            if (isset($anchors[$name])) {
+                $ordered[$name] = (int) $anchors[$name];
+            }
+        }
+
+        asort($ordered, SORT_NUMERIC);
+        $keys = array_keys($ordered);
+        $bounds = [];
+        $count = count($keys);
+        for ($i = 0; $i < $count; $i++) {
+            $name = $keys[$i];
+            $current = (int) ($ordered[$name] ?? 0);
+            $prev = $i > 0 ? (int) ($ordered[$keys[$i - 1]] ?? 0) : 0;
+            $next = $i + 1 < $count ? (int) ($ordered[$keys[$i + 1]] ?? $imageWidth) : $imageWidth;
+
+            $start = $i === 0 ? 0 : (int) floor(($prev + $current) / 2);
+            $end = $i + 1 < $count ? (int) ceil(($current + $next) / 2) : max($imageWidth, $current + 1);
+            $bounds[$name] = ['start' => $start, 'end' => $end];
+        }
+
+        return $bounds;
+    }
+
+    /**
+     * @param array<string, array{start: int, end: int}> $bounds
+     */
+    private function assignLoadslipTsvWordToColumn(array $word, array $bounds): ?string
+    {
+        $center = (int) round(((int) ($word['left'] ?? 0) + (int) ($word['right'] ?? 0)) / 2);
+        foreach ($bounds as $name => $range) {
+            if ($center >= (int) ($range['start'] ?? 0) && $center < (int) ($range['end'] ?? PHP_INT_MAX)) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, string> $columns
+     * @return array{text: string, columnsPreview: array<int, string>, columnMap: array{code: int|null, section: int|null, description: int|null, schedule: int|null, units: int|null}}
+     */
+    private function buildLoadslipTsvStructuredRowPayload(array $columns): array
+    {
+        $orderedColumns = [
+            'code' => trim((string) ($columns['code'] ?? '')),
+            'section' => trim((string) ($columns['section'] ?? '')),
+            'description' => trim((string) ($columns['description'] ?? '')),
+            'schedule' => trim((string) ($columns['schedule'] ?? '')),
+            'room' => trim((string) ($columns['room'] ?? '')),
+            'units' => trim((string) ($columns['units'] ?? '')),
+        ];
+
+        $segments = [];
+        $columnsPreview = [];
+        $columnPositions = [];
+        $position = 0;
+        foreach ($orderedColumns as $name => $value) {
+            if ($value === '') {
+                continue;
+            }
+            $position++;
+            $segments[] = $value;
+            $columnsPreview[] = $value;
+            $columnPositions[$name] = $position;
+        }
+
+        return [
+            'text' => trim(implode('  ', $segments)),
+            'columnsPreview' => $columnsPreview,
+            'columnMap' => [
+                'code' => $columnPositions['code'] ?? null,
+                'section' => $columnPositions['section'] ?? null,
+                'description' => $columnPositions['description'] ?? null,
+                'schedule' => $columnPositions['schedule'] ?? null,
+                'units' => $columnPositions['units'] ?? null,
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, array{text: string, left: int, top: int, right: int, bottom: int, words: array<int, array{text: string, left: int, top: int, width: int, height: int, right: int, bottom: int, conf: float, page_num: int, block_num: int, par_num: int, line_num: int, word_num: int}>}> $lines
+     * @return array{rows: array<int, array{text: string, lineNumber: int, lineNumberEnd: int, tableRow: int, columnCount: int, columnsPreview: array<int, string>, columnMap: array{code: int|null, section: int|null, description: int|null, schedule: int|null, units: int|null}}>, trace: array<string, mixed>}
+     */
+    private function extractLoadslipStructuredRowsFromTsv(string $path, array $psmModes, ?string $tesseractExecutable, string $schedulePattern): array
+    {
+        $allRows = [];
+        $bestHeaderLine = null;
+        $modeTraces = [];
+        $trace = [
+            'psmModesTried' => array_values(array_unique(array_map('intval', $psmModes))),
+            'psmModesSucceeded' => [],
+            'psmRowCounts' => [],
+            'headerFound' => false,
+            'headerLine' => null,
+            'rowCandidates' => 0,
+            'modeRows' => [],
+        ];
+
+        foreach (array_values(array_unique(array_map('intval', $psmModes))) as $psm) {
+            $tsv = $this->runLoadslipTsvOcr($path, $psm, $tesseractExecutable);
+            if ($tsv === null) {
+                continue;
+            }
+
+            $words = $this->parseLoadslipTsvWords($tsv);
+            if (empty($words)) {
+                continue;
+            }
+
+            $nativeLines = $this->buildLoadslipTsvLines($words);
+            if (empty($nativeLines)) {
+                continue;
+            }
+
+            $lines = [];
+            foreach ($nativeLines as $lineIdx => $line) {
+                $line['lineNumber'] = $lineIdx + 1;
+                $line['lineNumberEnd'] = $lineIdx + 1;
+                $lines[] = $line;
+            }
+
+            $header = $this->detectLoadslipTsvHeader($lines);
+            $modeTrace = [
+                'psm' => $psm,
+                'headerFound' => $header !== null,
+                'headerLine' => $header['lineNumber'] ?? null,
+                'rowCandidates' => 0,
+                'visualRows' => 0,
+            ];
+
+            if ($header === null) {
+                $trace['psmRowCounts'][(string) $psm] = 0;
+                $modeTraces[] = $modeTrace;
+                continue;
+            }
+
+            $trace['psmModesSucceeded'][] = $psm;
+            $trace['headerFound'] = true;
+            if ($bestHeaderLine === null || ((int) ($header['lineNumber'] ?? PHP_INT_MAX)) < $bestHeaderLine) {
+                $bestHeaderLine = (int) ($header['lineNumber'] ?? 0);
+            }
+
+            $imageWidth = 0;
+            foreach ($words as $word) {
+                $imageWidth = max($imageWidth, (int) ($word['right'] ?? 0));
+            }
+
+            $bounds = $this->buildLoadslipTsvColumnBounds((array) ($header['anchors'] ?? []), $imageWidth > 0 ? $imageWidth : 4000);
+            $rows = [];
+            $currentBlock = null;
+            $footerPattern = '/\b(?:TOTAL\s+SUBJECTS?|TOTAL\s+UNITS?|ENCODED\s+BY|PRINTED\s+BY|DATE\s+ENROLLED|NOTE\s*:|STUDENT,?\s*PARENT)\b/u';
+            $rowLines = $this->mergeLoadslipTsvLinesIntoVisualRows(array_slice($lines, ((int) ($header['lineIndexEnd'] ?? ($header['lineIndex'] ?? 0))) + 1));
+            $modeTrace['visualRows'] = count($rowLines);
+
+            $flushCurrent = function () use (&$rows, &$currentBlock): void {
+                if (!is_array($currentBlock)) {
+                    return;
+                }
+
+                $payload = $this->buildLoadslipTsvStructuredRowPayload((array) ($currentBlock['columns'] ?? []));
+                if (($payload['text'] ?? '') === '') {
+                    $currentBlock = null;
+                    return;
+                }
+
+                $rows[] = [
+                    'text' => (string) ($payload['text'] ?? ''),
+                    'lineNumber' => (int) ($currentBlock['lineNumber'] ?? 0),
+                    'lineNumberEnd' => (int) ($currentBlock['lineNumberEnd'] ?? 0),
+                    'tableRow' => count($rows) + 1,
+                    'columnCount' => max(1, count((array) ($payload['columnsPreview'] ?? []))),
+                    'columnsPreview' => array_values(array_slice((array) ($payload['columnsPreview'] ?? []), 0, 8)),
+                    'columnMap' => (array) ($payload['columnMap'] ?? []),
+                    'psm' => (int) ($currentBlock['psm'] ?? 0),
+                ];
+
+                $currentBlock = null;
+            };
+
+            foreach ($rowLines as $line) {
+                $text = strtoupper(trim((string) preg_replace('/\s+/u', ' ', (string) ($line['text'] ?? ''))));
+                if ($text === '') {
+                    continue;
+                }
+
+                if (preg_match($footerPattern, $text)) {
+                    $flushCurrent();
+                    break;
+                }
+
+                $columns = [
+                    'code' => '',
+                    'section' => '',
+                    'description' => '',
+                    'schedule' => '',
+                    'room' => '',
+                    'units' => '',
+                ];
+                foreach ((array) ($line['words'] ?? []) as $word) {
+                    $columnName = $this->assignLoadslipTsvWordToColumn($word, $bounds);
+                    if ($columnName === null || !array_key_exists($columnName, $columns)) {
+                        continue;
+                    }
+
+                    $part = trim((string) ($word['text'] ?? ''));
+                    if ($part === '') {
+                        continue;
+                    }
+
+                    $columns[$columnName] = trim($columns[$columnName] . ' ' . $part);
+                }
+
+                $candidateCodeSource = $columns['code'] !== '' ? $columns['code'] : $text;
+                $startsNewRow = $this->lineStartsWithLikelySubjectCode($candidateCodeSource);
+                if ($startsNewRow) {
+                    $flushCurrent();
+                    $currentBlock = [
+                        'columns' => $columns,
+                        'lineNumber' => (int) ($line['lineNumber'] ?? 0),
+                        'lineNumberEnd' => (int) ($line['lineNumberEnd'] ?? 0),
+                        'psm' => $psm,
+                    ];
+                    continue;
+                }
+
+                if (!is_array($currentBlock)) {
+                    continue;
+                }
+
+                foreach ($columns as $name => $value) {
+                    if ($value === '') {
+                        continue;
+                    }
+
+                    $existing = trim((string) (($currentBlock['columns'][$name] ?? '')));
+                    if ($existing === '') {
+                        $currentBlock['columns'][$name] = $value;
+                    } elseif (!str_contains($existing, $value)) {
+                        $currentBlock['columns'][$name] = trim($existing . ' ' . $value);
+                    }
+                }
+                $currentBlock['lineNumberEnd'] = max((int) ($currentBlock['lineNumberEnd'] ?? 0), (int) ($line['lineNumberEnd'] ?? ($line['lineNumber'] ?? 0)));
+            }
+
+            $flushCurrent();
+            $modeTrace['rowCandidates'] = count($rows);
+            $trace['psmRowCounts'][(string) $psm] = count($rows);
+            $modeTraces[] = $modeTrace;
+
+            foreach ($rows as $row) {
+                $allRows[] = $row;
+            }
+        }
+
+        $trace['psmModesSucceeded'] = array_values(array_unique(array_map('intval', (array) ($trace['psmModesSucceeded'] ?? []))));
+        $trace['headerLine'] = $bestHeaderLine;
+        $trace['rowCandidates'] = count($allRows);
+        $trace['modeRows'] = $modeTraces;
+
+        return [
+            'rows' => $allRows,
+            'trace' => $trace,
+        ];
+    }
+
+    /**
+     * @return array{rows: array<int, array{code: string, section: string, description: string, schedule: string, units: string, text: string, lineNumber: int, lineNumberEnd: int, tableRow: int, columnCount: int, columnsPreview: array<int, string>, columnMap: array{code: int|null, section: int|null, description: int|null, schedule: int|null, units: int|null}}>, trace: array<string, mixed>}
+     */
+    private function loadLoadslipStructuredRowsFromSidecar(string $path): array
+    {
+        $basePath = preg_replace('/\.[^.]+$/u', '', $path) ?: $path;
+        $candidates = array_values(array_unique(array_filter([
+            $path . '.structured.json',
+            $basePath . '.structured.json',
+            $basePath . '.ocr.json',
+            $basePath . '.rows.json',
+        ], static fn(string $value): bool => $value !== '')));
+
+        $result = [
+            'rows' => [],
+            'trace' => [
+                'used' => false,
+                'path' => null,
+                'rowCandidates' => 0,
+            ],
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!is_file($candidate) || !is_readable($candidate)) {
+                continue;
+            }
+
+            $decoded = json_decode((string) @file_get_contents($candidate), true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $rowsPayload = is_array($decoded['rows'] ?? null)
+                ? (array) ($decoded['rows'] ?? [])
+                : (array_is_list($decoded) ? $decoded : []);
+            if (empty($rowsPayload)) {
+                continue;
+            }
+
+            $normalizedRows = [];
+            foreach ($rowsPayload as $index => $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $columns = [
+                    'code' => trim((string) ($row['code'] ?? '')),
+                    'section' => trim((string) ($row['section'] ?? '')),
+                    'description' => trim((string) ($row['description'] ?? '')),
+                    'schedule' => trim((string) ($row['schedule'] ?? '')),
+                    'room' => trim((string) ($row['room'] ?? '')),
+                    'units' => trim((string) ($row['units'] ?? '')),
+                ];
+                $payload = $this->buildLoadslipTsvStructuredRowPayload($columns);
+                $text = trim((string) ($row['text'] ?? ($payload['text'] ?? '')));
+                if ($text === '' && $columns['code'] === '' && $columns['schedule'] === '') {
+                    continue;
+                }
+
+                $normalizedRows[] = [
+                    'code' => $columns['code'],
+                    'section' => $columns['section'],
+                    'description' => $columns['description'],
+                    'schedule' => $columns['schedule'],
+                    'units' => $columns['units'],
+                    'text' => $text,
+                    'lineNumber' => max(1, (int) ($row['lineNumber'] ?? $row['line'] ?? ($index + 1))),
+                    'lineNumberEnd' => max(1, (int) ($row['lineNumberEnd'] ?? $row['lineEnd'] ?? $row['lineNumber'] ?? $row['line'] ?? ($index + 1))),
+                    'tableRow' => max(1, (int) ($row['tableRow'] ?? ($index + 1))),
+                    'columnCount' => max(1, count((array) ($payload['columnsPreview'] ?? []))),
+                    'columnsPreview' => array_values(array_slice((array) ($payload['columnsPreview'] ?? []), 0, 8)),
+                    'columnMap' => (array) ($payload['columnMap'] ?? []),
+                ];
+            }
+
+            if (!empty($normalizedRows)) {
+                $result['rows'] = $normalizedRows;
+                $result['trace'] = [
+                    'used' => true,
+                    'path' => $candidate,
+                    'rowCandidates' => count($normalizedRows),
+                ];
+                break;
+            }
+        }
+
+        return $result;
     }
 
     private function normalizeWeekdayToken(string $token): string
@@ -2161,8 +3231,205 @@ class EvaluationController extends AbstractController
         return null;
     }
 
+    private function computeLoadslipDeskewProjectionScore($image): float
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        if ($width <= 0 || $height <= 0) {
+            return 0.0;
+        }
+
+        $rowInkCounts = [];
+        for ($y = 0; $y < $height; $y++) {
+            $ink = 0;
+            for ($x = 0; $x < $width; $x++) {
+                $rgb = imagecolorat($image, $x, $y);
+                $gray = (int) (($rgb >> 16) & 0xFF);
+                if ($gray < 185) {
+                    $ink++;
+                }
+            }
+            if ($ink > 0) {
+                $rowInkCounts[] = $ink;
+            }
+        }
+
+        $count = count($rowInkCounts);
+        if ($count < 8) {
+            return 0.0;
+        }
+
+        $mean = array_sum($rowInkCounts) / $count;
+        $varianceSum = 0.0;
+        foreach ($rowInkCounts as $value) {
+            $delta = $value - $mean;
+            $varianceSum += $delta * $delta;
+        }
+
+        return $varianceSum / $count;
+    }
+
+    private function estimateLoadslipDeskewAngle($image): float
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        if ($width <= 0 || $height <= 0) {
+            return 0.0;
+        }
+
+        $sampleMaxSide = 900.0;
+        $scale = min(1.0, $sampleMaxSide / max($width, $height));
+        $sampledWidth = max(80, (int) round($width * $scale));
+        $sampledHeight = max(80, (int) round($height * $scale));
+
+        $sample = imagecreatetruecolor($sampledWidth, $sampledHeight);
+        if ($sample === false) {
+            return 0.0;
+        }
+
+        $white = imagecolorallocate($sample, 255, 255, 255);
+        imagefill($sample, 0, 0, $white);
+        imagecopyresampled($sample, $image, 0, 0, 0, 0, $sampledWidth, $sampledHeight, $width, $height);
+        imagefilter($sample, IMG_FILTER_GRAYSCALE);
+        imagefilter($sample, IMG_FILTER_CONTRAST, -35);
+
+        $baselineScore = $this->computeLoadslipDeskewProjectionScore($sample);
+        $bestScore = $baselineScore;
+        $bestAngle = 0.0;
+
+        for ($angle = -4.0; $angle <= 4.0; $angle += 0.5) {
+            if (abs($angle) < 0.01) {
+                continue;
+            }
+
+            $rotated = @imagerotate($sample, $angle, $white);
+            if ($rotated === false) {
+                continue;
+            }
+
+            $score = $this->computeLoadslipDeskewProjectionScore($rotated);
+            imagedestroy($rotated);
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestAngle = $angle;
+            }
+        }
+
+        imagedestroy($sample);
+
+        if (abs($bestAngle) < 0.35) {
+            return 0.0;
+        }
+
+        if ($baselineScore > 0.0 && $bestScore < ($baselineScore * 1.08)) {
+            return 0.0;
+        }
+
+        return round($bestAngle, 2);
+    }
+
+    private function cropLoadslipImageToRoi($image, ?array &$meta = null)
+    {
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $meta = [
+            'applied' => false,
+            'x' => 0,
+            'y' => 0,
+            'width' => $width,
+            'height' => $height,
+        ];
+
+        if ($width <= 0 || $height <= 0) {
+            return $image;
+        }
+
+        $sampleMaxSide = 900.0;
+        $scale = min(1.0, $sampleMaxSide / max($width, $height));
+        $sampledWidth = max(60, (int) round($width * $scale));
+        $sampledHeight = max(60, (int) round($height * $scale));
+
+        $sample = imagecreatetruecolor($sampledWidth, $sampledHeight);
+        if ($sample === false) {
+            return $image;
+        }
+
+        $white = imagecolorallocate($sample, 255, 255, 255);
+        imagefill($sample, 0, 0, $white);
+        imagecopyresampled($sample, $image, 0, 0, 0, 0, $sampledWidth, $sampledHeight, $width, $height);
+        imagefilter($sample, IMG_FILTER_GRAYSCALE);
+
+        $minX = $sampledWidth;
+        $minY = $sampledHeight;
+        $maxX = -1;
+        $maxY = -1;
+        for ($y = 0; $y < $sampledHeight; $y++) {
+            for ($x = 0; $x < $sampledWidth; $x++) {
+                $rgb = imagecolorat($sample, $x, $y);
+                $gray = (int) (($rgb >> 16) & 0xFF);
+                if ($gray >= 242) {
+                    continue;
+                }
+
+                $minX = min($minX, $x);
+                $minY = min($minY, $y);
+                $maxX = max($maxX, $x);
+                $maxY = max($maxY, $y);
+            }
+        }
+
+        imagedestroy($sample);
+
+        if ($maxX < 0 || $maxY < 0) {
+            return $image;
+        }
+
+        $cropX = max(0, (int) floor($minX / max($scale, 0.0001)));
+        $cropY = max(0, (int) floor($minY / max($scale, 0.0001)));
+        $cropRight = min($width - 1, (int) ceil($maxX / max($scale, 0.0001)));
+        $cropBottom = min($height - 1, (int) ceil($maxY / max($scale, 0.0001)));
+
+        $padX = max(14, (int) round(($cropRight - $cropX + 1) * 0.04));
+        $padY = max(14, (int) round(($cropBottom - $cropY + 1) * 0.04));
+        $cropX = max(0, $cropX - $padX);
+        $cropY = max(0, $cropY - $padY);
+        $cropRight = min($width - 1, $cropRight + $padX);
+        $cropBottom = min($height - 1, $cropBottom + $padY);
+
+        $cropWidth = max(1, $cropRight - $cropX + 1);
+        $cropHeight = max(1, $cropBottom - $cropY + 1);
+
+        if ($cropWidth >= (int) floor($width * 0.98) && $cropHeight >= (int) floor($height * 0.98)) {
+            return $image;
+        }
+
+        if ($cropWidth < (int) floor($width * 0.45) || $cropHeight < (int) floor($height * 0.45)) {
+            return $image;
+        }
+
+        $cropped = @imagecrop($image, [
+            'x' => $cropX,
+            'y' => $cropY,
+            'width' => $cropWidth,
+            'height' => $cropHeight,
+        ]);
+        if ($cropped === false) {
+            return $image;
+        }
+
+        $meta = [
+            'applied' => true,
+            'x' => $cropX,
+            'y' => $cropY,
+            'width' => $cropWidth,
+            'height' => $cropHeight,
+        ];
+
+        return $cropped;
+    }
+
     /**
-     * Enhance loadslip image before OCR: upscale, grayscale, and contrast boost.
+     * Enhance loadslip image before OCR: upscale, deskew, crop ROI, grayscale, and contrast boost.
      *
      * @return string|null Temporary enhanced image path (PNG) or null when enhancement is unavailable.
      */
@@ -2182,6 +3449,10 @@ class EvaluationController extends AbstractController
             'profile' => $resolutionProfile,
             'maxDimension' => (int) $maxDimension,
             'maxPixels' => (int) $maxPixels,
+            'deskewApplied' => false,
+            'deskewAngle' => 0.0,
+            'roiCrop' => ['applied' => false],
+            'perspectiveCorrection' => 'not_available_without_cv',
         ];
 
         if (!extension_loaded('gd') || !is_file($path)) {
@@ -2284,18 +3555,35 @@ class EvaluationController extends AbstractController
             return null;
         }
 
-        if ($imageType === IMAGETYPE_PNG) {
-            imagealphablending($enhanced, false);
-            imagesavealpha($enhanced, true);
-            $transparent = imagecolorallocatealpha($enhanced, 0, 0, 0, 127);
-            imagefill($enhanced, 0, 0, $transparent);
-        }
+        $white = imagecolorallocate($enhanced, 255, 255, 255);
+        imagefill($enhanced, 0, 0, $white);
 
         imagecopyresampled($enhanced, $source, 0, 0, 0, 0, $targetWidth, $targetHeight, $width, $height);
 
         // OCR-friendly pass aligned with browser-canvas preprocessing.
         imagefilter($enhanced, IMG_FILTER_GRAYSCALE);
-        imagefilter($enhanced, IMG_FILTER_CONTRAST, -25);
+        imagefilter($enhanced, IMG_FILTER_CONTRAST, -30);
+
+        $deskewAngle = $this->estimateLoadslipDeskewAngle($enhanced);
+        $deskewApplied = false;
+        if (abs($deskewAngle) >= 0.35) {
+            $rotated = @imagerotate($enhanced, $deskewAngle, $white);
+            if ($rotated !== false) {
+                imagedestroy($enhanced);
+                $enhanced = $rotated;
+                $deskewApplied = true;
+            }
+        }
+
+        $roiMeta = null;
+        $cropped = $this->cropLoadslipImageToRoi($enhanced, $roiMeta);
+        if ($cropped !== $enhanced) {
+            imagedestroy($enhanced);
+            $enhanced = $cropped;
+        }
+
+        imagefilter($enhanced, IMG_FILTER_CONTRAST, -18);
+        @imageconvolution($enhanced, [[-1, -1, -1], [-1, 16, -1], [-1, -1, -1]], 8, 0);
 
         $tempBase = tempnam(sys_get_temp_dir(), 'ocr_enh_');
         if ($tempBase === false) {
@@ -2322,14 +3610,18 @@ class EvaluationController extends AbstractController
             'scale' => round($scale, 3),
             'adaptiveScale' => round($scale, 3),
             'requestedScale' => $requestedScale,
-            'source' => 'gd_upscale_grayscale_contrast',
+            'source' => 'gd_upscale_deskew_roi_grayscale_contrast',
             'profile' => $resolutionProfile,
             'maxDimension' => (int) $maxDimension,
             'maxPixels' => (int) $maxPixels,
             'originalWidth' => $width,
             'originalHeight' => $height,
-            'processedWidth' => $targetWidth,
-            'processedHeight' => $targetHeight,
+            'processedWidth' => imagesx($enhanced),
+            'processedHeight' => imagesy($enhanced),
+            'deskewApplied' => $deskewApplied,
+            'deskewAngle' => $deskewApplied ? $deskewAngle : 0.0,
+            'roiCrop' => is_array($roiMeta) ? $roiMeta : ['applied' => false],
+            'perspectiveCorrection' => 'not_available_without_cv',
         ];
 
         return $tempPath;
@@ -3246,11 +4538,16 @@ class EvaluationController extends AbstractController
         $subjectCodeTrace = [];
         $maxParsedRows = 16;
         $passStats = [
+            'structured_model' => 0,
+            'tsv_table' => 0,
             'line' => 0,
             'line_pair' => 0,
+            'line_block' => 0,
             'flat' => 0,
             'segment' => 0,
         ];
+        $structuredModelTrace = [];
+        $structuredTableTrace = [];
 
         $pushTrace = static function (array &$bucket, array $entry, int $max = 180): void {
             if (count($bucket) >= $max) {
@@ -3259,6 +4556,36 @@ class EvaluationController extends AbstractController
             $bucket[] = $entry;
         };
         $sanitizeTraceSource = fn(string $value): string => mb_substr($this->sanitizeLoadslipTraceSource($value), 0, 200);
+        $splitOcrColumns = static function (string $value): array {
+            return array_values(array_filter(
+                array_map('trim', preg_split('/\t+|\s{2,}/u', strtoupper($value)) ?: []),
+                static fn(string $v): bool => $v !== ''
+            ));
+        };
+        $hasAnchoredCodeLikeText = function (string $value): bool {
+            $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+            if ($normalized === '') {
+                return false;
+            }
+
+            if (!preg_match('/^\s*([A-Z0-9]{2,8}\s*-?\s*[A-Z0-9]{1,6}|[A-Z]{2,8}[0-9OQDILSZGB]{1,4}[A-Z]?)\b/u', $normalized, $m)) {
+                return false;
+            }
+
+            return $this->isLikelySubjectCode((string) ($m[1] ?? ''));
+        };
+        $isLikelyUnitsFragment = static function (string $value): bool {
+            $normalized = strtoupper(trim((string) preg_replace('/\s+/u', ' ', $value)));
+            if ($normalized === '') {
+                return false;
+            }
+
+            if (!preg_match('/^\d+(?:\.\d+)?$/u', $normalized)) {
+                return false;
+            }
+
+            return (float) $normalized <= 10.0;
+        };
 
         // Extract student number using robust detection
         $studentNumber = $this->extractStudentNumber($text, $expectedStudentNumber);
@@ -3291,11 +4618,22 @@ class EvaluationController extends AbstractController
                 }
             }
             $units = trim((string) ($row['units'] ?? ''));
+            $hintedRow = $this->applyLoadslipGoldenRowHints([
+                'code' => $code,
+                'section' => $section,
+                'description' => $description,
+                'schedule' => $schedule,
+                'units' => $units,
+            ]);
+            $code = $this->normalizeSubjectCode((string) ($hintedRow['code'] ?? $code));
+            $description = $this->normalizeLoadslipDescription((string) ($hintedRow['description'] ?? $description), $code);
+            $units = trim((string) ($hintedRow['units'] ?? $units));
             $sourcePreview = $sanitizeTraceSource((string) $source);
             $lineNumber = isset($traceMeta['lineNumber']) ? (int) $traceMeta['lineNumber'] : null;
             $lineNumberEnd = isset($traceMeta['lineNumberEnd']) ? (int) $traceMeta['lineNumberEnd'] : null;
             $textOffset = isset($traceMeta['textOffset']) ? (int) $traceMeta['textOffset'] : null;
             $tableRowHint = isset($traceMeta['tableRow']) ? (int) $traceMeta['tableRow'] : null;
+            $psm = array_key_exists('psm', $traceMeta) && $traceMeta['psm'] !== null ? (int) $traceMeta['psm'] : null;
             $columnCount = isset($row['columnCount']) ? (int) $row['columnCount'] : (isset($traceMeta['columnCount']) ? (int) $traceMeta['columnCount'] : 0);
             $columnsPreview = [];
             if (is_array($row['columnsPreview'] ?? null)) {
@@ -3305,9 +4643,10 @@ class EvaluationController extends AbstractController
             }
             $columnMap = is_array($row['columnMap'] ?? null) ? (array) ($row['columnMap'] ?? []) : [];
 
-            $traceDecision = function (bool $accepted, string $reason) use (&$subjectCodeTrace, $pushTrace, $pass, $rawCode, $code, $rawSection, $section, $sectionSource, $schedule, $rawDescription, $description, $descriptionSource, $units, $sourcePreview, $lineNumber, $lineNumberEnd, $textOffset, $tableRowHint, $columnCount, $columnsPreview, $columnMap): void {
+            $traceDecision = function (bool $accepted, string $reason) use (&$subjectCodeTrace, $pushTrace, $pass, $rawCode, $code, $rawSection, $section, $sectionSource, $schedule, $rawDescription, $description, $descriptionSource, $units, $sourcePreview, $lineNumber, $lineNumberEnd, $textOffset, $tableRowHint, $psm, $columnCount, $columnsPreview, $columnMap): void {
                 $pushTrace($subjectCodeTrace, [
                     'pass' => $pass,
+                    'psm' => $psm,
                     'raw' => $rawCode,
                     'normalized' => $code,
                     'rawSection' => $rawSection,
@@ -3447,6 +4786,7 @@ class EvaluationController extends AbstractController
                     if ($updated) {
                         $pushTrace($rowTrace, [
                             'pass' => $pass,
+                            'psm' => $psm,
                             'tableRow' => $existingIndex + 1,
                             'lineNumber' => $lineNumber,
                             'lineNumberEnd' => $lineNumberEnd,
@@ -3502,6 +4842,7 @@ class EvaluationController extends AbstractController
 
             $pushTrace($rowTrace, [
                 'pass' => $pass,
+                'psm' => $psm,
                 'tableRow' => $acceptedTableRow,
                 'lineNumber' => $lineNumber,
                 'lineNumberEnd' => $lineNumberEnd,
@@ -3530,6 +4871,108 @@ class EvaluationController extends AbstractController
             return true;
         };
 
+        $structuredModel = $this->loadLoadslipStructuredRowsFromSidecar($path);
+        $structuredModelTrace = is_array($structuredModel['trace'] ?? null) ? (array) $structuredModel['trace'] : [];
+        foreach ((array) ($structuredModel['rows'] ?? []) as $structuredRow) {
+            if (count($parsedRows) >= $maxParsedRows) {
+                break;
+            }
+
+            $row = [
+                'code' => trim((string) ($structuredRow['code'] ?? '')),
+                'section' => trim((string) ($structuredRow['section'] ?? '')),
+                'description' => trim((string) ($structuredRow['description'] ?? '')),
+                'schedule' => trim((string) ($structuredRow['schedule'] ?? '')),
+                'units' => trim((string) ($structuredRow['units'] ?? '')),
+                'columnCount' => (int) ($structuredRow['columnCount'] ?? 0),
+                'columnsPreview' => array_values(array_slice((array) ($structuredRow['columnsPreview'] ?? []), 0, 8)),
+                'columnMap' => is_array($structuredRow['columnMap'] ?? null) ? (array) ($structuredRow['columnMap'] ?? []) : [],
+            ];
+            $sourceText = trim((string) ($structuredRow['text'] ?? ''));
+            if ($sourceText === '') {
+                $sourceText = trim(implode(' ', array_filter([$row['code'], $row['section'], $row['description'], $row['schedule'], $row['units']])));
+            }
+
+            if (!$addParsedRow($row, 'structured_model', $sourceText, [
+                'lineNumber' => (int) ($structuredRow['lineNumber'] ?? 0),
+                'lineNumberEnd' => (int) ($structuredRow['lineNumberEnd'] ?? 0),
+                'tableRow' => (int) ($structuredRow['tableRow'] ?? 0),
+                'columnCount' => (int) ($structuredRow['columnCount'] ?? 0),
+                'columnsPreview' => array_slice((array) ($structuredRow['columnsPreview'] ?? []), 0, 8),
+            ])) {
+                $pushTrace($rejectedTrace, [
+                    'pass' => 'structured_model',
+                    'reason' => 'duplicate_or_invalid',
+                    'lineNumber' => (int) ($structuredRow['lineNumber'] ?? 0),
+                    'lineNumberEnd' => (int) ($structuredRow['lineNumberEnd'] ?? 0),
+                    'columnCount' => (int) ($row['columnCount'] ?? 0),
+                    'columnsPreview' => array_slice((array) ($row['columnsPreview'] ?? []), 0, 8),
+                    'code' => (string) ($row['code'] ?? ''),
+                    'section' => (string) ($row['section'] ?? ''),
+                    'description' => (string) ($row['description'] ?? ''),
+                    'schedule' => (string) ($row['schedule'] ?? ''),
+                    'units' => (string) ($row['units'] ?? ''),
+                    'source' => $sanitizeTraceSource($sourceText),
+                ], 160);
+            }
+        }
+
+        $structuredTsv = $this->extractLoadslipStructuredRowsFromTsv($ocrPath, $ocrPsmModes, $tesseractExecutable, $schedulePattern);
+        $structuredTableTrace = is_array($structuredTsv['trace'] ?? null) ? (array) $structuredTsv['trace'] : [];
+        foreach ((array) ($structuredTsv['rows'] ?? []) as $structuredRow) {
+            if (count($parsedRows) >= $maxParsedRows) {
+                break;
+            }
+
+            $structuredText = trim((string) ($structuredRow['text'] ?? ''));
+            if ($structuredText === '') {
+                continue;
+            }
+
+            $row = $this->extractOcrRowFromLine($structuredText, $schedulePattern);
+            if (!is_array($row)) {
+                $pushTrace($rejectedTrace, [
+                    'pass' => 'tsv_table',
+                    'reason' => 'structured_extract_failed',
+                    'lineNumber' => (int) ($structuredRow['lineNumber'] ?? 0),
+                    'lineNumberEnd' => (int) ($structuredRow['lineNumberEnd'] ?? 0),
+                    'columnCount' => (int) ($structuredRow['columnCount'] ?? 0),
+                    'columnsPreview' => array_slice((array) ($structuredRow['columnsPreview'] ?? []), 0, 8),
+                    'source' => $sanitizeTraceSource($structuredText),
+                ], 160);
+                continue;
+            }
+
+            $row['columnCount'] = (int) ($structuredRow['columnCount'] ?? ($row['columnCount'] ?? 0));
+            $row['columnsPreview'] = array_values(array_slice((array) ($structuredRow['columnsPreview'] ?? ($row['columnsPreview'] ?? [])), 0, 8));
+            $row['columnMap'] = is_array($structuredRow['columnMap'] ?? null) ? (array) ($structuredRow['columnMap'] ?? []) : (array) ($row['columnMap'] ?? []);
+
+            if (!$addParsedRow($row, 'tsv_table', $structuredText, [
+                'lineNumber' => (int) ($structuredRow['lineNumber'] ?? 0),
+                'lineNumberEnd' => (int) ($structuredRow['lineNumberEnd'] ?? 0),
+                'tableRow' => (int) ($structuredRow['tableRow'] ?? 0),
+                'psm' => array_key_exists('psm', $structuredRow) ? (int) ($structuredRow['psm'] ?? 0) : null,
+                'columnCount' => (int) ($structuredRow['columnCount'] ?? 0),
+                'columnsPreview' => array_slice((array) ($structuredRow['columnsPreview'] ?? []), 0, 8),
+            ])) {
+                $pushTrace($rejectedTrace, [
+                    'pass' => 'tsv_table',
+                    'psm' => array_key_exists('psm', $structuredRow) ? (int) ($structuredRow['psm'] ?? 0) : null,
+                    'reason' => 'duplicate_or_invalid',
+                    'lineNumber' => (int) ($structuredRow['lineNumber'] ?? 0),
+                    'lineNumberEnd' => (int) ($structuredRow['lineNumberEnd'] ?? 0),
+                    'columnCount' => (int) ($row['columnCount'] ?? 0),
+                    'columnsPreview' => array_slice((array) ($row['columnsPreview'] ?? []), 0, 8),
+                    'code' => (string) ($row['code'] ?? ''),
+                    'section' => (string) ($row['section'] ?? ''),
+                    'description' => (string) ($row['description'] ?? ''),
+                    'schedule' => (string) ($row['schedule'] ?? ''),
+                    'units' => (string) ($row['units'] ?? ''),
+                    'source' => $sanitizeTraceSource($structuredText),
+                ], 160);
+            }
+        }
+
         foreach ($linePassIndexes as $lineIndex) {
             $lineRaw = (string) ($lines[$lineIndex] ?? '');
             $line = trim((string) $lineRaw);
@@ -3537,7 +4980,7 @@ class EvaluationController extends AbstractController
                 continue;
             }
 
-            $lineColumns = array_values(array_filter(array_map('trim', preg_split('/\t+|\s{2,}/u', strtoupper($line)) ?: []), static fn(string $v): bool => $v !== ''));
+            $lineColumns = $splitOcrColumns($line);
 
             $row = $this->extractOcrRowFromLine($line, $schedulePattern);
             if (!is_array($row)) {
@@ -3605,7 +5048,7 @@ class EvaluationController extends AbstractController
             }
 
             $combined = $first . ' ' . $second;
-            $combinedColumns = array_values(array_filter(array_map('trim', preg_split('/\t+|\s{2,}/u', strtoupper($combined)) ?: []), static fn(string $v): bool => $v !== ''));
+            $combinedColumns = $splitOcrColumns($combined);
             $row = $this->extractOcrRowFromLine($combined, $schedulePattern);
             if (!is_array($row)) {
                 $pushTrace($rejectedTrace, [
@@ -3633,6 +5076,130 @@ class EvaluationController extends AbstractController
                     'lineNumberEnd' => $i + 2,
                     'columnCount' => (int) ($row['columnCount'] ?? count($combinedColumns)),
                     'columnsPreview' => is_array($row['columnsPreview'] ?? null) ? array_slice((array) ($row['columnsPreview'] ?? []), 0, 8) : array_slice($combinedColumns, 0, 8),
+                    'code' => (string) ($row['code'] ?? ''),
+                    'section' => (string) ($row['section'] ?? ''),
+                    'description' => (string) ($row['description'] ?? ''),
+                    'schedule' => (string) ($row['schedule'] ?? ''),
+                    'units' => (string) ($row['units'] ?? ''),
+                    'source' => $sanitizeTraceSource($combined),
+                ], 160);
+            }
+        }
+
+        // Recovery pass: rebuild a table row when OCR emits subject code, section,
+        // description, schedule, and units as nearby line fragments instead of one line.
+        $blockLookahead = 6;
+        for ($i = $pairStart; $i <= $pairEnd; $i++) {
+            if (count($parsedRows) >= $maxParsedRows) {
+                break;
+            }
+
+            $anchorRaw = trim((string) ($lines[$i] ?? ''));
+            if ($anchorRaw === '') {
+                continue;
+            }
+
+            $anchor = strtoupper((string) preg_replace('/\s+/u', ' ', $anchorRaw));
+            if (!$hasAnchoredCodeLikeText($anchor) || $this->extractScheduleFromText($anchor, $schedulePattern) !== '') {
+                continue;
+            }
+
+            $blockLines = [$anchorRaw];
+            $blockEndIndex = $i;
+            $scheduleFound = false;
+            $tailLinesAfterSchedule = 0;
+
+            for ($j = $i + 1; $j <= min($pairEnd, $i + $blockLookahead); $j++) {
+                $candidateRaw = trim((string) ($lines[$j] ?? ''));
+                if ($candidateRaw === '') {
+                    if ($scheduleFound) {
+                        break;
+                    }
+                    continue;
+                }
+
+                $candidate = strtoupper((string) preg_replace('/\s+/u', ' ', $candidateRaw));
+                if (preg_match('/\b(?:NOTE\s*:|STUDENT,?\s*PARENT|ENCODED\s+BY|PRINTED\s+BY|DATE\s+ENROLLED|TOTAL\s+SUBJECTS?|TOTAL\s+UNITS?)\b/u', $candidate)) {
+                    break;
+                }
+
+                $candidateHasCode = $hasAnchoredCodeLikeText($candidate);
+                $candidateHasSchedule = $this->extractScheduleFromText($candidate, $schedulePattern) !== '';
+
+                if ($candidateHasCode) {
+                    break;
+                }
+
+                $blockLines[] = $candidateRaw;
+                $blockEndIndex = $j;
+
+                if ($candidateHasSchedule) {
+                    $scheduleFound = true;
+                    if ($isLikelyUnitsFragment($candidate)) {
+                        break;
+                    }
+                    continue;
+                }
+
+                if ($scheduleFound) {
+                    $tailLinesAfterSchedule++;
+                    if ($isLikelyUnitsFragment($candidate) || $tailLinesAfterSchedule >= 2) {
+                        break;
+                    }
+                }
+            }
+
+            if (!$scheduleFound || count($blockLines) < 3) {
+                continue;
+            }
+
+            $combined = implode(' ', $blockLines);
+            $blockColumns = [];
+            foreach ($blockLines as $fragmentLine) {
+                $fragmentColumns = $splitOcrColumns((string) $fragmentLine);
+                if (empty($fragmentColumns)) {
+                    $normalizedFragment = trim((string) preg_replace('/\s+/u', ' ', strtoupper((string) $fragmentLine)));
+                    if ($normalizedFragment !== '') {
+                        $fragmentColumns[] = $normalizedFragment;
+                    }
+                }
+                foreach ($fragmentColumns as $fragmentColumn) {
+                    $blockColumns[] = $fragmentColumn;
+                }
+            }
+
+            $row = $this->extractOcrRowFromLine($combined, $schedulePattern);
+            if (!is_array($row)) {
+                $pushTrace($rejectedTrace, [
+                    'pass' => 'line_block',
+                    'reason' => 'fragment_block_failed',
+                    'lineNumber' => $i + 1,
+                    'lineNumberEnd' => $blockEndIndex + 1,
+                    'columnCount' => count($blockColumns),
+                    'columnsPreview' => array_slice($blockColumns, 0, 8),
+                    'source' => $sanitizeTraceSource($combined),
+                ], 160);
+                continue;
+            }
+
+            if (!empty($blockColumns)) {
+                $row['columnCount'] = count($blockColumns);
+                $row['columnsPreview'] = array_slice($blockColumns, 0, 8);
+            }
+
+            if (!$addParsedRow($row, 'line_block', $combined, [
+                'lineNumber' => $i + 1,
+                'lineNumberEnd' => $blockEndIndex + 1,
+                'columnCount' => count($blockColumns),
+                'columnsPreview' => array_slice($blockColumns, 0, 8),
+            ])) {
+                $pushTrace($rejectedTrace, [
+                    'pass' => 'line_block',
+                    'reason' => 'duplicate_or_invalid',
+                    'lineNumber' => $i + 1,
+                    'lineNumberEnd' => $blockEndIndex + 1,
+                    'columnCount' => (int) ($row['columnCount'] ?? count($blockColumns)),
+                    'columnsPreview' => is_array($row['columnsPreview'] ?? null) ? array_slice((array) ($row['columnsPreview'] ?? []), 0, 8) : array_slice($blockColumns, 0, 8),
                     'code' => (string) ($row['code'] ?? ''),
                     'section' => (string) ($row['section'] ?? ''),
                     'description' => (string) ($row['description'] ?? ''),
@@ -3843,6 +5410,11 @@ class EvaluationController extends AbstractController
                 'tableWindowDetected' => is_array($tableWindow),
                 'tableWindowStart' => is_array($tableWindow) ? ((int) ($tableWindow['start'] ?? -1) + 1) : null,
                 'tableWindowEnd' => is_array($tableWindow) ? ((int) ($tableWindow['end'] ?? -1) + 1) : null,
+                'structuredModelRowsDetected' => (int) ($structuredModelTrace['rowCandidates'] ?? 0),
+                'tsvTableRowsDetected' => (int) ($structuredTableTrace['rowCandidates'] ?? 0),
+                'tsvHeaderLine' => $structuredTableTrace['headerLine'] ?? null,
+                'tsvPsmRowCounts' => (array) ($structuredTableTrace['psmRowCounts'] ?? []),
+                'tsvPsmModesSucceeded' => array_values((array) ($structuredTableTrace['psmModesSucceeded'] ?? [])),
                 'recoveryPassesEnabled' => $shouldRunRecoveryPasses,
                 'psmModesTried' => $ocrPsmModes,
                 'psmModesSucceeded' => array_values(array_unique(array_map('intval', $psmModesSucceeded))),
@@ -3858,6 +5430,8 @@ class EvaluationController extends AbstractController
                 'rowTrace' => $rowTrace,
                 'rejectedTrace' => $rejectedTrace,
                 'subjectCodeTrace' => $subjectCodeTrace,
+                'structuredModelTrace' => $structuredModelTrace,
+                'structuredTableTrace' => $structuredTableTrace,
                 'passStats' => $passStats,
                 'rowCount' => count($parsedRows),
                 'studentNumber' => $studentNumber,
@@ -4569,6 +6143,18 @@ class EvaluationController extends AbstractController
         if (!empty($codes)) {
             $curriculumCodeMap = $this->getCurriculumSubjectCodeMapForUser($student, $curriculumRepo);
             $knownCodeByCompact = $this->buildKnownSubjectCodeByCompact($subjectRepo, $curriculumCodeMap);
+            $subjectNameByCode = [];
+            foreach ($subjectRepo->findAll() as $subject) {
+                $subjectCode = $this->normalizeSubjectCode((string) $subject->getSubjectCode());
+                $subjectName = trim((string) $subject->getSubjectName());
+                if ($subjectCode === '' || $subjectName === '') {
+                    continue;
+                }
+                if (!empty($curriculumCodeMap) && !isset($curriculumCodeMap[$subjectCode])) {
+                    continue;
+                }
+                $subjectNameByCode[$subjectCode] = $subjectName;
+            }
 
             if (is_array($ocrDebugData)) {
                 $ocrDebugData['importTrace']['curriculumCodeCount'] = count($curriculumCodeMap);
@@ -4658,6 +6244,17 @@ class EvaluationController extends AbstractController
                     'schedule' => trim((string) ($row['schedule'] ?? '')),
                     'units' => trim((string) ($row['units'] ?? '')),
                 ];
+
+                $canonicalSubjectName = trim((string) ($subjectNameByCode[$resolvedCode] ?? ''));
+                if (
+                    $canonicalSubjectName !== ''
+                    && (
+                        $resolvedRow['description'] === ''
+                        || $this->isLikelyLoadslipNonSubjectText($resolvedRow['description'])
+                    )
+                ) {
+                    $resolvedRow['description'] = $canonicalSubjectName;
+                }
 
                 $key = $resolvedRow['code']
                     . '|' . $this->normalizeSectionValue($resolvedRow['section'])

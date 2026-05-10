@@ -467,9 +467,14 @@
         {% set scanDetection = ocrDebugPreview.scanDetection|default({}) %}
         {% set psmTried = scanDetection.psmModesTried|default([]) %}
         {% set psmSucceeded = scanDetection.psmModesSucceeded|default([]) %}
+        {% set tsvPsmSucceeded = scanDetection.tsvPsmModesSucceeded|default([]) %}
+        {% set tsvPsmRowCounts = scanDetection.tsvPsmRowCounts|default({}) %}
         <div class="small mb-2"><strong>Pass Stats:</strong>
+            structured_model={{ passStats.structured_model|default(0) }},
+            tsv_table={{ passStats.tsv_table|default(0) }},
             line={{ passStats.line|default(0) }},
             line_pair={{ passStats.line_pair|default(0) }},
+            line_block={{ passStats.line_block|default(0) }},
             flat={{ passStats.flat|default(0) }},
             segment={{ passStats.segment|default(0) }}
         </div>
@@ -479,7 +484,9 @@
             lineScope={{ scanDetection.linePassCount|default(0) }},
             tableWindow={{ scanDetection.tableWindowDetected|default(false) ? 'yes' : 'no' }}{% if scanDetection.tableWindowDetected|default(false) %} ({{ scanDetection.tableWindowStart|default('-') }}-{{ scanDetection.tableWindowEnd|default('-') }}){% endif %},
             recovery={{ scanDetection.recoveryPassesEnabled|default(false) ? 'on' : 'off' }},
-            psm={{ psmSucceeded is not empty ? psmSucceeded|join('/') : 'none' }}/{{ psmTried is not empty ? psmTried|join('/') : 'none' }}{% if scanDetection.fallbackUsed|default(false) %}, fallback=on{% endif %}
+            psm={{ psmSucceeded is not empty ? psmSucceeded|join('/') : 'none' }}/{{ psmTried is not empty ? psmTried|join('/') : 'none' }}{% if scanDetection.fallbackUsed|default(false) %}, fallback=on{% endif %},
+            tsvRows={{ scanDetection.tsvTableRowsDetected|default(0) }},
+            tsvPsm={{ tsvPsmSucceeded is not empty ? tsvPsmSucceeded|join('/') : 'none' }}{% if tsvPsmRowCounts is not empty %} ({% for psm, count in tsvPsmRowCounts %}{{ psm }}:{{ count }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}
         </div>
         <div class="small mb-2"><strong>Parsed Row Count:</strong> {{ ocrDebugPreview.rowCount|default(0) }}</div>
         <div class="small mb-2"><strong>Valid Codes:</strong> {{ (ocrDebugPreview.validCodes|default([]))|join(', ')|default('None') }}</div>
@@ -509,7 +516,7 @@ desc={{ item.description|default('') }}
         {% endif %}
         {% if ocrDebugPreview.rowTrace|default([]) is not empty %}
             <div class="small mb-1"><strong>OCR Row Trace:</strong></div>
-            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:240px;overflow:auto;">{% for row in ocrDebugPreview.rowTrace|slice(0, 12) %}[{{ row.pass|default('') }}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:240px;overflow:auto;">{% for row in ocrDebugPreview.rowTrace|slice(0, 12) %}[{{ row.pass|default('') }}{% if row.psm is defined and row.psm is not null %} psm={{ row.psm }}{% endif %}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
 code={{ row.code|default('') }} | sec={{ row.section|default('') }} ({{ row.sectionSource|default('') }}) | sched={{ row.schedule|default('') }} | unit={{ row.units|default('') }}
 desc={{ row.description|default('') }} ({{ row.descriptionSource|default('') }})
 colmap: code={{ row.columnMap.code|default('-') }}, sec={{ row.columnMap.section|default('-') }}, desc={{ row.columnMap.description|default('-') }}, sched={{ row.columnMap.schedule|default('-') }}, unit={{ row.columnMap.units|default('-') }}
@@ -520,7 +527,7 @@ colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
         {% endif %}
         {% if ocrDebugPreview.subjectCodeTrace|default([]) is not empty %}
             <div class="small mb-1"><strong>Subject Code Trace:</strong></div>
-            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.subjectCodeTrace|slice(0, 12) %}[{{ row.pass|default('') }}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.subjectCodeTrace|slice(0, 12) %}[{{ row.pass|default('') }}{% if row.psm is defined and row.psm is not null %} psm={{ row.psm }}{% endif %}] tblRow={{ row.tableRow|default('-') }} | line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }}
 {{ row.raw|default('') }} -> {{ row.normalized|default('') }} ({{ row.accepted ? 'accepted' : 'rejected' }}: {{ row.reason|default('') }})
     sec={{ row.section|default('') }} [raw={{ row.rawSection|default('') }}, src={{ row.sectionSource|default('') }}] | units={{ row.units|default('') }}
     sched={{ row.schedule|default('') }}
@@ -531,7 +538,7 @@ colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
         {% endif %}
         {% if ocrDebugPreview.rejectedTrace|default([]) is not empty %}
             <div class="small mb-1"><strong>OCR Rejected Rows (sample):</strong></div>
-            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.rejectedTrace|slice(0, 60) %}[{{ row.pass|default('') }}] line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }} | {{ row.reason|default('') }}
+            <pre class="mb-2 small" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{% for row in ocrDebugPreview.rejectedTrace|slice(0, 60) %}[{{ row.pass|default('') }}{% if row.psm is defined and row.psm is not null %} psm={{ row.psm }}{% endif %}] line={{ row.lineNumber|default('-') }}{% if row.lineNumberEnd|default(null) %}-{{ row.lineNumberEnd }}{% endif %} | cols={{ row.columnCount|default(0) }} | {{ row.reason|default('') }}
 code={{ row.code|default('') }} | sec={{ row.section|default('') }} | sched={{ row.schedule|default('') }} | unit={{ row.units|default('') }}
 desc={{ row.description|default('') }}
 colpreview: {{ row.columnsPreview|default([])|join(' || ') }}
