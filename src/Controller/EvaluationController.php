@@ -12,6 +12,7 @@ use App\Repository\EvaluationPeriodRepository;
 use App\Repository\EvaluationResponseRepository;
 use App\Repository\FacultySubjectLoadRepository;
 use App\Repository\LoadslipVerificationRepository;
+use App\Repository\SubjectMasterListEntryRepository;
 use App\Repository\UserRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
@@ -40,6 +41,7 @@ class EvaluationController extends AbstractController
         private CurriculumRepository $curriculumRepo,
         private AcademicYearRepository $academicYearRepo,
         private LoadslipVerificationRepository $loadslipVerificationRepo,
+        private SubjectMasterListEntryRepository $subjectMasterListRepo,
     ) {}
 
     // ════════════════════════════════════════════════
@@ -59,6 +61,26 @@ class EvaluationController extends AbstractController
             '4th year' => 'Fourth Year', 'fourth year' => 'Fourth Year',
         ];
         return $map[strtolower(trim($yl))] ?? $yl;
+    }
+
+    private function isStudentAllowedByMasterList(?\App\Entity\User $faculty, ?\App\Entity\Subject $subject, string $schoolId, ?string $section = null): bool
+    {
+        if (!$faculty || !$subject) {
+            return true;
+        }
+
+        $facultyId = (int) ($faculty->getId() ?? 0);
+        $subjectId = (int) ($subject->getId() ?? 0);
+        if ($facultyId <= 0 || $subjectId <= 0) {
+            return true;
+        }
+
+        return $this->subjectMasterListRepo->isStudentAllowedForSubject($facultyId, $subjectId, $schoolId, $section);
+    }
+
+    private function masterListBlockedMessage(): string
+    {
+        return 'Only students listed in the faculty master list can evaluate this subject.';
     }
 
     private function normalizeSubjectCode(string $code): string
@@ -756,43 +778,7 @@ class EvaluationController extends AbstractController
      */
     private function detectLoadslipHeaderSpan(array $lines): ?array
     {
-        $requiredKinds = ['code', 'section', 'description', 'schedule', 'units'];
-        $lineCount = count($lines);
-
-        for ($idx = 0; $idx < $lineCount; $idx++) {
-            $current = trim((string) ($lines[$idx] ?? ''));
-            if ($current === '') {
-                continue;
-            }
-
-            $candidates = [
-                ['start' => $idx, 'end' => $idx, 'text' => $current],
-            ];
-
-            if (($idx + 1) < $lineCount) {
-                $next = trim((string) ($lines[$idx + 1] ?? ''));
-                if ($next !== '') {
-                    $candidates[] = [
-                        'start' => $idx,
-                        'end' => $idx + 1,
-                        'text' => $current . ' ' . $next,
-                    ];
-                }
-            }
-
-            foreach ($candidates as $candidate) {
-                $kinds = $this->extractLoadslipHeaderKindsFromText((string) ($candidate['text'] ?? ''));
-                if (count(array_intersect($requiredKinds, $kinds)) !== count($requiredKinds)) {
-                    continue;
-                }
-
-                return [
-                    'start' => (int) ($candidate['start'] ?? $idx),
-                    'end' => (int) ($candidate['end'] ?? $idx),
-                ];
-            }
-        }
-
+        // Student OCR table-header detection is intentionally disabled.
         return null;
     }
 
@@ -1327,9 +1313,6 @@ class EvaluationController extends AbstractController
 
         $rawCode = '';
         $codeCandidates = [];
-        if (!empty($columns)) {
-            $codeCandidates[] = (string) ($columns[0] ?? '');
-        }
         if (preg_match_all('/\b([A-Z]{2,8}\s*-?\s*[0-9OQDILSZGB]{1,4}[A-Z]?)\b/u', $beforeSchedule, $mStrictCodes)) {
             foreach (($mStrictCodes[1] ?? []) as $token) {
                 $codeCandidates[] = (string) $token;
@@ -1386,13 +1369,6 @@ class EvaluationController extends AbstractController
 
         $section = '';
         $sectionSource = 'missing';
-        if (count($columns) > 1 && isset($columns[0]) && $this->normalizeSubjectCode((string) $columns[0]) === $code) {
-            $columnSection = $this->normalizeSectionTokenFromOcr((string) ($columns[1] ?? ''), $code);
-            if ($this->isLikelySectionToken($columnSection, $code)) {
-                $section = $columnSection;
-                $sectionSource = 'column';
-            }
-        }
 
         $descriptionSource = 'before_schedule';
         $left = '';
@@ -1457,154 +1433,12 @@ class EvaluationController extends AbstractController
             $units = trim((string) ($unitMatch[1] ?? ''));
         }
 
-        // Rebuild row columns by position when OCR keeps columns but mangles spacing in the full line.
-        if (!empty($columns)) {
-            $codeColumnIdx = null;
-            foreach ($columns as $idx => $columnRaw) {
-                $columnCode = $this->normalizeSubjectCode((string) $columnRaw);
-                if ($columnCode !== '' && $this->subjectCodesAreCompatible($code, $columnCode)) {
-                    $codeColumnIdx = $idx;
-                    break;
-                }
-            }
-
-            if ($codeColumnIdx !== null) {
-                $scheduleByColumn = '';
-                $scheduleColumnIdx = null;
-                $scheduleColumnEndIdx = null;
-                for ($idx = $codeColumnIdx + 1; $idx < count($columns); $idx++) {
-                    $candidate = trim((string) ($columns[$idx] ?? ''));
-                    if ($candidate === '') {
-                        continue;
-                    }
-
-                    $columnSchedule = $this->extractScheduleFromText($candidate, $schedulePattern);
-                    if ($columnSchedule === '' && ($idx + 1) < count($columns)) {
-                        $joined = trim($candidate . ' ' . (string) ($columns[$idx + 1] ?? ''));
-                        $columnSchedule = $this->extractScheduleFromText($joined, $schedulePattern);
-                        if ($columnSchedule !== '') {
-                            $scheduleColumnEndIdx = $idx + 1;
-                        }
-                    }
-
-                    if ($columnSchedule !== '') {
-                        $scheduleByColumn = $columnSchedule;
-                        $scheduleColumnIdx = $idx;
-                        if ($scheduleColumnEndIdx === null) {
-                            $scheduleColumnEndIdx = $idx;
-                        }
-                        break;
-                    }
-                }
-
-                if ($schedule === '' && $scheduleByColumn !== '') {
-                    $schedule = $scheduleByColumn;
-                }
-
-                $sectionByColumn = '';
-                $sectionIdx = $codeColumnIdx + 1;
-                if (isset($columns[$sectionIdx])) {
-                    $sectionCandidate = $this->normalizeSectionTokenFromOcr((string) $columns[$sectionIdx], $code);
-                    if ($this->isLikelySectionToken($sectionCandidate, $code)) {
-                        $sectionByColumn = $sectionCandidate;
-                    }
-                }
-                if ($section === '' && $sectionByColumn !== '') {
-                    $section = $sectionByColumn;
-                    $sectionSource = 'column_positional';
-                }
-
-                $unitsByColumn = '';
-                if ($scheduleColumnEndIdx !== null) {
-                    for ($idx = count($columns) - 1; $idx > $scheduleColumnEndIdx; $idx--) {
-                        $tail = trim((string) ($columns[$idx] ?? ''));
-                        if ($tail === '') {
-                            continue;
-                        }
-                        if (preg_match('/^\d+(?:\.\d+)?$/u', $tail) && (float) $tail <= 10.0) {
-                            $unitsByColumn = $tail;
-                            break;
-                        }
-                    }
-                }
-                if ($units === '' && $unitsByColumn !== '') {
-                    $units = $unitsByColumn;
-                }
-
-                $descriptionByColumn = '';
-                if ($scheduleColumnIdx !== null) {
-                    $descStart = $codeColumnIdx + 1;
-                    if ($sectionByColumn !== '' && $sectionIdx === $descStart) {
-                        $descStart++;
-                    }
-
-                    $descEnd = $scheduleColumnIdx - 1;
-                    if ($descEnd >= $descStart) {
-                        $descParts = [];
-                        for ($idx = $descStart; $idx <= $descEnd; $idx++) {
-                            $part = trim((string) ($columns[$idx] ?? ''));
-                            if ($part !== '') {
-                                $descParts[] = $part;
-                            }
-                        }
-                        $descriptionByColumn = trim(implode(' ', $descParts));
-                    }
-                }
-
-                if ($descriptionByColumn !== '') {
-                    if ($left === '') {
-                        $left = $descriptionByColumn;
-                        $descriptionSource = 'column_positional';
-                    } elseif (mb_strlen($left) < 8 && mb_strlen($descriptionByColumn) > mb_strlen($left)) {
-                        $left = $descriptionByColumn;
-                        $descriptionSource = 'column_positional_override';
-                    }
-                }
-            }
-        }
-
-        $normalizedSection = $this->normalizeSectionValue($section);
-        $normalizedSchedule = $this->normalizeScheduleValue($schedule);
+        // Table-column detection is intentionally disabled for student OCR rows.
         $codeColumn = null;
         $sectionColumn = null;
         $descriptionColumn = null;
         $scheduleColumn = null;
         $unitsColumn = null;
-
-        foreach ($columns as $idx => $columnRaw) {
-            $column = trim((string) $columnRaw);
-            if ($column === '') {
-                continue;
-            }
-
-            $columnNo = $idx + 1;
-            $columnCode = $this->normalizeSubjectCode($column);
-            if ($codeColumn === null && $columnCode !== '' && $this->subjectCodesAreCompatible($code, $columnCode)) {
-                $codeColumn = $columnNo;
-            }
-
-            if ($sectionColumn === null && $normalizedSection !== '' && $this->isLikelySectionToken($column, $code) && $this->normalizeSectionValue($column) === $normalizedSection) {
-                $sectionColumn = $columnNo;
-            }
-
-            if ($scheduleColumn === null && $normalizedSchedule !== '') {
-                $columnSchedule = $this->normalizeScheduleValue($column);
-                if ($columnSchedule !== '' && $this->schedulesAreCompatible($normalizedSchedule, $columnSchedule)) {
-                    $scheduleColumn = $columnNo;
-                }
-            }
-
-            if ($unitsColumn === null && $units !== '' && preg_match('/^\d+(?:\.\d+)?$/u', $column) && trim($column) === $units) {
-                $unitsColumn = $columnNo;
-            }
-
-            if ($descriptionColumn === null && $left !== '') {
-                $descNeedle = mb_substr($left, 0, 24);
-                if ($descNeedle !== '' && str_contains($column, $descNeedle)) {
-                    $descriptionColumn = $columnNo;
-                }
-            }
-        }
 
         return [
             'code' => $code,
@@ -1898,52 +1732,7 @@ class EvaluationController extends AbstractController
      */
     private function detectLoadslipTsvHeader(array $lines): ?array
     {
-        foreach ($lines as $idx => $line) {
-            $candidates = [
-                [
-                    'lineIndex' => $idx,
-                    'lineIndexEnd' => $idx,
-                    'lineNumber' => (int) ($line['lineNumber'] ?? ($idx + 1)),
-                    'lineNumberEnd' => (int) ($line['lineNumberEnd'] ?? ($line['lineNumber'] ?? ($idx + 1))),
-                    'text' => (string) ($line['text'] ?? ''),
-                    'words' => (array) ($line['words'] ?? []),
-                ],
-            ];
-
-            if (($idx + 1) < count($lines)) {
-                $nextLine = (array) ($lines[$idx + 1] ?? []);
-                $combinedText = trim((string) ($line['text'] ?? '') . ' ' . (string) ($nextLine['text'] ?? ''));
-                if ($combinedText !== '') {
-                    $candidates[] = [
-                        'lineIndex' => $idx,
-                        'lineIndexEnd' => $idx + 1,
-                        'lineNumber' => (int) ($line['lineNumber'] ?? ($idx + 1)),
-                        'lineNumberEnd' => (int) ($nextLine['lineNumberEnd'] ?? ($nextLine['lineNumber'] ?? ($idx + 2))),
-                        'text' => $combinedText,
-                        'words' => array_merge((array) ($line['words'] ?? []), (array) ($nextLine['words'] ?? [])),
-                    ];
-                }
-            }
-
-            foreach ($candidates as $candidate) {
-                $kinds = $this->extractLoadslipHeaderKindsFromText((string) ($candidate['text'] ?? ''));
-                if (count(array_intersect(['code', 'section', 'description', 'schedule', 'units'], $kinds)) !== 5) {
-                    continue;
-                }
-
-                $anchors = $this->extractLoadslipHeaderAnchorsFromWords((array) ($candidate['words'] ?? []));
-                if (isset($anchors['code'], $anchors['section'], $anchors['description'], $anchors['schedule'], $anchors['units'])) {
-                    return [
-                        'lineIndex' => (int) ($candidate['lineIndex'] ?? $idx),
-                        'lineIndexEnd' => (int) ($candidate['lineIndexEnd'] ?? $idx),
-                        'lineNumber' => (int) ($candidate['lineNumber'] ?? ($idx + 1)),
-                        'lineNumberEnd' => (int) ($candidate['lineNumberEnd'] ?? ($idx + 1)),
-                        'anchors' => $anchors,
-                    ];
-                }
-            }
-        }
-
+        // Student OCR table-header detection is intentionally disabled.
         return null;
     }
 
@@ -5499,8 +5288,8 @@ class EvaluationController extends AbstractController
             if ($subject && $eval->getFaculty()) {
                 $facultyName = $eval->getFaculty();
                 $facultyUsers = $userRepo->createQueryBuilder('u')
-                    ->where('CONCAT(u.lastName, \', \', u.firstName) = :fullName')
-                    ->orWhere('CONCAT(u.firstName, \' \', u.lastName) = :fullName')
+                    ->where("CONCAT(u.lastName, ', ', u.firstName) = :fullName")
+                    ->orWhere("CONCAT(u.firstName, ' ', u.lastName) = :fullName")
                     ->setParameter('fullName', $facultyName)
                     ->getQuery()->getResult();
 
@@ -5530,6 +5319,29 @@ class EvaluationController extends AbstractController
                         $sectionFromLoad = strtoupper(trim((string) ($load->getSection() ?? '')));
                         $schedule = trim((string) ($load->getSchedule() ?? ''));
                     }
+                }
+            }
+
+            // Extra fallback when faculty name matching fails: use subject+section latest load row.
+            if ($subject && $schedule === '') {
+                $sectionLookup = trim((string) ($section ?? ''));
+                if ($sectionLookup !== '') {
+                    $fallbackLoads = $fslRepo->findBy([
+                        'subject' => $subject,
+                        'section' => $sectionLookup,
+                    ], ['id' => 'DESC'], 1);
+                } else {
+                    $fallbackLoads = $fslRepo->findBy([
+                        'subject' => $subject,
+                    ], ['id' => 'DESC'], 1);
+                }
+
+                $fallbackLoad = $fallbackLoads[0] ?? null;
+                if ($fallbackLoad) {
+                    if ($sectionFromLoad === '') {
+                        $sectionFromLoad = strtoupper(trim((string) ($fallbackLoad->getSection() ?? '')));
+                    }
+                    $schedule = trim((string) ($fallbackLoad->getSchedule() ?? ''));
                 }
             }
         }
@@ -5563,6 +5375,15 @@ class EvaluationController extends AbstractController
         if (!$faculty) {
             $this->addFlash('danger', 'No faculty assigned to this evaluation.');
             return $this->redirectToRoute('app_login');
+        }
+
+        // Keep validation schedule behavior intact while ensuring UI can still show a schedule value.
+        $displaySchedule = $schedule;
+        if ($displaySchedule === '') {
+            $displaySchedule = trim((string) ($subject->getSchedule() ?? ''));
+        }
+        if ($displaySchedule === '' && method_exists($eval, 'getTime')) {
+            $displaySchedule = trim((string) ($eval->getTime() ?? ''));
         }
 
         $questions = $questionRepo->findByType('SET');
@@ -5609,12 +5430,24 @@ class EvaluationController extends AbstractController
                     $schedule !== '' ? $schedule : null,
                     (string) ($subject->getSubjectName() ?? '')
                 );
+            $stillAllowedByMasterList = $this->isStudentAllowedByMasterList(
+                $faculty,
+                $subject,
+                (string) $verifiedStudent->getSchoolId(),
+                $finalSection !== '' ? $finalSection : null
+            );
             if (!$stillVerified) {
                 $session->remove($privacySessionKeyFor($verifiedStudent->getId()));
                 $verifiedStudent = null;
                 $privacyConsentChoice = '';
                 $session->remove($verificationSessionKey);
                 $error = 'Loadslip verification is required before entering the form.';
+            } elseif (!$stillAllowedByMasterList) {
+                $session->remove($privacySessionKeyFor($verifiedStudent->getId()));
+                $verifiedStudent = null;
+                $privacyConsentChoice = '';
+                $session->remove($verificationSessionKey);
+                $error = $this->masterListBlockedMessage();
             }
         }
 
@@ -5655,6 +5488,8 @@ class EvaluationController extends AbstractController
                             $error = 'Loadslip is not verified for this Student ID. Please import and verify your loadslip first.';
                         } elseif (!$this->qrLoadslipRowMatches($request, $schoolId, (string) $subject->getSubjectCode(), $finalSection !== '' ? $finalSection : null, $schedule !== '' ? $schedule : null, (string) ($subject->getSubjectName() ?? ''))) {
                             $error = 'Loadslip details do not match this QR evaluation (subject code, section, schedule, or description).';
+                        } elseif (!$this->isStudentAllowedByMasterList($faculty, $subject, $schoolId, $finalSection !== '' ? $finalSection : null)) {
+                            $error = $this->masterListBlockedMessage();
                         } else {
                             $session->set($verificationSessionKey, $student->getId());
                             $session->remove($privacySessionKeyFor($student->getId()));
@@ -5686,6 +5521,8 @@ class EvaluationController extends AbstractController
                     $error = 'Loadslip verification expired or missing. Please import and verify your loadslip again.';
                 } elseif (!$this->qrLoadslipRowMatches($request, (string) $verifiedStudent->getSchoolId(), (string) $subject->getSubjectCode(), $finalSection !== '' ? $finalSection : null, $schedule !== '' ? $schedule : null, (string) ($subject->getSubjectName() ?? ''))) {
                     $error = 'Loadslip details no longer match this QR evaluation (subject code, section, schedule, or description).';
+                } elseif (!$this->isStudentAllowedByMasterList($faculty, $subject, (string) $verifiedStudent->getSchoolId(), $finalSection !== '' ? $finalSection : null)) {
+                    $error = $this->masterListBlockedMessage();
                 }
             }
 
@@ -5733,6 +5570,7 @@ class EvaluationController extends AbstractController
                         (string) $subject->getSubjectCode(),
                         (string) $subject->getSubjectName(),
                         $finalSection !== '' ? $finalSection : null,
+                        $displaySchedule !== '' ? $displaySchedule : null,
                     );
 
                     $success = true;
@@ -5752,12 +5590,26 @@ class EvaluationController extends AbstractController
             );
         }
 
+        if ($displaySchedule === '') {
+            foreach ($qrLoadslipRows as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $rowSchedule = trim((string) ($row['schedule'] ?? ''));
+                if ($rowSchedule !== '') {
+                    $displaySchedule = $rowSchedule;
+                    break;
+                }
+            }
+        }
+
         return $this->render('evaluation/qr_form.html.twig', [
             'evaluation' => $eval,
             'subject' => $subject,
             'faculty' => $faculty,
             'section' => $finalSection,
-            'schedule' => $schedule,
+            'schedule' => $displaySchedule,
             'questions' => $questions,
             'categoryDescriptions' => $descRepo->findDescriptionsByType('SET'),
             'privacyDisclaimerText' => $descRepo->getDisclaimerText('SET'),
@@ -5880,6 +5732,10 @@ class EvaluationController extends AbstractController
             }
 
             if (!$faculty || !$subject) {
+                continue;
+            }
+
+            if (!$this->isStudentAllowedByMasterList($faculty, $subject, (string) $user->getSchoolId(), (string) ($eval->getSection() ?? ''))) {
                 continue;
             }
 
@@ -6446,6 +6302,11 @@ class EvaluationController extends AbstractController
             return $this->redirectToRoute('evaluation_set_index');
         }
 
+        if (!$this->isStudentAllowedByMasterList($faculty, $subject, (string) $user->getSchoolId(), (string) ($eval->getSection() ?? ''))) {
+            $this->addFlash('danger', $this->masterListBlockedMessage());
+            return $this->redirectToRoute('evaluation_set_index');
+        }
+
         // Check if already submitted (non-draft)
         if ($responseRepo->hasSubmitted($user->getId(), $evalId, $faculty->getId(), $subjectId)) {
             $this->addFlash('warning', 'You have already submitted this evaluation.');
@@ -6557,6 +6418,7 @@ class EvaluationController extends AbstractController
         string $subjectCode,
         string $subjectName,
         ?string $section = null,
+        ?string $schedule = null,
     ): void {
         $toEmail = strtolower(trim((string) $toEmail));
         if ($toEmail === '') {
@@ -6564,6 +6426,7 @@ class EvaluationController extends AbstractController
         }
 
         $sectionLine = $section ? "Section: {$section}\n" : '';
+        $scheduleLine = $schedule ? "Schedule: {$schedule}\n" : '';
         $submittedAt = (new \DateTimeImmutable())->format('F d, Y h:i A');
 
         $message = (new Email())
@@ -6576,6 +6439,7 @@ class EvaluationController extends AbstractController
                 . "Faculty: {$facultyName}\n"
                 . "Subject: {$subjectCode} - {$subjectName}\n"
                 . $sectionLine
+                . $scheduleLine
                 . "Submitted: {$submittedAt}\n\n"
                 . "Thank you for participating in the SET-SEF evaluation process."
             );

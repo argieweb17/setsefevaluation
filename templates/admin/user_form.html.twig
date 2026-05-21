@@ -99,8 +99,8 @@
                             { value: 'admin',    label: 'Admin',    icon: 'bi-shield-lock',  color: '#dc3545' },
                         ] %}
                         {% set roleToConst = { student: '', faculty: 'ROLE_FACULTY', staff: 'ROLE_STAFF', admin: 'ROLE_ADMIN' } %}
-                        {# Student is checked when no special role is present #}
-                        {% set isStudent = isEdit and ('ROLE_FACULTY' not in userRoles) and ('ROLE_STAFF' not in userRoles) and ('ROLE_SUPERIOR' not in userRoles) and ('ROLE_ADMIN' not in userRoles) %}
+                        {# Student is checked when no privileged role is present #}
+                        {% set isStudent = ('ROLE_FACULTY' not in userRoles) and ('ROLE_STAFF' not in userRoles) and ('ROLE_SUPERIOR' not in userRoles) and ('ROLE_ADMIN' not in userRoles) %}
                         {% for opt in roleOptions %}
                             {% set isChecked = (opt.value == 'student') ? isStudent : (roleToConst[opt.value] in userRoles) %}
                             <label class="uf-role-chip {{ isChecked ? 'uf-role-chip--active' }}" style="--chip-color:{{ opt.color }};">
@@ -123,9 +123,9 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div id="uf-employment-status-group" class="col-md-6 {{ isStudent ? 'd-none' }}">
                     <label class="form-label fw-semibold small text-muted"><i  class="bi bi-person-vcard me-1"></i>Employment Status / Designation</label>
-                    <select name="employmentStatus" class="form-select">
+                    <select name="employmentStatus" class="form-select" {{ isStudent ? 'disabled' }}>
                         {% set empStatus = isEdit ? user.employmentStatus : '' %}
                         <option value="" {{ empStatus is empty ? 'selected' }}>— None —</option>
                         <option value="Dean" {{ empStatus == 'Dean' ? 'selected' }}>Dean</option>
@@ -160,11 +160,54 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.uf-role-cb').forEach(function(cb) {
+    const roleCheckboxes = Array.from(document.querySelectorAll('.uf-role-cb'));
+    const studentCheckbox = document.querySelector('.uf-role-cb[value="student"]');
+    const nonStudentRoleCheckboxes = roleCheckboxes.filter(function(cb) { return cb.value !== 'student'; });
+    const employmentStatusGroup = document.getElementById('uf-employment-status-group');
+    const employmentStatusSelect = employmentStatusGroup ? employmentStatusGroup.querySelector('select[name="employmentStatus"]') : null;
+
+    function refreshChipStyles() {
+        roleCheckboxes.forEach(function(cb) {
+            cb.closest('.uf-role-chip').classList.toggle('uf-role-chip--active', cb.checked);
+        });
+    }
+
+    function syncStudentMode() {
+        const hasNonStudentRole = nonStudentRoleCheckboxes.some(function(cb) { return cb.checked; });
+
+        if (studentCheckbox) {
+            studentCheckbox.checked = !hasNonStudentRole;
+        }
+
+        if (employmentStatusGroup && employmentStatusSelect) {
+            employmentStatusGroup.classList.toggle('d-none', !hasNonStudentRole);
+            employmentStatusSelect.disabled = !hasNonStudentRole;
+
+            if (!hasNonStudentRole) {
+                employmentStatusSelect.value = '';
+            }
+        }
+
+        refreshChipStyles();
+    }
+
+    roleCheckboxes.forEach(function(cb) {
         cb.addEventListener('change', function() {
-            this.closest('.uf-role-chip').classList.toggle('uf-role-chip--active', this.checked);
+            if (this.value === 'student' && this.checked) {
+                nonStudentRoleCheckboxes.forEach(function(otherCb) {
+                    otherCb.checked = false;
+                });
+            }
+
+            if (this.value !== 'student' && this.checked && studentCheckbox) {
+                studentCheckbox.checked = false;
+            }
+
+            syncStudentMode();
         });
     });
+
+    syncStudentMode();
 });
 </script>
 {% endblock %}

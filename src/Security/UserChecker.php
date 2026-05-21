@@ -28,15 +28,9 @@ class UserChecker implements UserCheckerInterface
             );
         }
 
-        if ($this->requiresInstitutionalEmailDomain($user) && !$this->hasAllowedEmailDomain($user)) {
-            throw new CustomUserMessageAccountStatusException(
-                'Faculty, Staff, Superior, and Admin accounts must use an @norsu.edu.ph email address.'
-            );
-        }
-
         if ($this->requiresInstitutionalCredentials($user) && !$this->hasValidInstitutionalCredentials($user)) {
             throw new CustomUserMessageAccountStatusException(
-                'Faculty, Staff, and Superior accounts must have an @norsu.edu.ph email and a registered ID. Please contact an administrator.'
+                'Faculty, Staff, and Superior accounts must have a registered ID. Please contact an administrator.'
             );
         }
     }
@@ -55,36 +49,10 @@ class UserChecker implements UserCheckerInterface
             || in_array('ROLE_SUPERIOR', $roles, true);
     }
 
-    private function requiresInstitutionalEmailDomain(User $user): bool
-    {
-        $roles = $user->getRoles();
-
-        return in_array('ROLE_ADMIN', $roles, true)
-            || in_array('ROLE_FACULTY', $roles, true)
-            || in_array('ROLE_STAFF', $roles, true)
-            || in_array('ROLE_SUPERIOR', $roles, true);
-    }
-
     private function hasValidInstitutionalCredentials(User $user): bool
     {
-        $email = trim((string) $user->getEmail());
         $schoolId = trim((string) $user->getSchoolId());
 
-        if ($schoolId === '') {
-            return false;
-        }
-
-        return str_ends_with(mb_strtolower($email), '@norsu.edu.ph');
-    }
-
-    private function hasAllowedEmailDomain(User $user): bool
-    {
-        $email = trim((string) $user->getEmail());
-
-        if ($email === '') {
-            return true;
-        }
-
-        return str_ends_with(mb_strtolower($email), '@norsu.edu.ph');
+        return $schoolId !== '';
     }
 }

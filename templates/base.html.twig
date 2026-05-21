@@ -22,6 +22,42 @@
                 }
             })();
         </script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var routeName = '{{ app.request.attributes.get('_route')|default('') }}';
+                if (routeName !== 'admin_users') {
+                    return;
+                }
+
+                var bulkUploadBtn = document.querySelector('.mu-header [data-bs-target="#bulkUploadModal"]');
+                if (bulkUploadBtn) {
+                    bulkUploadBtn.remove();
+                }
+
+                var addUserBtn = document.querySelector('.mu-header a[href="/admin/users/create"], .mu-header a[href$="/admin/users/create"]');
+                if (addUserBtn) {
+                    addUserBtn.remove();
+                }
+            });
+        </script>
+        {% if app.user and app.user.isStudent and not app.user.isFaculty and not app.user.isStaff and not app.user.isAdmin %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var sidebar = document.getElementById('sidebar');
+                if (!sidebar) {
+                    return;
+                }
+
+                var links = sidebar.querySelectorAll('a.nav-link');
+                links.forEach(function (link) {
+                    var href = (link.getAttribute('href') || '').toLowerCase();
+                    if (href.indexOf('schedule') !== -1 || href.indexOf('student_schedule') !== -1) {
+                        link.remove();
+                    }
+                });
+            });
+        </script>
+        {% endif %}
         <title>{% block title %}SET-SEF Evaluation System{% endblock %}</title>
         <link rel="icon" type="image/png" href="{{ asset('images/quamc-logo.png') }}">
         <link href="{{ asset('vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -84,6 +120,15 @@
                     transition: left 0.3s ease, margin-left 0.3s ease;
                 }
             }
+
+            {% if app.user and app.user.isStudent and not app.user.isFaculty and not app.user.isStaff and not app.user.isAdmin %}
+            .sidebar .nav-link[href="{{ path('student_schedule') }}"],
+            .sidebar .nav-link[href*="/student/schedule"],
+            .sidebar .nav-link[href*="student_schedule"],
+            .sidebar .nav-link[href*="schedule"] {
+                display: none !important;
+            }
+            {% endif %}
         </style>
         {% block stylesheets %}{% endblock %}
         {% block javascripts %}
@@ -182,10 +227,6 @@
                     <a class="nav-link {% if app.request.attributes.get('_route')|default('') in ['evaluation_set_index','evaluation_set_form'] %}active{% endif %}"
                        href="{{ path('evaluation_set_index') }}">
                         <i class="sidebar-icon bi bi-journal-bookmark"></i> Loadslip
-                    </a>
-                    <a class="nav-link {% if 'student_schedule' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
-                       href="{{ path('student_schedule') }}">
-                        <i class="sidebar-icon bi bi-calendar3-week"></i> Schedule
                     </a>
                     <div class="sidebar-header">Evaluation</div>
                     <a class="nav-link {% if 'evaluation_history' == app.request.attributes.get('_route')|default('') %}active{% endif %}"
@@ -850,10 +891,13 @@
             {% set loadslipStudentIdMissingMessages = [] %}
             {% set selectImageMessages = [] %}
             {% set dataPrivacyDisclaimerMessages = [] %}
+            {% set facultyMasterListBlockedMessages = [] %}
             {% for label, messages in nonSuccessFlashes %}
                 {% for message in messages %}
                     {% if label == 'danger' and message starts with 'Student ID mismatch' %}
                         {% set studentMismatchMessages = studentMismatchMessages|merge([message]) %}
+                    {% elseif label == 'danger' and message starts with 'Only students listed in the faculty master list can evaluate this subject.' %}
+                        {% set facultyMasterListBlockedMessages = facultyMasterListBlockedMessages|merge([message]) %}
                     {% elseif label == 'danger' and message starts with 'Student ID not found.' %}
                         {% set studentIdNotFoundMessages = studentIdNotFoundMessages|merge([message]) %}
                     {% elseif label == 'warning' and message starts with 'Could not extract Student ID from loadslip.' %}
@@ -920,6 +964,41 @@
                     }
                     document.addEventListener('DOMContentLoaded', showStudentMismatchModal);
                     document.addEventListener('turbo:load', showStudentMismatchModal);
+                })();
+                </script>
+            {% endif %}
+
+            {% if facultyMasterListBlockedMessages|length > 0 %}
+                <div class="modal fade" id="facultyMasterListBlockedModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-error-modal="1">
+                    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+                        <div class="modal-content border-0 shadow" style="border-radius: 14px; overflow: hidden;">
+                            <div class="modal-body text-center px-4 py-4">
+                                <div class="mb-3" style="font-size: 2.25rem; color: #DC2626;">
+                                    <i class="bi bi-shield-exclamation"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2" style="color:#1E293B;">Access Restricted</h5>
+                                {% for message in facultyMasterListBlockedMessages %}
+                                    <p class="text-muted mb-0" style="font-size: .95rem;">{{ message }}</p>
+                                {% endfor %}
+                                <div class="mt-4">
+                                    <button type="button" class="btn btn-norsu px-4" data-bs-dismiss="modal">OK</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    function showFacultyMasterListBlockedModal() {
+                        var modalEl = document.getElementById('facultyMasterListBlockedModal');
+                        if (!modalEl || modalEl.dataset.shown === '1') return;
+                        if (!window.bootstrap || !window.bootstrap.Modal) return;
+                        modalEl.dataset.shown = '1';
+                        var modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+                    document.addEventListener('DOMContentLoaded', showFacultyMasterListBlockedModal);
+                    document.addEventListener('turbo:load', showFacultyMasterListBlockedModal);
                 })();
                 </script>
             {% endif %}

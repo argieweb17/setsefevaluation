@@ -537,6 +537,34 @@
     background: #E2E8F0;
 }
 
+/* ── Google login button ── */
+.lg-google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 0.625rem;
+    background: #fff;
+    color: #1E293B;
+    font-size: 0.925rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    margin-bottom: 0.75rem;
+    animation: slideUp 0.35s ease 0.57s both;
+}
+.lg-google-btn:hover {
+    border-color: #4285F4;
+    background: #F8FAFF;
+    box-shadow: 0 0 0 3px rgba(66,133,244,0.1);
+}
+.lg-google-btn:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 /* ── Alt login button ── */
 .lg-alt-btn {
     display: flex;
@@ -757,6 +785,112 @@
         opacity: 1 !important;
     }
 }
+
+/* ── Google error modal ── */
+.lg-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+.lg-modal-backdrop.lg-modal-open {
+    opacity: 1;
+    pointer-events: all;
+}
+.lg-modal {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 2rem 2rem 1.75rem;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(15,23,42,0.18);
+    text-align: center;
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
+    opacity: 0;
+}
+.lg-modal-backdrop.lg-modal-open .lg-modal {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+.lg-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.1rem;
+}
+.lg-modal-icon--error {
+    background: #FEF2F2;
+    color: #DC2626;
+}
+.lg-modal-icon--warning {
+    background: #FFFBEB;
+    color: #D97706;
+}
+.lg-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0 0 0.5rem;
+}
+.lg-modal-body {
+    font-size: 0.9rem;
+    color: #475569;
+    margin: 0 0 1.5rem;
+    line-height: 1.55;
+}
+.lg-modal-actions {
+    display: flex;
+    gap: 0.65rem;
+    justify-content: center;
+}
+.lg-modal-btn {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.lg-modal-btn--primary {
+    background: #1E3A8A;
+    color: #fff;
+}
+.lg-modal-btn--primary:hover {
+    background: #1e40af;
+    box-shadow: 0 4px 12px rgba(30,58,138,0.3);
+}
+.lg-modal-btn--secondary {
+    background: #F1F5F9;
+    color: #334155;
+}
+.lg-modal-btn--secondary:hover {
+    background: #E2E8F0;
+}
+/* Password suggestion modal extras */
+.lg-pwd-modal-note {
+    font-size: 0.78rem;
+    color: #64748B;
+    margin: 0 0 1.25rem;
+    line-height: 1.5;
+    text-align: center;
+}
+#lgLoginCodeInput:focus {
+    border-color: #1E3A8A;
+    box-shadow: 0 0 0 3px rgba(30,58,138,.15);
+}
 </style>
 {% endblock %}
 
@@ -908,16 +1042,19 @@
                         <span>or continue with</span>
                     </div>
 
-                    <a href="{{ path('app_student_login') }}" class="lg-alt-btn">
-                        <div class="lg-alt-btn-icon">
-                            <i  class="bi bi-mortarboard"></i>
-                        </div>
-                        <div class="lg-alt-btn-text">
-                            <strong>Student Quick Login</strong>
-                            <span>Sign in using Student ID only</span>
-                        </div>
-                        <i  class="bi bi-chevron-right lg-alt-btn-arrow"></i>
-                    </a>
+                    {% if googleAuthEnabled %}
+                    <button type="button" class="lg-google-btn" id="lgGoogleBtn" onclick="lgTriggerGoogleSignIn()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" style="margin-right:10px;flex-shrink:0">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                            <path fill="none" d="M0 0h48v48H0z"/>
+                        </svg>
+                        <span>Continue with Google</span>
+                    </button>
+                    <div id="lgGoogleBtnOverlay" style="position:fixed;top:-9999px;left:-9999px;width:220px;height:50px;overflow:hidden;"></div>
+                    {% endif %}
 
                     <div class="lg-register-link">
                         New to the platform? <a href="{{ path('app_register') }}">Create an account</a>
@@ -928,10 +1065,46 @@
     </div>
 </div>
 
+{% if googleAuthEnabled %}
+{# ── Google sign-in error modal ── #}
+<div id="lgGoogleModal" class="lg-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="lgGoogleModalTitle">
+    <div class="lg-modal">
+        <div class="lg-modal-icon lg-modal-icon--error" id="lgGoogleModalIcon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 class="lg-modal-title" id="lgGoogleModalTitle">Google Sign-In</h3>
+        <p class="lg-modal-body" id="lgGoogleModalBody">An error occurred.</p>
+        <div class="lg-modal-actions" id="lgGoogleModalActions">
+            <button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgCloseModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-{# ═══════════════════════════════════════════════════
-   JAVASCRIPT
-   ═══════════════════════════════════════════════════ #}
+{# ═══ Google login 6-digit code modal ═══ #}
+{% if googleAuthEnabled %}
+<div id="lgPwdModal" class="lg-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="lgPwdModalTitle" style="z-index:10001">
+    <div class="lg-modal">
+        <div class="lg-modal-icon" style="background:#EFF6FF;color:#1E40AF">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h3 class="lg-modal-title" id="lgPwdModalTitle">Check Your Gmail</h3>
+        <p class="lg-modal-body" style="margin-bottom:0.4rem">A 6-digit login code was sent to:</p>
+        <p id="lgPwdEmailAddr" style="font-weight:700;color:#1E40AF;font-size:0.88rem;text-align:center;margin:0 0 1rem;word-break:break-all"></p>
+        <div style="margin-bottom:1rem">
+            <input type="text" id="lgLoginCodeInput" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                placeholder="Enter 6-digit code"
+                style="width:100%;padding:0.65rem 1rem;font-size:1.3rem;font-weight:700;letter-spacing:.25em;text-align:center;border:2px solid #CBD5E1;border-radius:0.5rem;outline:none;font-family:monospace;box-sizing:border-box"
+                autocomplete="one-time-code">
+            <p id="lgLoginCodeMsg" style="margin:0.4rem 0 0;font-size:0.78rem;color:#DC2626;text-align:center;min-height:1.1em"></p>
+        </div>
+        <div class="lg-modal-actions">
+            <button type="button" class="lg-modal-btn lg-modal-btn--secondary" id="lgPwdSkipBtn">Cancel</button>
+            <button type="button" class="lg-modal-btn lg-modal-btn--primary" id="lgPwdContinueBtn">Verify &amp; Login</button>
+        </div>
+    </div>
+</div>
+{% endif %}
 <script>
 (function() {
     'use strict';
@@ -972,4 +1145,304 @@
     });
 })();
 </script>
+
+{% if googleAuthEnabled %}
+<script>
+(function() {
+    'use strict';
+
+    var LG_CLIENT_ID  = {{ googleClientId | json_encode | raw }};
+    var LG_LOGIN_URL   = '{{ path('app_google_login') }}';
+    var LG_VERIFY_URL  = '{{ path('app_google_login_verify') }}';
+    var _lgPendingRedirect = null;
+    var _lgGoogleScriptPromise = null;
+
+    function lgDefaultGoogleButtonHtml() {
+        return '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" style="margin-right:10px;flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg><span>Continue with Google</span>';
+    }
+
+    function lgResetGoogleButton(btn) {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.innerHTML = lgDefaultGoogleButtonHtml();
+    }
+
+    function lgEnsureGoogleScript() {
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+            return Promise.resolve(window.google);
+        }
+        if (_lgGoogleScriptPromise) {
+            return _lgGoogleScriptPromise;
+        }
+
+        _lgGoogleScriptPromise = new Promise(function(resolve, reject) {
+            var existing = document.querySelector('script[data-google-gsi="1"]');
+            if (existing) {
+                var existingStatus = existing.getAttribute('data-google-gsi-status');
+                if (existingStatus === 'loaded' && window.google && window.google.accounts && window.google.accounts.id) {
+                    resolve(window.google);
+                    return;
+                }
+                if (existingStatus === 'loading') {
+                    existing.addEventListener('load', function() {
+                        if (window.google && window.google.accounts && window.google.accounts.id) {
+                            resolve(window.google);
+                            return;
+                        }
+                        _lgGoogleScriptPromise = null;
+                        reject(new Error('Google Identity script loaded without API.'));
+                    }, { once: true });
+                    existing.addEventListener('error', function() {
+                        _lgGoogleScriptPromise = null;
+                        reject(new Error('Failed to load Google Identity script.'));
+                    }, { once: true });
+                    return;
+                }
+
+                existing.remove();
+            }
+
+            var script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            script.setAttribute('data-google-gsi', '1');
+            script.setAttribute('data-google-gsi-status', 'loading');
+            script.onload = function() {
+                script.setAttribute('data-google-gsi-status', 'loaded');
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    resolve(window.google);
+                    return;
+                }
+                _lgGoogleScriptPromise = null;
+                reject(new Error('Google Identity script loaded without API.'));
+            };
+            script.onerror = function() {
+                script.setAttribute('data-google-gsi-status', 'error');
+                _lgGoogleScriptPromise = null;
+                reject(new Error('Failed to load Google Identity script.'));
+            };
+            document.head.appendChild(script);
+        });
+
+        return _lgGoogleScriptPromise;
+    }
+
+    window.lgTriggerGoogleSignIn = function() {
+        var overlay = document.getElementById('lgGoogleBtnOverlay');
+        var btn = document.getElementById('lgGoogleBtn');
+        if (!overlay) {
+            return;
+        }
+
+        overlay.innerHTML = '';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Loading Google...';
+        }
+
+        lgEnsureGoogleScript()
+            .then(function() {
+                if (window.google && window.google.accounts && window.google.accounts.id && typeof window.google.accounts.id.disableAutoSelect === 'function') {
+                    // Always allow account switching instead of silently reusing a previous Google account.
+                    window.google.accounts.id.disableAutoSelect();
+                }
+
+                window.google.accounts.id.initialize({
+                    client_id: LG_CLIENT_ID,
+                    callback: lgHandleGoogleCredential,
+                    use_fedcm_for_prompt: false,
+                    auto_select: false
+                });
+
+                window.google.accounts.id.renderButton(overlay, {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    width: 220
+                });
+
+                setTimeout(function() {
+                    var realBtn = overlay.querySelector('div[role="button"]') ||
+                                  overlay.querySelector('button') ||
+                                  overlay.firstElementChild;
+                    if (realBtn) realBtn.click();
+                }, 150);
+
+                lgResetGoogleButton(btn);
+            })
+            .catch(function() {
+                lgResetGoogleButton(btn);
+
+                var bodyEl = document.getElementById('lgGoogleModalBody');
+                var actionsEl = document.getElementById('lgGoogleModalActions');
+                if (bodyEl) bodyEl.textContent = 'Google sign-in is unavailable right now. Please check your internet connection and try again.';
+                if (actionsEl) actionsEl.innerHTML =
+                    '<button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgCloseModal()">Close</button>';
+                lgOpenModal();
+            });
+    };
+
+    window.lgUseAnotherGoogleAccount = function() {
+        var btn = document.getElementById('lgGoogleBtn');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" style="margin-right:10px;flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg><span>Continue with Google</span>';
+        }
+
+        lgCloseModal();
+        setTimeout(function() {
+            window.lgTriggerGoogleSignIn();
+        }, 120);
+    };
+
+    /* ── Google login 6-digit code modal ── */
+    function lgShowCodeModal(email, debugCode) {
+        var emailEl = document.getElementById('lgPwdEmailAddr');
+        if (emailEl) emailEl.textContent = email || '';
+        var codeInput = document.getElementById('lgLoginCodeInput');
+        var codeMsg   = document.getElementById('lgLoginCodeMsg');
+        if (codeInput) { codeInput.value = debugCode ? String(debugCode) : ''; }
+        if (codeMsg)   { codeMsg.textContent = ''; }
+
+        var modal = document.getElementById('lgPwdModal');
+        if (!modal) return;
+        modal.setAttribute('aria-hidden', 'false');
+        modal.classList.add('lg-modal-open');
+        document.body.style.overflow = 'hidden';
+        if (codeInput) setTimeout(function() { codeInput.focus(); }, 100);
+
+        function lgDoVerify() {
+            var code = codeInput ? codeInput.value.trim() : '';
+            if (!/^\d{6}$/.test(code)) {
+                if (codeMsg) codeMsg.textContent = 'Enter the 6-digit code from your Gmail.';
+                return;
+            }
+            var verifyBtn = document.getElementById('lgPwdContinueBtn');
+            if (verifyBtn) { verifyBtn.disabled = true; verifyBtn.textContent = 'Verifying…'; }
+            if (codeMsg) codeMsg.textContent = '';
+
+            fetch(LG_VERIFY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ code: code }),
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify & Login'; }
+                if (d.success && d.redirect) {
+                    modal.setAttribute('aria-hidden', 'true');
+                    modal.classList.remove('lg-modal-open');
+                    document.body.style.overflow = '';
+                    window.location.href = d.redirect;
+                    return;
+                }
+                if (codeMsg) codeMsg.textContent = d.message || 'Incorrect code. Please try again.';
+            })
+            .catch(function() {
+                if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify & Login'; }
+                if (codeMsg) codeMsg.textContent = 'Network error. Please try again.';
+            });
+        }
+
+        var continueBtn = document.getElementById('lgPwdContinueBtn');
+        var cancelBtn   = document.getElementById('lgPwdSkipBtn');
+        if (continueBtn) continueBtn.onclick = lgDoVerify;
+        if (codeInput) {
+            codeInput.onkeydown = function(e) { if (e.key === 'Enter') lgDoVerify(); };
+        }
+        if (cancelBtn) {
+            cancelBtn.onclick = function() {
+                modal.setAttribute('aria-hidden', 'true');
+                modal.classList.remove('lg-modal-open');
+                document.body.style.overflow = '';
+                var btn = document.getElementById('lgGoogleBtn');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" style="margin-right:10px;flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg><span>Continue with Google</span>'; }
+            };
+        }
+    }
+
+    function lgHandleGoogleCredential(response) {
+        var btn = document.getElementById('lgGoogleBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+        fetch(LG_LOGIN_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ idToken: response.credential })
+        })
+        .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+        .then(function(res) {
+            var d = res.data;
+            if (d.success && d.redirect) {
+                window.location.href = d.redirect;
+                return;
+            }
+            if (d.needsCode) {
+                lgShowCodeModal(d.email || '', d.debugCode || null);
+                return;
+            }
+            if (btn) { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" style="margin-right:10px;flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.96 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg><span>Continue with Google</span>'; }
+
+            var iconEl    = document.getElementById('lgGoogleModalIcon');
+            var bodyEl    = document.getElementById('lgGoogleModalBody');
+            var actionsEl = document.getElementById('lgGoogleModalActions');
+
+            if (d.noAccount) {
+                if (iconEl) { iconEl.className = 'lg-modal-icon lg-modal-icon--error'; }
+                if (bodyEl) bodyEl.textContent = 'No account is linked to this Google email. You can try another Google account or create a new account.';
+                if (actionsEl) actionsEl.innerHTML =
+                    '<button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgUseAnotherGoogleAccount()">Use Another Google Account</button>' +
+                    '<a href="{{ path('app_register') }}" class="lg-modal-btn lg-modal-btn--primary" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Create Account</a>';
+            } else if (d.pending) {
+                if (iconEl) { iconEl.className = 'lg-modal-icon lg-modal-icon--warning'; }
+                if (bodyEl) bodyEl.textContent = 'Your account is pending administrator approval. Please check back later.';
+                if (actionsEl) actionsEl.innerHTML =
+                    '<button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgCloseModal()">OK</button>';
+            } else {
+                if (iconEl) { iconEl.className = 'lg-modal-icon lg-modal-icon--error'; }
+                if (bodyEl) bodyEl.textContent = d.message || 'Google sign-in failed. Please try again.';
+                if (actionsEl) actionsEl.innerHTML =
+                    '<button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgCloseModal()">Close</button>';
+            }
+
+            lgOpenModal();
+        })
+        .catch(function() {
+            if (btn) { btn.disabled = false; }
+            var bodyEl = document.getElementById('lgGoogleModalBody');
+            var actionsEl = document.getElementById('lgGoogleModalActions');
+            if (bodyEl) bodyEl.textContent = 'A network error occurred. Please check your connection and try again.';
+            if (actionsEl) actionsEl.innerHTML = '<button type="button" class="lg-modal-btn lg-modal-btn--secondary" onclick="lgCloseModal()">Close</button>';
+            lgOpenModal();
+        });
+    }
+
+    function lgOpenModal() {
+        var modal = document.getElementById('lgGoogleModal');
+        if (!modal) return;
+        modal.setAttribute('aria-hidden', 'false');
+        modal.classList.add('lg-modal-open');
+        document.body.style.overflow = 'hidden';
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) lgCloseModal();
+        }, { once: true });
+    }
+
+    window.lgCloseModal = function() {
+        var modal = document.getElementById('lgGoogleModal');
+        if (!modal) return;
+        modal.classList.remove('lg-modal-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    };
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') lgCloseModal();
+    });
+
+    window.lgHandleGoogleCredential = lgHandleGoogleCredential;
+})();
+</script>
+{% endif %}
 {% endblock %}

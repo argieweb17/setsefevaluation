@@ -539,14 +539,8 @@
     <table class="ev-table" id="sdPendingTable">
         <thead>
             <tr>
-                <th>Subject</th>
-                <th>Section</th>
-                <th class="sd-col-hide-md">Description</th>
-                <th class="sd-col-hide-md">Unit</th>
                 <th>SET Subject</th>
                 <th>Faculty</th>
-                <th class="sd-col-hide-md">Schedule</th>
-                <th class="sd-col-hide-md">Eval Section</th>
                 <th>Period</th>
                 <th>Status</th>
                 <th style="text-align:right">Action</th>
@@ -555,10 +549,6 @@
         <tbody>
             {% for item in pending %}
             <tr class="ev-row">
-                <td class="ev-td-meta">{{ item.loadslipRow.code|default('—') }}</td>
-                <td class="ev-td-meta">{{ item.loadslipRow.section ? item.loadslipRow.section|upper : '—' }}</td>
-                <td class="ev-td-meta sd-col-hide-md">{{ item.loadslipRow.description|default('—') }}</td>
-                <td class="ev-td-meta sd-col-hide-md">{{ item.loadslipRow.units|default('—') }}</td>
                 <td class="ev-td-subject">
                     <span class="sd-code-badge">{{ item.subject.subjectCode }}</span>
                     {{ item.subject.subjectName }}
@@ -569,8 +559,6 @@
                         <span>{{ item.faculty.fullName }}</span>
                     </div>
                 </td>
-                <td class="ev-td-meta sd-col-hide-md">{{ item.evaluation.time ?? '—' }}</td>
-                <td class="ev-td-meta sd-col-hide-md">{{ item.evaluation.section ? item.evaluation.section|upper : '—' }}</td>
                 <td class="ev-td-meta">{{ item.evaluation.label }}</td>
                 <td><span class="sd-status-badge sd-status-pending"><i  class="bi bi-clock me-1"></i>Pending</span></td>
                 <td style="text-align:right">

@@ -64,7 +64,7 @@
                 {# Header #}
                 <div class="sl-header">
                     <h2 class="sl-title">Student Login</h2>
-                    <p class="sl-subtitle">Enter your Student ID to view your evaluation history</p>
+                    <p class="sl-subtitle">Enter your Student ID and password to view your evaluation history</p>
                 </div>
 
                 {# Error alert #}
@@ -86,10 +86,26 @@
                                 <i class="bi bi-person-badge"></i>
                                 <input type="text" name="school_id" id="inputSchoolId"
                                        class="form-control sl-input" required autofocus
-                                       placeholder="e.g. 2023-1234" autocomplete="off">
+                                       placeholder="e.g. 202000000" autocomplete="username"
+                                       value="{{ lastSchoolId|default('') }}">
                             </div>
                             <div class="sl-field-hint">
                                 <i class="bi bi-info-circle me-1"></i>Use the ID on your school registration form
+                            </div>
+                        </div>
+
+                        <div class="sl-field">
+                            <label for="inputPassword" class="sl-label">
+                                Password
+                            </label>
+                            <div class="sl-input-wrap">
+                                <i class="bi bi-key"></i>
+                                <input type="password" name="password" id="inputPassword"
+                                       class="form-control sl-input"
+                                       placeholder="Enter your password" autocomplete="current-password">
+                            </div>
+                            <div class="sl-field-hint">
+                                <i class="bi bi-info-circle me-1"></i>If your account has no password yet, you can still sign in with Student ID only.
                             </div>
                         </div>
                     </div>

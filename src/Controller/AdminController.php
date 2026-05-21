@@ -38,8 +38,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -69,7 +73,7 @@ class AdminController extends AbstractController
     }
 
     #[Route('/users/{id}/approve', name: 'admin_user_approve', methods: ['POST'])]
-    public function approveUser(User $user, Request $request, EntityManagerInterface $em): Response
+    public function approveUser(User $user, Request $request, EntityManagerInterface $em, MailerInterface $mailer): Response
     {
         if ($this->isCsrfTokenValid('approve' . $user->getId(), $request->request->get('_token'))) {
             $user->setAccountStatus('active');
@@ -77,6 +81,82 @@ class AdminController extends AbstractController
 
             $this->audit->log(AuditLog::ACTION_ACTIVATE_USER, 'User', $user->getId(),
                 'Approved registration for ' . $user->getFullName());
+
+            // Send approval email notification
+            $userEmail = (string) $user->getEmail();
+            if ($userEmail !== '') {
+                try {
+                    $fromEmail = $_ENV['MAILER_FROM_EMAIL'] ?? $_SERVER['MAILER_FROM_EMAIL'] ?? 'noreply@quamc.local';
+                    $fromName  = $_ENV['MAILER_FROM_NAME']  ?? $_SERVER['MAILER_FROM_NAME']  ?? 'QUAMC Evaluation';
+                    $loginUrl  = $this->generateUrl('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL);
+                    $fullName  = $user->getFullName();
+                    $role      = implode(', ', array_map(
+                        fn(string $r) => ucfirst(strtolower(str_replace('ROLE_', '', $r))),
+                        array_filter($user->getRoles(), fn($r) => $r !== 'ROLE_USER')
+                    )) ?: 'User';
+
+                    $htmlBody = <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:1rem;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr><td style="background:#1E3A8A;padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;color:#fff;font-size:1.4rem;font-weight:700;letter-spacing:-0.01em;">QUAMC Evaluation System</h1>
+        </td></tr>
+        <tr><td style="padding:36px 40px;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#DCFCE7;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h2 style="margin:0 0 8px;color:#1E293B;font-size:1.2rem;font-weight:700;">Account Approved!</h2>
+            <p style="margin:0;color:#64748B;font-size:0.9rem;">Your registration has been approved by the administrator.</p>
+          </div>
+          <p style="color:#475569;font-size:0.9rem;line-height:1.6;margin:0 0 8px;">Hi <strong>{$fullName}</strong>,</p>
+          <p style="color:#475569;font-size:0.9rem;line-height:1.6;margin:0 0 24px;">
+            Your <strong>{$role}</strong> account on the QUAMC Evaluation System has been <strong style="color:#16A34A;">approved</strong> and is now active.
+            You can now sign in and access the system.
+          </p>
+          <div style="text-align:center;margin-bottom:28px;">
+            <a href="{$loginUrl}" style="display:inline-block;background:#1E3A8A;color:#fff;text-decoration:none;padding:12px 32px;border-radius:0.5rem;font-weight:600;font-size:0.9rem;">
+              Sign In Now →
+            </a>
+          </div>
+          <p style="color:#94A3B8;font-size:0.8rem;line-height:1.5;margin:0;">
+            If you did not register on this platform, please ignore this email.
+          </p>
+        </td></tr>
+        <tr><td style="background:#F8FAFC;padding:20px 40px;text-align:center;border-top:1px solid #E2E8F0;">
+          <p style="margin:0;color:#94A3B8;font-size:0.78rem;">© QUAMC Evaluation System · This is an automated message, please do not reply.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+HTML;
+
+                    $textBody = "QUAMC Evaluation System\n\n"
+                        . "Hi {$fullName},\n\n"
+                        . "Your {$role} account has been approved by the administrator. "
+                        . "You can now sign in and access the system at:\n{$loginUrl}\n\n"
+                        . "If you did not register on this platform, please ignore this email.";
+
+                    $message = (new Email())
+                        ->from(new Address($fromEmail, $fromName))
+                        ->to($userEmail)
+                        ->subject('Your QUAMC Evaluation account has been approved')
+                        ->text($textBody)
+                        ->html($htmlBody);
+
+                    $mailer->send($message);
+                } catch (\Throwable $e) {
+                    // Email failure is non-critical — approval is already saved
+                    $this->audit->log('approval_email_failed', 'User', $user->getId(), $e->getMessage());
+                }
+            }
 
             $this->addFlash('success', $user->getFullName() . ' has been approved.');
         }
@@ -132,6 +212,8 @@ class AdminController extends AbstractController
             }
             $user->setRoles($roles);
 
+            $isStudentOnly = !array_intersect($roles, ['ROLE_ADMIN', 'ROLE_SUPERIOR', 'ROLE_STAFF', 'ROLE_FACULTY']);
+
             $deptId = $request->request->get('department');
             if ($deptId) {
                 $dept = $deptRepo->find($deptId);
@@ -140,8 +222,8 @@ class AdminController extends AbstractController
                 }
             }
 
-            $empStatus = $request->request->get('employmentStatus', '');
-            $user->setEmploymentStatus($empStatus ?: null);
+            $empStatus = trim((string) $request->request->get('employmentStatus', ''));
+            $user->setEmploymentStatus($isStudentOnly ? null : ($empStatus !== '' ? $empStatus : null));
 
             $password = $request->request->get('password', 'password123');
             $user->setPassword($hasher->hashPassword($user, $password));
@@ -196,11 +278,13 @@ class AdminController extends AbstractController
             }
             $user->setRoles($roles);
 
+            $isStudentOnly = !array_intersect($roles, ['ROLE_ADMIN', 'ROLE_SUPERIOR', 'ROLE_STAFF', 'ROLE_FACULTY']);
+
             $deptId = $request->request->get('department');
             $user->setDepartment($deptId ? $deptRepo->find($deptId) : null);
 
-            $empStatus = $request->request->get('employmentStatus', '');
-            $user->setEmploymentStatus($empStatus ?: null);
+            $empStatus = trim((string) $request->request->get('employmentStatus', ''));
+            $user->setEmploymentStatus($isStudentOnly ? null : ($empStatus !== '' ? $empStatus : null));
 
             $em->flush();
 

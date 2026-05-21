@@ -1,0 +1,214 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Schedule Feasibility | SET - SEF Evaluation System{% endblock %}
+
+{% block body_class %}no-navbar{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+{% include 'home/_fes_styles.html.twig' %}
+
+.fes-gantt-wrap {
+    padding: 2.25rem 0 3rem;
+}
+
+.fes-gantt-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 14px 32px rgba(17, 24, 39, 0.1);
+    border: 1px solid #dbe7fb;
+    overflow: hidden;
+}
+
+.fes-gantt-head {
+    padding: 1.35rem 1.4rem;
+    background: linear-gradient(135deg, #0f3460, #1a4f91);
+    color: #ffffff;
+}
+
+.fes-gantt-head h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.fes-gantt-head p {
+    margin: 0.35rem 0 0;
+    font-size: 0.86rem;
+    opacity: 0.9;
+}
+
+.fes-gantt-shell {
+    border-top: 1px solid #215395;
+    border-bottom: 1px solid #215395;
+    overflow-x: auto;
+}
+
+.fes-gantt-table {
+    width: 100%;
+    min-width: 1120px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+}
+
+.fes-gantt-table th,
+.fes-gantt-table td {
+    border: 1px solid #234678;
+}
+
+.fes-gantt-table .activity-col {
+    width: 165px;
+    min-width: 165px;
+    background: #1f64c5;
+    color: #ffffff;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.fes-gantt-table .month {
+    background: #1f64c5;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: center;
+    padding: 7px 3px;
+    font-size: 13px;
+}
+
+.fes-gantt-table .week {
+    background: #2d79da;
+    color: #f1f6ff;
+    font-size: 10px;
+    text-align: center;
+    text-transform: lowercase;
+    padding: 4px 0;
+}
+
+.fes-gantt-table tbody th {
+    background: #eef3fb;
+    color: #10284b;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    padding: 11px 14px;
+    white-space: nowrap;
+}
+
+.fes-gantt-grid {
+    position: relative;
+    height: 58px;
+    padding: 0;
+    background: #ffffff;
+    background-image:
+        repeating-linear-gradient(
+            to right,
+            transparent 0,
+            transparent calc((100% / 44) - 1px),
+            #234678 calc((100% / 44) - 1px),
+            #234678 calc(100% / 44)
+        );
+}
+
+.fes-gantt-grid .bar {
+    position: absolute;
+    top: 16px;
+    left: calc((var(--start) - 1) * (100% / 44));
+    width: calc((var(--end) - var(--start) + 1) * (100% / 44));
+    height: 26px;
+    border-radius: 2px;
+    background: #5b8fe7;
+    box-shadow: inset 0 0 0 1px rgba(18, 56, 114, 0.35);
+}
+
+.fes-gantt-caption {
+    text-align: center;
+    padding: 0.95rem 1.15rem 1.2rem;
+    font-size: 0.82rem;
+    color: #64748b;
+    border-top: 1px dashed #d6e0f4;
+}
+
+@media (max-width: 900px) {
+    .fes-gantt-wrap {
+        padding: 1.4rem 0 2rem;
+    }
+
+    .fes-gantt-head h1 {
+        font-size: 1rem;
+    }
+
+    .fes-gantt-head p {
+        font-size: 0.8rem;
+    }
+
+    .fes-gantt-table .activity-col,
+    .fes-gantt-table tbody th {
+        font-size: 13px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+{% set months = ['Aug-2025', 'Sep-2025', 'Oct-2025', 'Nov-2025', 'Dec-2025', 'Jan-2026', 'Feb-2026', 'Mar-2026', 'Apr-2026', 'May-2026', 'Jun-2026'] %}
+{% set activities = [
+    { label: 'Requirements', start: 1, end: 2 },
+    { label: 'Design', start: 4, end: 14 },
+    { label: 'Implement', start: 16, end: 27 },
+    { label: 'Testing', start: 28, end: 35 },
+    { label: 'Deployment', start: 36, end: 37 },
+    { label: 'Maintenance', start: 38, end: 43 }
+] %}
+
+<div class="fes-page">
+    {% include 'home/_fes_header.html.twig' with {active: 'timeline'} %}
+
+    <section class="fes-gantt-wrap">
+        <div class="container">
+            <div class="fes-gantt-card">
+                <div class="fes-gantt-head">
+                    <h1>Schedule Feasibility of the Study</h1>
+                    <p>Project activity timeline from August 2025 to June 2026</p>
+                </div>
+
+                <div class="fes-gantt-shell">
+                    <table class="fes-gantt-table" aria-label="Schedule feasibility Gantt chart">
+                        <thead>
+                            <tr>
+                                <th class="activity-col" rowspan="2">ACTIVITY</th>
+                                {% for month in months %}
+                                <th class="month" colspan="4">{{ month }}</th>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                {% for month in months %}
+                                    {% for week in 1..4 %}
+                                    <th class="week">w{{ week }}</th>
+                                    {% endfor %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activities %}
+                            <tr>
+                                <th scope="row">{{ activity.label }}</th>
+                                <td class="fes-gantt-grid" colspan="44">
+                                    <span class="bar" style="--start: {{ activity.start }}; --end: {{ activity.end }};"></span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="fes-gantt-caption">Figure 20. Schedule Feasibility of the Study</p>
+            </div>
+        </div>
+    </section>
+
+    {% include 'home/_fes_footer.html.twig' %}
+</div>
+{% endblock %}

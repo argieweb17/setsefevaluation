@@ -10,6 +10,7 @@
         <nav class="fes-nav">
             <a href="{{ path('app_home') }}" class="fes-nav-link{{ active|default('') == 'home' ? ' active' : '' }}">Home</a>
             <a href="{{ path('app_home', {view: 'about'}) }}" class="fes-nav-link{{ active|default('') == 'about' ? ' active' : '' }}">About</a>
+            <a href="{{ path('app_schedule_feasibility') }}" class="fes-nav-link{{ active|default('') == 'timeline' ? ' active' : '' }}">Timeline</a>
             <a href="{{ path('app_home', {view: 'faq'}) }}" class="fes-nav-link{{ active|default('') == 'faq' ? ' active' : '' }}">FAQ</a>
             <a href="{{ path('app_home', {view: 'contact'}) }}" class="fes-nav-link{{ active|default('') == 'contact' ? ' active' : '' }}">Contact Us</a>
             <details class="fes-account-dropdown">
@@ -35,6 +36,7 @@
             <div class="fes-mobile-drawer-links">
                 <a href="{{ path('app_home') }}" class="fes-mobile-drawer-link{{ active|default('') == 'home' ? ' is-active' : '' }}">Home</a>
                 <a href="{{ path('app_home', {view: 'about'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'about' ? ' is-active' : '' }}">About</a>
+                <a href="{{ path('app_schedule_feasibility') }}" class="fes-mobile-drawer-link{{ active|default('') == 'timeline' ? ' is-active' : '' }}">Timeline</a>
                 <a href="{{ path('app_home', {view: 'faq'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'faq' ? ' is-active' : '' }}">FAQ</a>
                 <a href="{{ path('app_home', {view: 'contact'}) }}" class="fes-mobile-drawer-link{{ active|default('') == 'contact' ? ' is-active' : '' }}">Contact Us</a>
             </div>

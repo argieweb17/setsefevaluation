@@ -7,6 +7,7 @@ use App\Entity\FacultyNotificationRead;
 use App\Entity\FacultySubjectLoad;
 use App\Entity\MessageNotification;
 use App\Entity\Subject;
+use App\Entity\SubjectMasterListEntry;
 use App\Entity\User;
 use App\Repository\AcademicYearRepository;
 use App\Repository\AuditLogRepository;
@@ -22,10 +23,13 @@ use App\Repository\MessageNotificationRepository;
 use App\Repository\QuestionCategoryDescriptionRepository;
 use App\Repository\QuestionRepository;
 use App\Repository\SubjectRepository;
+use App\Repository\SubjectMasterListEntryRepository;
 use App\Repository\SuperiorEvaluationRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -177,6 +181,101 @@ class HomeController extends AbstractController
             '5', '5th year', 'fifth year' => 'Fifth Year',
             default => null,
         };
+    }
+
+    private function normalizeMasterListSection(?string $section): string
+    {
+        return SubjectMasterListEntryRepository::normalizeSection($section);
+    }
+
+    /**
+     * Parses a faculty master list file and returns normalized student rows.
+     * Expected primary columns: A=Student ID, B=Student Name.
+     * Additional name fragments in columns C/D are merged when present.
+     *
+     * @return array{rows: array<int, array{schoolId: string, name: ?string}>, importedCount: int, skippedCount: int}
+     */
+    private function parseMasterListSpreadsheet(string $filePath): array
+    {
+        $reader = IOFactory::createReaderForFile($filePath);
+        if (method_exists($reader, 'setReadDataOnly')) {
+            $reader->setReadDataOnly(true);
+        }
+
+        $spreadsheet = $reader->load($filePath);
+        $sheet = $spreadsheet->getActiveSheet();
+        $highestRow = max(1, (int) $sheet->getHighestDataRow());
+
+        $rows = [];
+        $seenSchoolIds = [];
+        $skippedCount = 0;
+
+        for ($row = 1; $row <= $highestRow; $row++) {
+            $studentIdRaw = trim((string) $sheet->getCell('A' . $row)->getFormattedValue());
+
+            $nameParts = [];
+            foreach (['B', 'C', 'D'] as $col) {
+                $cellValue = trim((string) $sheet->getCell($col . $row)->getFormattedValue());
+                if ($cellValue !== '') {
+                    $nameParts[] = $cellValue;
+                }
+            }
+            $studentNameRaw = trim(implode(' ', $nameParts));
+
+            if ($studentIdRaw === '' && $studentNameRaw === '') {
+                continue;
+            }
+
+            if ($row === 1) {
+                $headerHint = mb_strtolower($studentIdRaw . ' ' . $studentNameRaw);
+                if (
+                    str_contains($headerHint, 'student')
+                    && (
+                        str_contains($headerHint, 'id')
+                        || str_contains($headerHint, 'number')
+                        || str_contains($headerHint, 'name')
+                    )
+                ) {
+                    continue;
+                }
+            }
+
+            $normalizedSchoolId = SubjectMasterListEntryRepository::normalizeSchoolId($studentIdRaw);
+            if ($normalizedSchoolId === '') {
+                $skippedCount++;
+                continue;
+            }
+
+            if (isset($seenSchoolIds[$normalizedSchoolId])) {
+                $skippedCount++;
+                continue;
+            }
+            $seenSchoolIds[$normalizedSchoolId] = true;
+
+            $rows[] = [
+                'schoolId' => $normalizedSchoolId,
+                'name' => $studentNameRaw !== '' ? $studentNameRaw : null,
+            ];
+        }
+
+        $spreadsheet->disconnectWorksheets();
+        unset($spreadsheet);
+
+        return [
+            'rows' => $rows,
+            'importedCount' => count($rows),
+            'skippedCount' => $skippedCount,
+        ];
+    }
+
+    private function redirectToFacultyLoadedSubjectsWithAy(Request $request): Response
+    {
+        $ay = (int) $request->request->get('ay', $request->query->get('ay', 0));
+        if ($ay > 0) {
+            return $this->redirectToRoute('faculty_loaded_subjects', ['ay' => $ay]);
+        }
+
+        return $this->redirectToRoute('faculty_loaded_subjects');
     }
 
     private function normalizeLoadslipRowCode(?string $value): string
@@ -502,6 +601,12 @@ class HomeController extends AbstractController
     public function contact(): Response
     {
         return $this->render('home/contact.html.twig');
+    }
+
+    #[Route('/schedule-feasibility', name: 'app_schedule_feasibility')]
+    public function scheduleFeasibility(): Response
+    {
+        return $this->render('home/schedule_feasibility.html.twig');
     }
 
     #[Route('/dashboard', name: 'app_dashboard')]
@@ -1245,6 +1350,7 @@ class HomeController extends AbstractController
         FacultySubjectLoadRepository $fslRepo,
         EvaluationPeriodRepository $evalRepo,
         EvaluationResponseRepository $responseRepo,
+        EntityManagerInterface $em,
     ): Response {
         /** @var \App\Entity\User $user */
         /** @var User $user */
@@ -1298,6 +1404,37 @@ class HomeController extends AbstractController
                 }
             }
         }
+
+        /** @var SubjectMasterListEntryRepository $masterListRepo */
+        $masterListRepo = $em->getRepository(SubjectMasterListEntry::class);
+
+        $masterListCountMap = $masterListRepo->getCountMapForFaculty(
+            $user->getId(),
+            array_map(
+                static fn(array $item): int => (int) ($item['subject']->getId() ?? 0),
+                $loadedItems
+            )
+        );
+
+        foreach ($loadedItems as &$item) {
+            $subjectId = (int) ($item['subject']->getId() ?? 0);
+            $section = $this->normalizeMasterListSection((string) ($item['section'] ?? ''));
+
+            $sectionCount = $masterListCountMap[$subjectId . '|' . $section] ?? 0;
+            $subjectWideCount = $masterListCountMap[$subjectId . '|'] ?? 0;
+
+            if ($sectionCount > 0) {
+                $item['masterListCount'] = $sectionCount;
+                $item['masterListScope'] = 'section';
+            } elseif ($subjectWideCount > 0) {
+                $item['masterListCount'] = $subjectWideCount;
+                $item['masterListScope'] = 'subject';
+            } else {
+                $item['masterListCount'] = 0;
+                $item['masterListScope'] = 'none';
+            }
+        }
+        unset($item);
 
         // Only show previous loads that are NOT currently loaded (current AY)
         $previousLoads = array_filter($savedLoads, fn($fsl) => !in_array($fsl->getSubject()->getId(), $loadedSubjectIds));
@@ -1476,6 +1613,298 @@ class HomeController extends AbstractController
             'activeEvalMap' => $activeEvalMap,
             'previousEvaluations' => $previousEvaluations,
         ]);
+    }
+
+    #[Route('/faculty/master-list/preview', name: 'faculty_master_list_preview', methods: ['GET'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultyMasterListPreview(
+        Request $request,
+        SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        EntityManagerInterface $em,
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        $subjectId = (int) $request->query->get('subject_id', 0);
+        $section = $this->normalizeMasterListSection((string) $request->query->get('section', ''));
+
+        if ($subjectId <= 0) {
+            return $this->json(['error' => 'Invalid subject.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $subject = $subjectRepo->find($subjectId);
+        if (!$subject) {
+            return $this->json(['error' => 'Subject not found.'], Response::HTTP_NOT_FOUND);
+        }
+
+        $currentAY = $ayRepo->findCurrent();
+        $isDirectOwner = $subject->getFaculty() && $subject->getFaculty()->getId() === $user->getId();
+        $fslCriteria = [
+            'faculty' => $user,
+            'subject' => $subject,
+            'academicYear' => $currentAY,
+        ];
+        if ($section !== '') {
+            $fslCriteria['section'] = $section;
+        }
+        $isFromFacultyLoad = $currentAY ? (bool) $fslRepo->findOneBy($fslCriteria) : false;
+
+        if (!$isDirectOwner && !$isFromFacultyLoad) {
+            return $this->json(['error' => 'You are not allowed to view this master list.'], Response::HTTP_FORBIDDEN);
+        }
+
+        /** @var SubjectMasterListEntryRepository $masterListRepo */
+        $masterListRepo = $em->getRepository(SubjectMasterListEntry::class);
+
+        $entries = [];
+        $scope = 'none';
+        if ($section !== '') {
+            $entries = $masterListRepo->findByFacultySubjectSection($user->getId(), $subjectId, $section);
+            if (!empty($entries)) {
+                $scope = 'section';
+            }
+        }
+
+        if (empty($entries)) {
+            $entries = $masterListRepo->findByFacultySubjectSection($user->getId(), $subjectId, '');
+            if (!empty($entries)) {
+                $scope = 'subject';
+            }
+        }
+
+        $payloadEntries = array_map(
+            static fn(SubjectMasterListEntry $entry): array => [
+                'id' => $entry->getId(),
+                'schoolId' => $entry->getStudentSchoolId(),
+                'name' => (string) ($entry->getStudentName() ?? ''),
+                'section' => $entry->getSection(),
+            ],
+            $entries
+        );
+
+        return $this->json([
+            'subject' => [
+                'id' => (int) $subject->getId(),
+                'code' => (string) $subject->getSubjectCode(),
+                'name' => (string) $subject->getSubjectName(),
+            ],
+            'requestedSection' => $section,
+            'scope' => $scope,
+            'count' => count($payloadEntries),
+            'entries' => $payloadEntries,
+        ]);
+    }
+
+    #[Route('/faculty/master-list/delete', name: 'faculty_master_list_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultyMasterListDelete(
+        Request $request,
+        SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        /** @var SubjectMasterListEntryRepository $masterListRepo */
+        $masterListRepo = $em->getRepository(SubjectMasterListEntry::class);
+
+        $subjectId = (int) $request->request->get('subject_id', 0);
+        $section = $this->normalizeMasterListSection((string) $request->request->get('section', ''));
+        $scopeHint = mb_strtolower(trim((string) $request->request->get('scope', '')));
+
+        $csrfId = 'master_list_delete_' . $subjectId . '_' . ($section !== '' ? $section : 'NA');
+        if (!$this->isCsrfTokenValid($csrfId, (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid request token. Please try deleting the master list again.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        if ($subjectId <= 0) {
+            $this->addFlash('danger', 'Invalid subject for master list deletion.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $subject = $subjectRepo->find($subjectId);
+        if (!$subject) {
+            $this->addFlash('danger', 'Subject not found for master list deletion.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $currentAY = $ayRepo->findCurrent();
+        $isDirectOwner = $subject->getFaculty() && $subject->getFaculty()->getId() === $user->getId();
+        $fslCriteria = [
+            'faculty' => $user,
+            'subject' => $subject,
+            'academicYear' => $currentAY,
+        ];
+        if ($section !== '') {
+            $fslCriteria['section'] = $section;
+        }
+        $isFromFacultyLoad = $currentAY ? (bool) $fslRepo->findOneBy($fslCriteria) : false;
+
+        if (!$isDirectOwner && !$isFromFacultyLoad) {
+            $this->addFlash('danger', 'You are not allowed to delete the master list for this subject.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $targetSection = $section;
+        $scopeLabel = $section !== '' ? ('Section ' . $section) : 'Subject-wide';
+
+        if ($scopeHint === 'subject') {
+            $targetSection = '';
+            $scopeLabel = 'Subject-wide';
+        } elseif ($scopeHint === 'section') {
+            $targetSection = $section;
+            $scopeLabel = $section !== '' ? ('Section ' . $section) : 'Subject-wide';
+        } elseif ($section !== '' && $masterListRepo->countByFacultySubjectSection($user->getId(), $subjectId, $section) <= 0) {
+            // If the section list is empty, fall back to subject-wide entries shown in the UI.
+            $targetSection = '';
+            $scopeLabel = 'Subject-wide';
+        }
+
+        $removedCount = $masterListRepo->removeByFacultySubjectSection($user->getId(), $subjectId, $targetSection);
+
+        if ($removedCount <= 0) {
+            $this->addFlash('info', sprintf('No master list entries found for %s (%s).', (string) $subject->getSubjectCode(), $scopeLabel));
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $this->addFlash(
+            'success',
+            sprintf(
+                'Deleted %d master list entr%s for %s (%s).',
+                $removedCount,
+                $removedCount === 1 ? 'y' : 'ies',
+                (string) $subject->getSubjectCode(),
+                $scopeLabel
+            )
+        );
+
+        return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+    }
+
+    #[Route('/faculty/master-list/upload', name: 'faculty_master_list_upload', methods: ['POST'])]
+    #[IsGranted('ROLE_FACULTY')]
+    public function facultyMasterListUpload(
+        Request $request,
+        SubjectRepository $subjectRepo,
+        AcademicYearRepository $ayRepo,
+        FacultySubjectLoadRepository $fslRepo,
+        EntityManagerInterface $em,
+    ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        /** @var SubjectMasterListEntryRepository $masterListRepo */
+        $masterListRepo = $em->getRepository(SubjectMasterListEntry::class);
+
+        $subjectId = (int) $request->request->get('subject_id', 0);
+        $section = $this->normalizeMasterListSection((string) $request->request->get('section', ''));
+        $csrfId = 'master_list_upload_' . $subjectId . '_' . ($section !== '' ? $section : 'NA');
+        if (!$this->isCsrfTokenValid($csrfId, (string) $request->request->get('_token'))) {
+            $this->addFlash('danger', 'Invalid request token. Please try uploading the master list again.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        if ($subjectId <= 0) {
+            $this->addFlash('danger', 'Invalid subject for master list upload.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $subject = $subjectRepo->find($subjectId);
+        if (!$subject) {
+            $this->addFlash('danger', 'Subject not found for master list upload.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $currentAY = $ayRepo->findCurrent();
+        $isDirectOwner = $subject->getFaculty() && $subject->getFaculty()->getId() === $user->getId();
+        $fslCriteria = [
+            'faculty' => $user,
+            'subject' => $subject,
+            'academicYear' => $currentAY,
+        ];
+        if ($section !== '') {
+            $fslCriteria['section'] = $section;
+        }
+        $isFromFacultyLoad = $currentAY ? (bool) $fslRepo->findOneBy($fslCriteria) : false;
+
+        if (!$isDirectOwner && !$isFromFacultyLoad) {
+            $this->addFlash('danger', 'You are not allowed to update the master list for this subject.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $file = $request->files->get('master_list_file');
+        if (!$file || !$file->isValid()) {
+            $this->addFlash('danger', 'Please choose a valid master list file (.xlsx, .xls, or .csv).');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $ext = strtolower((string) $file->getClientOriginalExtension());
+        if (!in_array($ext, ['xlsx', 'xls', 'csv'], true)) {
+            $this->addFlash('danger', 'Unsupported file type. Upload .xlsx, .xls, or .csv only.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        try {
+            $parsed = $this->parseMasterListSpreadsheet((string) $file->getPathname());
+        } catch (\Throwable) {
+            $this->addFlash('danger', 'Unable to read the master list file. Please check the file format and try again.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $rows = $parsed['rows'] ?? [];
+        $importedCount = (int) ($parsed['importedCount'] ?? 0);
+        $skippedCount = (int) ($parsed['skippedCount'] ?? 0);
+
+        if ($importedCount <= 0) {
+            $this->addFlash('warning', 'No valid Student ID rows were found in the uploaded file. Expected columns: Student ID and Student Name.');
+            return $this->redirectToFacultyLoadedSubjectsWithAy($request);
+        }
+
+        $removedCount = $masterListRepo->removeByFacultySubjectSection($user->getId(), $subject->getId(), $section);
+        $now = new \DateTimeImmutable();
+
+        foreach ($rows as $row) {
+            $schoolId = SubjectMasterListEntryRepository::normalizeSchoolId((string) ($row['schoolId'] ?? ''));
+            if ($schoolId === '') {
+                continue;
+            }
+
+            $entry = new SubjectMasterListEntry();
+            $entry->setFaculty($user);
+            $entry->setSubject($subject);
+            $entry->setSection($section);
+            $entry->setStudentSchoolId($schoolId);
+            $entry->setStudentName((string) ($row['name'] ?? ''));
+            $entry->setCreatedAt($now);
+            $entry->setUpdatedAt($now);
+            $em->persist($entry);
+        }
+
+        $em->flush();
+
+        $scopeLabel = $section !== '' ? ('Section ' . $section) : 'Subject-wide';
+        $message = sprintf(
+            'Master list uploaded for %s (%s): %d student(s) imported',
+            (string) $subject->getSubjectCode(),
+            $scopeLabel,
+            $importedCount
+        );
+        if ($removedCount > 0) {
+            $message .= sprintf(', %d old entr%s replaced', $removedCount, $removedCount === 1 ? 'y' : 'ies');
+        }
+        if ($skippedCount > 0) {
+            $message .= sprintf(', %d duplicate/invalid row%s skipped', $skippedCount, $skippedCount === 1 ? '' : 's');
+        }
+        $message .= '.';
+
+        $this->addFlash('success', $message);
+
+        return $this->redirectToFacultyLoadedSubjectsWithAy($request);
     }
 
     #[Route('/faculty/loaded-subjects/restore', name: 'faculty_restore_load', methods: ['POST'])]
@@ -2840,117 +3269,7 @@ class HomeController extends AbstractController
             throw $this->createAccessDeniedException('Only students can access this page.');
         }
 
-        $session = $request->getSession();
-        $rows = (array) $session->get('student_loadslip_rows', []);
-        $collapsedRows = $this->collapseStudentScheduleRows($rows);
-        if ($collapsedRows !== $rows) {
-            $rows = $collapsedRows;
-            $session->set('student_loadslip_rows', $rows);
-
-            $schoolId = trim((string) ($user->getSchoolId() ?? ''));
-            if ($schoolId !== '') {
-                $verification = $loadslipVerificationRepo->findOneBySchoolId($schoolId);
-                if ($verification !== null) {
-                    $verification->setRows($rows);
-                    $verification->setUpdatedAt(new \DateTimeImmutable());
-                    $loadslipVerificationRepo->save($verification, true);
-                }
-            }
-        } else {
-            $rows = $collapsedRows;
-        }
-
-        $currentAcademicYear = $ayRepo->findCurrent() ?? $ayRepo->findLatestBySequence();
-        $activeSemester = $this->normalizeAcademicSemester($currentAcademicYear?->getSemester());
-        $studentYearLevel = $this->normalizeYearLevelLabel($user->getYearLevel());
-
-        $curriculumSubjects = $this->getCurriculumSubjectsForStudent($user, $curriculumRepo);
-        $codeOptions = [];
-        $descriptionOptions = [];
-        $unitOptions = [];
-        $scheduleOptions = [];
-        $sectionOptions = [];
-        $autofillMap = [];
-
-        foreach ($curriculumSubjects as $subject) {
-            if ($studentYearLevel !== null) {
-                $subjectYearLevel = $this->normalizeYearLevelLabel($subject->getYearLevel());
-                if ($subjectYearLevel === null || $subjectYearLevel !== $studentYearLevel) {
-                    continue;
-                }
-            }
-
-            if ($activeSemester !== null) {
-                $subjectSemester = $this->normalizeAcademicSemester($subject->getSemester());
-                if ($subjectSemester === null || $subjectSemester !== $activeSemester) {
-                    continue;
-                }
-            }
-
-            $code = trim((string) $subject->getSubjectCode());
-            if ($code !== '') {
-                $codeOptions[$code] = true;
-            }
-
-            $description = trim((string) $subject->getSubjectName());
-            if ($description !== '') {
-                $descriptionOptions[$description] = true;
-            }
-
-            $units = $subject->getUnits();
-            if ($units !== null) {
-                $unitOptions[(string) $units] = true;
-            }
-
-            $schedule = trim((string) ($subject->getSchedule() ?? ''));
-            if ($schedule !== '') {
-                $scheduleOptions[$schedule] = true;
-            }
-
-            $section = trim((string) ($subject->getSection() ?? ''));
-            if ($section !== '') {
-                $sectionOptions[strtoupper($section)] = true;
-            }
-
-            if ($code !== '') {
-                $codeKey = strtoupper($code);
-                $entry = $autofillMap[$codeKey] ?? ['description' => '', 'units' => ''];
-                if ($entry['description'] === '' && $description !== '') {
-                    $entry['description'] = $description;
-                }
-                if ($entry['units'] === '' && $units !== null) {
-                    $entry['units'] = (string) $units;
-                }
-                $autofillMap[$codeKey] = $entry;
-            }
-        }
-
-        $codeOptions = array_keys($codeOptions);
-        sort($codeOptions, SORT_NATURAL | SORT_FLAG_CASE);
-        $descriptionOptions = array_keys($descriptionOptions);
-        sort($descriptionOptions, SORT_NATURAL | SORT_FLAG_CASE);
-        $unitOptions = array_keys($unitOptions);
-        sort($unitOptions, SORT_NATURAL);
-        $scheduleOptions = array_keys($scheduleOptions);
-        sort($scheduleOptions, SORT_NATURAL | SORT_FLAG_CASE);
-        $sectionOptions = array_keys($sectionOptions);
-        sort($sectionOptions, SORT_NATURAL | SORT_FLAG_CASE);
-
-        return $this->render('home/student/schedule.html.twig', [
-            'rows'        => $rows,
-            'isVerified'  => (bool) $session->get('student_loadslip_verified', false),
-            'customRows'  => $customRepo->findByStudent($user),
-            'curriculumOptions' => [
-                'codes' => $codeOptions,
-                'descriptions' => $descriptionOptions,
-                'units' => $unitOptions,
-                'schedules' => $scheduleOptions,
-                'sections' => $sectionOptions,
-                'autofill' => $autofillMap,
-                'activeSemester' => $activeSemester,
-                'yearLevel' => $studentYearLevel,
-            ],
-        ]);
+        return $this->redirectToRoute('evaluation_set_index');
     }
 
     #[Route('/student/schedule/add', name: 'student_schedule_add', methods: ['POST'])]
@@ -2965,30 +3284,7 @@ class HomeController extends AbstractController
             throw $this->createAccessDeniedException();
         }
 
-        $code     = trim((string) $request->request->get('code', ''));
-        $name     = trim((string) $request->request->get('name', ''));
-        $schedule = trim((string) $request->request->get('schedule', '')) ?: null;
-        $section  = trim((string) $request->request->get('section', '')) ?: null;
-        $units    = trim((string) $request->request->get('units', '')) ?: null;
-
-        if ($code === '' || $name === '') {
-            $this->addFlash('error', 'Subject code and name are required.');
-            return $this->redirectToRoute('student_schedule');
-        }
-
-        $subject = (new \App\Entity\StudentCustomSubject())
-            ->setStudent($user)
-            ->setCode($code)
-            ->setName($name)
-            ->setSchedule($schedule)
-            ->setSection($section)
-            ->setUnits($units);
-
-        $em->persist($subject);
-        $em->flush();
-
-        $this->addFlash('success', 'Subject added successfully.');
-        return $this->redirectToRoute('student_schedule');
+        return $this->redirectToRoute('evaluation_set_index');
     }
 
     #[Route('/student/schedule/delete/{id}', name: 'student_schedule_delete', methods: ['POST'])]
@@ -3000,17 +3296,11 @@ class HomeController extends AbstractController
     ): Response {
         /** @var \App\Entity\User $user */
         $user = $this->getUser();
-        $subject = $customRepo->find($id);
-
-        if (!$subject || $subject->getStudent() !== $user) {
-            throw $this->createNotFoundException();
+        if ($user->isFaculty() || $user->isStaff() || $user->isAdmin()) {
+            throw $this->createAccessDeniedException();
         }
 
-        $em->remove($subject);
-        $em->flush();
-
-        $this->addFlash('success', 'Subject removed.');
-        return $this->redirectToRoute('student_schedule');
+        return $this->redirectToRoute('evaluation_set_index');
     }
 
     #[Route('/student/audit-log', name: 'student_audit_log')]

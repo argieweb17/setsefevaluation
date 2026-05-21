@@ -15,14 +15,38 @@ class AppUserProvider implements UserProviderInterface
 {
     public function __construct(private UserRepository $userRepo) {}
 
+    private function normalizeSchoolId(string $identifier): string
+    {
+        $trimmed = trim($identifier);
+        if ($trimmed === '') {
+            return '';
+        }
+
+        // Keep alpha-containing IDs untouched; only collapse separators for numeric student IDs.
+        if (preg_match('/[A-Za-z]/', $trimmed) === 1) {
+            return $trimmed;
+        }
+
+        return preg_replace('/\D+/', '', $trimmed) ?? $trimmed;
+    }
+
     public function loadUserByIdentifier(string $identifier): UserInterface
     {
+        $identifier = trim($identifier);
+
         // Try email first
         $user = $this->userRepo->findOneBy(['email' => $identifier]);
 
         // Then try schoolId
         if (!$user) {
             $user = $this->userRepo->findOneBy(['schoolId' => $identifier]);
+        }
+
+        if (!$user) {
+            $normalizedSchoolId = $this->normalizeSchoolId($identifier);
+            if ($normalizedSchoolId !== '' && $normalizedSchoolId !== $identifier) {
+                $user = $this->userRepo->findOneBy(['schoolId' => $normalizedSchoolId]);
+            }
         }
 
         if (!$user) {

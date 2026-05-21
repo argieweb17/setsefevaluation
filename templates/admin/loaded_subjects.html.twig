@@ -73,6 +73,21 @@
 .ls-action-qr:hover{background:transparent!important;color:#0f766e;border-color:transparent!important;transform:none;}
 .ls-action-unload{width:auto;height:auto;padding:0!important;border:none!important;background:transparent!important;border-radius:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;color:#dc2626;box-shadow:none!important;}
 .ls-action-unload:hover{color:#b91c1c;background:transparent!important;border:none!important;}
+.ls-masterlist-cell{min-width:170px;}
+.ls-masterlist-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ls-masterlist-actions{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;}
+.ls-masterlist-count{font-size:.7rem;font-weight:700;color:#1e3a8a;line-height:1.1;}
+.ls-masterlist-scope{font-size:.64rem;color:#64748b;line-height:1;}
+.ls-masterlist-empty{font-size:.68rem;color:#94a3b8;line-height:1.1;}
+.ls-action-masterlist{width:auto;height:auto;padding:0!important;border:none!important;background:transparent!important;border-radius:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;color:#2563eb;box-shadow:none!important;}
+.ls-action-masterlist:hover{color:#1d4ed8;background:transparent!important;border:none!important;}
+.ls-action-masterlist-preview{color:#0f766e;}
+.ls-action-masterlist-preview:hover{color:#0f766e;background:transparent!important;border:none!important;}
+.ls-action-masterlist-edit{color:#2563eb;}
+.ls-action-masterlist-edit:hover{color:#1d4ed8;background:transparent!important;border:none!important;}
+.ls-action-masterlist-delete{color:#dc2626;}
+.ls-action-masterlist-delete:hover{color:#b91c1c;background:transparent!important;border:none!important;}
+.ls-action-masterlist[disabled]{color:#cbd5e1!important;cursor:not-allowed;pointer-events:none;}
 
 /* Unload blocked modal */
 .ls-blocked-modal .modal-content{border:0;border-radius:14px;overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.16);}
@@ -81,6 +96,12 @@
 .ls-blocked-body{padding:16px 16px 12px;}
 .ls-blocked-list{margin:8px 0 0;padding-left:18px;max-height:180px;overflow:auto;font-size:.82rem;color:#334155;}
 .ls-blocked-list li{margin-bottom:3px;}
+
+/* Master list preview modal */
+.ls-masterlist-modal .modal-content{border:0;border-radius:14px;overflow:hidden;box-shadow:0 20px 45px rgba(0,0,0,.16);}
+.ls-masterlist-meta{font-size:.74rem;color:#64748b;line-height:1.3;margin-top:2px;}
+.ls-masterlist-preview-table thead th{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;color:#64748b;border-bottom:1px solid #e2e8f0;}
+.ls-masterlist-preview-table tbody td{font-size:.78rem;vertical-align:middle;border-color:#f1f5f9;}
 
 .ls-th-actions{text-align:center;width:120px;}
 
@@ -419,6 +440,7 @@
                 <th class="ls-th">Section</th>
                 <th class="ls-th">Schedule/Time</th>
                 <th class="ls-th">Department</th>
+                <th class="ls-th text-center">Master List</th>
                 <th class="ls-th text-center">Status</th>
                 {% if not isHistoricalView|default(false) %}
                 <th class="ls-th text-center">Actions</th>
@@ -490,7 +512,71 @@
                         <span class="ls-empty">—</span>
                     {% endif %}
                 </td>
-                <td class="text-center">
+                <td class="text-center ls-masterlist-cell">
+                    {% if isHistoricalView|default(false) %}
+                        <span class="ls-empty">—</span>
+                    {% else %}
+                        {% set mlCount = s.masterListCount|default(0) %}
+                        {% set mlScope = s.masterListScope|default('none') %}
+                        {% set mlDeleteMessage = 'Delete master list for ' ~ s.subject.subjectCode ~ (mlScope == 'section' and s.section ? ' (Section ' ~ s.section|upper ~ ')' : ' (Subject-wide)') ~ '?' %}
+                        <div class="ls-masterlist-wrap">
+                            {% if mlCount > 0 %}
+                                <span class="ls-masterlist-count">{{ mlCount }} Student{{ mlCount == 1 ? '' : 's' }}</span>
+                                <span class="ls-masterlist-scope">{{ mlScope == 'section' ? 'Section List' : 'Subject-wide List' }}</span>
+                            {% else %}
+                                <span class="ls-masterlist-empty">No List</span>
+                            {% endif %}
+
+                            <form method="post" action="{{ path('faculty_master_list_upload') }}" enctype="multipart/form-data" class="ls-masterlist-form">
+                                <input type="hidden" name="_token" value="{{ csrf_token('master_list_upload_' ~ s.subject.id ~ '_' ~ (s.section ? s.section|trim|upper : 'NA')) }}">
+                                <input type="hidden" name="subject_id" value="{{ s.subject.id }}">
+                                <input type="hidden" name="section" value="{{ s.section|default('') }}">
+                                <input type="hidden" name="ay" value="{{ selectedAyId|default(0) }}">
+                                <input type="file" name="master_list_file" accept=".xlsx,.xls,.csv" class="d-none ls-masterlist-file" required onchange="lsSubmitMasterListFile(this)">
+                                <div class="ls-masterlist-actions">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm ls-action-masterlist ls-action-masterlist-preview"
+                                        title="{{ mlCount > 0 ? 'Preview Master List' : 'No Master List to Preview' }}"
+                                        data-subject-id="{{ s.subject.id }}"
+                                        data-section="{{ s.section|default('')|e('html_attr') }}"
+                                        data-subject-code="{{ s.subject.subjectCode|e('html_attr') }}"
+                                        data-subject-name="{{ s.subject.subjectName|e('html_attr') }}"
+                                        onclick="lsOpenMasterListPreview(this)"
+                                        {{ mlCount > 0 ? '' : 'disabled' }}>
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm ls-action-masterlist ls-action-masterlist-edit"
+                                        title="{{ mlCount > 0 ? 'Edit/Replace Master List (.xlsx, .xls, .csv)' : 'Upload Master List (.xlsx, .xls, .csv)' }}"
+                                        onclick="lsPickMasterListFile(this)">
+                                        <i class="bi {{ mlCount > 0 ? 'bi-pencil-square' : 'bi-file-earmark-arrow-up' }}"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm ls-action-masterlist ls-action-masterlist-delete"
+                                        title="{{ mlCount > 0 ? 'Delete Master List' : 'No Master List to Delete' }}"
+                                        data-delete-form-id="lsMasterListDeleteForm{{ loop.index }}"
+                                        data-confirm-message="{{ mlDeleteMessage|e('html_attr') }}"
+                                        onclick="lsSubmitMasterListDelete(this)"
+                                        {{ mlCount > 0 ? '' : 'disabled' }}>
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </form>
+
+                            <form method="post" action="{{ path('faculty_master_list_delete') }}" id="lsMasterListDeleteForm{{ loop.index }}" class="d-none">
+                                <input type="hidden" name="_token" value="{{ csrf_token('master_list_delete_' ~ s.subject.id ~ '_' ~ (s.section ? s.section|trim|upper : 'NA')) }}">
+                                <input type="hidden" name="subject_id" value="{{ s.subject.id }}">
+                                <input type="hidden" name="section" value="{{ s.section|default('') }}">
+                                <input type="hidden" name="scope" value="{{ mlScope }}">
+                                <input type="hidden" name="ay" value="{{ selectedAyId|default(0) }}">
+                            </form>
+                        </div>
+                    {% endif %}
+                </td>
+                <td class="text-center ls-status-cell">
                     {% if isHistoricalView|default(false) %}
                         <span class="ls-eval-badge ls-eval-none"><i class="bi bi-clock-history"></i> Historical</span>
                     {% elseif s.evaluation is defined and s.evaluation is not null %}
@@ -500,7 +586,7 @@
                     {% endif %}
                 </td>
                 {% if not isHistoricalView|default(false) %}
-                <td class="text-center">
+                <td class="text-center ls-actions-cell">
                     <div class="d-flex align-items-center justify-content-center gap-2">
                     {% if s.evaluation is defined and s.evaluation is not null %}
                         <button type="button" class="btn btn-sm ls-action-qr ls-qr-btn"
@@ -538,7 +624,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="{{ isHistoricalView|default(false) ? 9 : 10 }}" class="text-center py-5">
+                <td colspan="{{ isHistoricalView|default(false) ? 10 : 11 }}" class="text-center py-5">
                     <div class="ls-empty-state">
                         <div class="ls-empty-icon"><i class="bi bi-journal-text"></i></div>
                         <h6 class="fw-bold text-muted">No loaded subjects</h6>
@@ -575,6 +661,46 @@
                 <div class="text-end mt-3">
                     <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════
+   MASTER LIST PREVIEW MODAL
+   ═══════════════════════════════════════ #}
+<div class="modal fade" id="lsMasterListPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg ls-masterlist-modal">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-2">
+                <div>
+                    <h5 class="modal-title fw-bold" id="lsMasterListPreviewTitle">Master List Preview</h5>
+                    <div class="ls-masterlist-meta" id="lsMasterListPreviewMeta">Loading...</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div id="lsMasterListPreviewLoading" class="small text-muted">Loading master list entries...</div>
+                <div id="lsMasterListPreviewError" class="alert alert-danger py-2 px-3 small d-none mb-3" role="alert"></div>
+                <div id="lsMasterListPreviewEmpty" class="small text-muted d-none">No master list entries found for this subject.</div>
+                <div id="lsMasterListPreviewTableWrap" class="table-responsive d-none">
+                    <table class="table table-sm mb-0 ls-masterlist-preview-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width:56px;">#</th>
+                                <th style="width:180px;">Student ID</th>
+                                <th>Student Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lsMasterListPreviewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="lsMasterListPreviewEditBtn" onclick="lsEditMasterListFromPreview()">
+                    <i class="me-1 bi bi-pencil-square"></i>Edit List
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -796,6 +922,191 @@ function lsViewDetail(btn) {
     new bootstrap.Modal(document.getElementById('lsViewModal')).show();
 }
 
+function lsPickMasterListFile(button) {
+    var form = button.closest('form');
+    if (!form) return;
+
+    var input = form.querySelector('.ls-masterlist-file');
+    if (!input) return;
+    input.click();
+}
+
+function lsSubmitMasterListFile(input) {
+    if (!input || !input.form) return;
+    if (!input.files || input.files.length === 0) return;
+
+    input.form.submit();
+}
+
+function lsSubmitMasterListDelete(button) {
+    if (!button) return;
+
+    var formId = button.getAttribute('data-delete-form-id') || '';
+    if (!formId) return;
+
+    var form = document.getElementById(formId);
+    if (!(form instanceof HTMLFormElement)) return;
+
+    var confirmMessage = button.getAttribute('data-confirm-message') || 'Delete this master list?';
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+
+    form.submit();
+}
+
+var lsMasterListPreviewEditSource = null;
+
+function lsOpenMasterListPreview(button) {
+    if (!button) return;
+
+    var subjectId = button.getAttribute('data-subject-id') || '';
+    if (!subjectId) return;
+
+    var section = button.getAttribute('data-section') || '';
+    var subjectCode = button.getAttribute('data-subject-code') || '';
+    var subjectName = button.getAttribute('data-subject-name') || '';
+
+    var modalEl = document.getElementById('lsMasterListPreviewModal');
+    if (!modalEl || !window.bootstrap || !window.bootstrap.Modal) return;
+
+    var previewTitleEl = document.getElementById('lsMasterListPreviewTitle');
+    var previewMetaEl = document.getElementById('lsMasterListPreviewMeta');
+    var loadingEl = document.getElementById('lsMasterListPreviewLoading');
+    var errorEl = document.getElementById('lsMasterListPreviewError');
+    var emptyEl = document.getElementById('lsMasterListPreviewEmpty');
+    var tableWrapEl = document.getElementById('lsMasterListPreviewTableWrap');
+    var bodyEl = document.getElementById('lsMasterListPreviewBody');
+    var editBtn = document.getElementById('lsMasterListPreviewEditBtn');
+
+    if (previewTitleEl) {
+        var title = subjectCode;
+        if (subjectName) {
+            title = title ? (title + ' — ' + subjectName) : subjectName;
+        }
+        previewTitleEl.textContent = title || 'Master List Preview';
+    }
+
+    if (previewMetaEl) {
+        var requested = section ? ('Requested: Section ' + section) : 'Requested: Subject-wide';
+        previewMetaEl.textContent = requested + ' · Loading...';
+    }
+
+    if (loadingEl) loadingEl.classList.remove('d-none');
+    if (errorEl) {
+        errorEl.classList.add('d-none');
+        errorEl.textContent = '';
+    }
+    if (emptyEl) emptyEl.classList.add('d-none');
+    if (tableWrapEl) tableWrapEl.classList.add('d-none');
+    if (bodyEl) bodyEl.innerHTML = '';
+
+    var parentForm = button.closest('form');
+    lsMasterListPreviewEditSource = parentForm ? parentForm.querySelector('.ls-action-masterlist-edit') : null;
+    if (editBtn) {
+        editBtn.disabled = !lsMasterListPreviewEditSource;
+    }
+
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+
+    var previewUrl = new URL('{{ path('faculty_master_list_preview') }}', window.location.origin);
+    previewUrl.searchParams.set('subject_id', subjectId);
+    previewUrl.searchParams.set('section', section);
+
+    fetch(previewUrl.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function(response) {
+        return response.json().catch(function() {
+            return {};
+        }).then(function(data) {
+            return { ok: response.ok, data: data };
+        });
+    })
+    .then(function(result) {
+        if (loadingEl) loadingEl.classList.add('d-none');
+
+        if (!result.ok) {
+            if (errorEl) {
+                errorEl.textContent = result.data.error || 'Unable to load master list preview.';
+                errorEl.classList.remove('d-none');
+            }
+            return;
+        }
+
+        var data = result.data || {};
+        var entries = Array.isArray(data.entries) ? data.entries : [];
+        var scope = (data.scope || 'none').toString();
+
+        var scopeLabel = 'No List';
+        if (scope === 'section') {
+            scopeLabel = 'Section List';
+        } else if (scope === 'subject') {
+            scopeLabel = 'Subject-wide List';
+        }
+
+        if (previewMetaEl) {
+            var countLabel = entries.length + ' Student' + (entries.length === 1 ? '' : 's');
+            previewMetaEl.textContent = scopeLabel + ' · ' + countLabel;
+        }
+
+        if (entries.length === 0) {
+            if (emptyEl) emptyEl.classList.remove('d-none');
+            return;
+        }
+
+        if (bodyEl) {
+            entries.forEach(function(entry, index) {
+                var tr = document.createElement('tr');
+
+                var tdIndex = document.createElement('td');
+                tdIndex.className = 'text-center text-muted';
+                tdIndex.textContent = String(index + 1);
+
+                var tdSchoolId = document.createElement('td');
+                var code = document.createElement('code');
+                code.className = 'ls-code-text';
+                code.textContent = (entry && entry.schoolId) ? String(entry.schoolId) : '—';
+                tdSchoolId.appendChild(code);
+
+                var tdName = document.createElement('td');
+                tdName.textContent = (entry && entry.name) ? String(entry.name) : '—';
+
+                tr.appendChild(tdIndex);
+                tr.appendChild(tdSchoolId);
+                tr.appendChild(tdName);
+                bodyEl.appendChild(tr);
+            });
+        }
+
+        if (tableWrapEl) tableWrapEl.classList.remove('d-none');
+    })
+    .catch(function() {
+        if (loadingEl) loadingEl.classList.add('d-none');
+        if (errorEl) {
+            errorEl.textContent = 'Unable to load master list preview.';
+            errorEl.classList.remove('d-none');
+        }
+    });
+}
+
+function lsEditMasterListFromPreview() {
+    if (!lsMasterListPreviewEditSource) return;
+
+    var modalEl = document.getElementById('lsMasterListPreviewModal');
+    if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+        var modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+    }
+
+    lsPickMasterListFile(lsMasterListPreviewEditSource);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.ls-row').forEach(function(r, i) {
         r.style.animationDelay = (i * 0.03) + 's';
@@ -805,6 +1116,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (previousAyFilter) {
         previousAyFilter.addEventListener('change', lsFilterPreviousLoads);
         lsFilterPreviousLoads();
+    }
+
+    var masterListPreviewModal = document.getElementById('lsMasterListPreviewModal');
+    if (masterListPreviewModal) {
+        masterListPreviewModal.addEventListener('hidden.bs.modal', function() {
+            lsMasterListPreviewEditSource = null;
+        });
     }
 });
 
@@ -1180,8 +1498,8 @@ function lsPrint() {
 
     function updateQRButtons() {
         document.querySelectorAll('#lsTableBody .ls-row').forEach(row => {
-            const statusCell = row.querySelector('td:nth-child(9)');
-            const actionsCell = row.querySelector('td:nth-child(10)');
+            const statusCell = row.querySelector('.ls-status-cell');
+            const actionsCell = row.querySelector('.ls-actions-cell');
             if (!actionsCell) return;
 
             const flexDiv = actionsCell.querySelector('.d-flex');
